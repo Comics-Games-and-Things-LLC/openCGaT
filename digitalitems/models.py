@@ -145,7 +145,7 @@ class DigitalItem(Item):
         if self.cart_owner_allowed_to_purchase(cart):
             return super().button_status(cart)
         else:
-            return "Requires other items", False
+            return {'text': "Requires other items", 'enabled': False, "style": self.BUTTON_STYLE_SOLD_OUT}
 
     def user_already_owns(self, user):
         return not user.is_anonymous and len(self.downloads.filter(user=user)) > 0

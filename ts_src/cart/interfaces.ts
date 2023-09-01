@@ -1,8 +1,15 @@
 import {step} from "../checkout/components/CheckoutStep";
 
+export enum ButtonStyles {
+    BUTTON_STYLE_SOLD_OUT = 1,
+    BUTTON_STYLE_BACKORDER = 2,
+    BUTTON_STYLE_GOOD = 3,
+}
+
 export interface IButtonStatus {
     text: string;
     enabled: boolean;
+    style?: ButtonStyles;
 }
 
 export interface IItem {

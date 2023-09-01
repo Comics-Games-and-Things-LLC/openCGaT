@@ -495,15 +495,19 @@ class Item(RepresentationMixin, PolymorphicModel):
         min_price = self.price
         return min_price
 
+    BUTTON_STYLE_GOOD = 3
+    BUTTON_STYLE_BACKORDER = 2
+    BUTTON_STYLE_SOLD_OUT = 1
+
     def button_status(self, cart=None):
         """Returns a tuple of text and enable/disabled"""
         if self.purchasable:
             if self.product.is_preorder:
-                return "Preorder", True
+                return {'text': "Preorder", 'enabled': True, "style": self.BUTTON_STYLE_GOOD}
             else:
-                return "Add to Cart", True
+                return {'text': "Add to Cart", 'enabled': True, "style": self.BUTTON_STYLE_GOOD}
         else:
-            return "Not available for purchase", False
+            return {'text': "Not Yet Available", 'enabled': False, "style": self.BUTTON_STYLE_SOLD_OUT}
 
     def purchase(self, cart):
         pass  # Most items do nothing when purchased
@@ -515,6 +519,8 @@ class InventoryItem(Item):
     allow_backorders = models.BooleanField(default=True)
     max_per_cart = models.IntegerField(null=True, blank=True, default=None)
     preallocated = models.BooleanField(default=False)
+    allow_extra_preorders = models.BooleanField(default=False,
+                                                help_text="If the item is preallocated and backorders are allowed, button will be backorder instead of marking as sold out of pre-orders")
 
     def adjust_inventory(self, quantity, reason=None, line=None):
         """
@@ -547,23 +553,31 @@ class InventoryItem(Item):
         return self.current_inventory
 
     def button_status(self, cart=None):
-        """Returns a tuple of text and enable/disabled
+        """Returns a tuple of text, enable/disabled, and style
         :param cart:
         """
         if self.purchasable:
             if self.product.is_preorder:
                 if not self.preallocated or (self.preallocated and self.current_inventory > 0):
-                    return "Preorder", True
+                    return {'text': "Preorder", 'enabled': True, "style": self.BUTTON_STYLE_GOOD}
                 elif self.preallocated and self.current_inventory <= 0:
-                    return "Pre-orders sold out", False
+                    if self.allow_extra_preorders and self.allow_backorders:
+                        return {'text': "Backorder", 'enabled': True, "style": self.BUTTON_STYLE_BACKORDER}
+                    else:
+                        return {'text': "Pre-orders Sold Out", 'enabled': False,
+                                "style": self.BUTTON_STYLE_SOLD_OUT}
             else:
                 if self.current_inventory > 0:
-                    return "Add to Cart", True
+                    return {'text': "Add to Cart", 'enabled': True, "style": self.BUTTON_STYLE_GOOD}
                 elif self.allow_backorders:
-                    return "Backorder", True
-            return "Sold out", False
+                    return {'text': "Backorder", 'enabled': True, "style": self.BUTTON_STYLE_BACKORDER}
+            return {'text': "Sold Out", 'enabled': False, "style": self.BUTTON_STYLE_SOLD_OUT}
         else:
-            return "Not Yet Available", False
+            return {'text': "Not Yet Available", 'enabled': False,
+                    "style": self.BUTTON_STYLE_SOLD_OUT}
+
+    SECOND_WAVE_PREORDER = "Initial release pre-orders are sold out. Backorders of this product will arrive some time after release."
+    BACKORDER_DISCLAIMER = "This item is not currently in stock. Place a backorder to receive the item when it returns to stock. Your entire order will be held until all items on your order are ready-to-ship."
 
 
 class InventoryLog(models.Model):
@@ -606,6 +620,13 @@ class MadeToOrder(Item):
 
     def get_inventory(self):
         return self.current_inventory
+
+    def button_status(self, cart=None):
+        status = super().button_status(cart)
+        if status['style'] == self.BUTTON_STYLE_GOOD and self.current_inventory < 1:  # If not in stock change the style
+            status['style'] = self.BUTTON_STYLE_BACKORDER
+            status['text'] = "Made to Order"
+        return status
 
 
 class CustomChargeItem(Item):

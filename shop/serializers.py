@@ -67,5 +67,4 @@ class ItemSerializer(serializers.ModelSerializer):
 
     def get_button_status(self, item):
         cart = self.context.get("cart")
-        text, enabled = item.button_status(cart=cart)
-        return {'text': text, 'enabled': enabled}
+        return item.button_status(cart=cart)

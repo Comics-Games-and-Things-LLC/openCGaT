@@ -72,7 +72,7 @@ class AddInventoryItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
         fields = ['current_inventory', 'allow_backorders',
-                  'price', 'default_price', 'featured', 'preallocated']
+                  'price', 'default_price', 'featured', 'preallocated', 'allow_extra_preorders']
 
     def __init__(self, *args, **kwargs):
         partner = kwargs.pop('partner')

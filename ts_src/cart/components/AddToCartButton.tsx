@@ -1,6 +1,6 @@
 import * as React from "react";
 import {useEffect} from "react";
-import {IItem} from "../interfaces";
+import {ButtonStyles, IItem} from "../interfaces";
 import {addButtonItem, addToCart, removeFromCart, setPopoverOpen, updateLine,} from "../reducers/cartSlice";
 import {RootState, useAppDispatch} from "../store";
 import {useSelector} from "react-redux";
@@ -62,43 +62,32 @@ const AddToCartButton: React.FunctionComponent<IAddProps> = (
             });
         };
 
-        let color = [
+        let color = [ //Button style Good
             "bg-primary-600",
             "hover:bg-primary-700",
             "focus:ring-primary-500",
         ];
-
-        if (props.type != "DigitalItem") {
-            //InventoryItem or MTO item
-            if (props.is_preorder) {
-                //"Preorder";
-            } else if (props.type == "MadeToOrder") {
-                //"Made to order";
+        switch (item.button_status.style) {
+            case ButtonStyles.BUTTON_STYLE_SOLD_OUT:
+                color = ["bg-red-600"];
+                break;
+            case ButtonStyles.BUTTON_STYLE_BACKORDER:
                 color = [
                     "bg-yellow-600",
                     "hover:bg-yellow-700",
                     "focus:ring-yellow-500",
                 ];
-            }
+                break;
+            case ButtonStyles.BUTTON_STYLE_GOOD:
+            default:
+            //Leave color as the default from above.
+        }
 
+        if (props.type != "DigitalItem") {
+            //InventoryItem or MTO item
             if (item.inventory <= 0) { //Use state in case inventory changes
-                if (props.is_preorder) {
-                    //"Preorder";
-                } else if (props.backorders_enabled) {
-                    //"Backorder";
-                    color = [
-                    "bg-yellow-600",
-                    "hover:bg-yellow-700",
-                    "focus:ring-yellow-500",
-                ];
-                } else {
-                    //"Sold out";
-                }
                 //TODO: Ensure max value is respected when quantity is increased
             }
-        }
-        if (!item.button_status.enabled) { //button state may change
-            color = ["bg-red-600"];
         }
 
         let classes = [
