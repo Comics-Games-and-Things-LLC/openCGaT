@@ -60,7 +60,6 @@ def intake_item_view(request, barcode, partner_slug):
     print(distributor)
     dist_items = None
     item = None
-    sqitem = None
     local_product = None
     local_item = None
     count = None
@@ -109,7 +108,6 @@ def intake_item_view(request, barcode, partner_slug):
         'dist_items': dist_items,
         'local_product': local_product,
         'local_item': local_item,
-        'square_item': sqitem,
         'count': count,
         'add_mode': add_mode,
         'mfc_guess': mfc_guess,
