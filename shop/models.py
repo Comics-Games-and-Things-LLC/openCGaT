@@ -6,6 +6,7 @@ from django.apps import apps
 from django.contrib.auth.models import User
 from django.core.mail import EmailMessage
 from django.db import models, transaction
+from django.db.models import Sum
 from django.template.defaultfilters import slugify
 from django.template.loader import get_template
 from django_react_templatetags.mixins import RepresentationMixin
@@ -341,6 +342,23 @@ class Product(PolymorphicModel):
 
     def apply_rule(self, rules):
         return Money(round(rules.latest('priority').percent_of_msrp / 100 * float(self.msrp.amount), 2), 'USD')
+
+    def get_sold_info(self, partner):
+        from checkout.models import CheckoutLine, Cart
+        from intake.models import POLine
+        sales = CheckoutLine.objects.filter(item__in=Item.objects.filter(product=self, partner=partner),
+                                            cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED,
+                                                              Cart.CANCELLED]).order_by("-cart__date_submitted")
+        purchases = POLine.objects.filter(barcode=self.barcode, po__partner=partner).exclude(barcode=None).order_by(
+            "-po__date")
+        context = {}
+        context["sales"] = sales
+        context["x_sold"] = \
+            sales.filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED]).exclude(
+                cancelled=True).aggregate(sum=Sum("quantity"))['sum']
+        context["po_lines"] = purchases
+        context["x_purchased"] = purchases.aggregate(sum=Sum("received_quantity"))['sum']
+        return context
 
 
 class ItemQuerySet(PolymorphicQuerySet):

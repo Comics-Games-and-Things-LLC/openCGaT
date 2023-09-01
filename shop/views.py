@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Sum
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -14,11 +13,11 @@ from django.urls import reverse
 from djmoney.money import Money
 from polymorphic.managers import PolymorphicManager
 
-from checkout.models import Cart, CheckoutLine
+from checkout.models import Cart
 from digitalitems.models import DigitalItem
 from images.forms import UploadImage
 from images.models import Image
-from intake.models import DistItem, POLine
+from intake.models import DistItem
 from partner.models import get_partner, get_partner_or_401
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm
@@ -272,17 +271,7 @@ def product_details(request, product_slug, partner_slug=None):
     }
     if manage:
         context["partner"] = partner
-
-        sales = CheckoutLine.objects.filter(item__in=Item.objects.filter(product=product, partner=partner),
-                                            cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED,
-                                                              Cart.CANCELLED]).order_by("-cart__date_submitted")
-        purchases = POLine.objects.filter(barcode=product.barcode).exclude(barcode=None).order_by("-po__date")
-        context["sales"] = sales
-        context["x_sold"] = \
-            sales.filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED]).exclude(
-                cancelled=True).aggregate(sum=Sum("quantity"))['sum']
-        context["po_lines"] = purchases
-        context["x_purchased"] = purchases.aggregate(sum=Sum("received_quantity"))['sum']
+        context.update(product.get_sold_info(partner=partner))
 
     else:
         if not product.visible:
