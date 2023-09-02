@@ -138,6 +138,8 @@ class CartSerializer(CartSummarySerializer):
 
     address_error = serializers.SerializerMethodField()
 
+    disclaimer = serializers.SerializerMethodField()
+
     class Meta:
         model = Cart
         fields = ('id', 'status', 'lines', 'payment_partner', 'final_total', 'final_tax', 'subtotal',
@@ -145,7 +147,7 @@ class CartSerializer(CartSummarySerializer):
                   'open', 'show_status_col', 'owner', 'email', 'username', 'shipping_address', 'billing_address',
                   'available_pickup_partners', 'is_shipping_required', 'pickup_partner', 'delivery_method',
                   'is_account_required', 'completed_steps', 'ready_steps', 'address_error',
-                  'discount_code', 'discount_code_message', 'site', 'is_free', 'in_store_pickup_only')
+                  'discount_code', 'discount_code_message', 'site', 'is_free', 'in_store_pickup_only', "disclaimer")
 
     @staticmethod
     def get_subtotal(cart):
@@ -203,6 +205,10 @@ class CartSerializer(CartSummarySerializer):
     @staticmethod
     def get_in_store_pickup_only(cart):
         return cart.in_store_pickup_only
+
+    @staticmethod
+    def get_disclaimer(cart):
+        return cart.get_disclaimer_text()
 
 
 def get_pos_props(partner, cart_id=None):

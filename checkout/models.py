@@ -13,6 +13,7 @@ from django.core import mail
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.mail import EmailMessage
 from django.db import models, transaction
+from django.db.models import F
 from django.db.models import Sum
 from django.template.loader import get_template
 from django.utils import timezone
@@ -508,7 +509,6 @@ class Cart(RepresentationMixin, models.Model):
                 DigitalItem)) > 0:
             # If there are non-digital items then it must need shipped (or in-store pickup)
             return True
-
         return False
 
     def is_shipping_set(self):
@@ -871,6 +871,22 @@ class Cart(RepresentationMixin, models.Model):
     def get_final_less_tax(self):
         return self.get_total_subtotal() + self.get_shipping()
 
+    def get_disclaimer_text(self):
+        lines_with_backorders = self.lines.filter(quantity__gt=F('item__inventoryitem__current_inventory'))
+        preorders = self.lines.filter(item__inventoryitem__allow_extra_preorders=True,
+                                      item__product__release_date__gte=datetime.datetime.now())
+        backorder_preorders = lines_with_backorders.filter(item__inventoryitem__allow_extra_preorders=True,
+                                                           item__product__release_date__gte=datetime.datetime.now())
+        backorders = lines_with_backorders.filter(item__product__release_date__lte=datetime.datetime.now())
+        text = ""
+        if backorder_preorders.exists():
+            text = text + "Initial release pre-orders of one or more items are sold out. Those products will arrive some time after release. "
+        if preorders.exists() or backorders.exists() or backorder_preorders.exists():
+            text = text + "One or more items are not currently in stock. Your entire order will be held until all items on your order are ready-to-ship. "
+
+        print(text)
+        return text.strip()
+
     def json(self):
         from .serializers import CartSerializer
         return json.dumps(CartSerializer(self).data)
@@ -1212,8 +1228,12 @@ class CheckoutLine(models.Model):
                 else:
                     backorder = self.quantity_to_backorder
                     in_stock = self.quantity - backorder
-                    return "{} in stock \n" \
-                           "{} will be {}ed".format(in_stock, backorder, backorder_or_preorder)
+                    if in_stock == 0:
+                        return "{} will be {}ed".format(backorder, backorder_or_preorder)
+                    else:
+                        return "{} in stock \n" \
+                               "{} will be {}ed".format(in_stock, backorder, backorder_or_preorder)
+
         else:
             return ""
 

@@ -63,7 +63,7 @@ const CartRow: React.FunctionComponent<IRowProps> = (props: IRowProps): JSX.Elem
         if (props.item.type != "DigitalItem" && props.open) {
             quantity_field =
                 <td><input id={qty_id} type='number' onChange={handleUpdateQuantity.bind(this, props.item.id)}
-                           defaultValue={props.quantity} max={999} min={0}/></td>
+                           defaultValue={props.quantity} max={999} min={0} style={{width: '60px',}}/></td>
         }
         if (!props.pos) {
             partner_cell = <td>{props.item.partner.name}</td>

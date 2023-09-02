@@ -90,7 +90,7 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
 
     let count = 0
     if (props.cart.lines?.length > 0) {
-        content = <Table className={"checkout-table"}>
+        content = <Table className={"checkout-table w-full"}>
             <thead>
             <tr>
                 <th>Item</th>
@@ -150,8 +150,11 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
 
 
     }, [code, codeRef])
-    return <div>
+    return <div className="w-full">
         {content}
+        {props.full && !props.pos ? <div>
+            {props.cart.disclaimer}
+        </div> : null}
         <div className="flex justify-end items-center p-2 w-full">
             {props.cart.discount_code || props.cart.discount_code_message ?
                 <div className="flex-grow p-2">

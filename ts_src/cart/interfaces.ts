@@ -74,6 +74,8 @@ export interface ICart {
     payment_method: string;
     show_status_col: boolean;
 
+    disclaimer: string;
+
     completed_steps: step[];
     ready_steps: step[];
     address_error?: any;
