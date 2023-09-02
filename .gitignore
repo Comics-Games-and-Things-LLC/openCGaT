@@ -2,8 +2,7 @@ venv
 *.pyc
 /static
 .env
-.envdev
-.envprod
+.env*
 
 .idea/
 .vscode/
