@@ -122,11 +122,11 @@ class PurchaseOrder(models.Model):
 
     @property
     def missing_costs(self):
-        return self.lines.filter(cost_per_item=None).exists()
+        return self.lines.filter(cost_per_item__isnull=True).exists()
 
     @property
     def missing_quantities(self):
-        return self.lines.filter(expected_quantity=None).exists() or self.lines.filter(expected_quantity=None).exists()
+        return self.lines.filter(expected_quantity=None).exists() or self.lines.filter(received_quantity=None).exists()
 
     @property
     def cost_does_not_match_up(self):
@@ -146,7 +146,7 @@ class POLine(models.Model):
     po = models.ForeignKey(PurchaseOrder, on_delete=models.PROTECT, related_name='lines')
     name = models.TextField(null=True, blank=True)
     barcode = models.CharField(max_length=20, blank=True, null=True)
-    cost_per_item = MoneyField(max_digits=8, decimal_places=4, default_currency='USD', null=True)
+    cost_per_item = MoneyField(max_digits=8, decimal_places=4, default_currency='USD', blank=True, null=True)
     expected_quantity = models.IntegerField(default=0)
     received_quantity = models.IntegerField(default=0)
     remaining_quantity = models.IntegerField(default=0)
