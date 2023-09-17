@@ -17,7 +17,7 @@ class AddProductForm(forms.ModelForm):
                                                   'show_buttons': True, 'filtered': True},
                                               )
 
-    categories.widget.attrs.update({'class': 'max-w-full'})
+    categories.widget.attrs.update({'class': 'w-full'})
 
     publisher = forms.ModelChoiceField(Publisher.objects.all().order_by('name'), required=False)
     games = forms.ModelMultipleChoiceField(Game.objects.all().order_by('name'), required=False)
@@ -54,6 +54,10 @@ class AddProductForm(forms.ModelForm):
             self.fields.pop('weight')
             self.fields.pop('in_store_pickup_only')
             self.fields.pop('all_retail')
+        self.fields['name'].widget.attrs['class'] = 'w-full'
+        self.fields['description'].widget.attrs['class'] = 'w-full'
+
+
 
 
 class RelatedProductsForm(forms.ModelForm):

@@ -1,14 +1,21 @@
 {% csrf_token %}
-{% for field in form %}
-    <div class="fieldWrapper">
+<div class="gap-1">
+    {% for field in form %}
         {% if not field.is_hidden %}
-            {{ field.errors }}
-            {{ field.label_tag }} {{ field }}
-            {% if field.help_text %}
-                <span class="help"><small><em>{{ field.help_text|safe }}</em></small></span>
-            {% endif %}
+            <div class="flex gap-1">
+                {{ field.errors }}
+                <div class="flex w-1/4 max-w-[200px]">
+                    {{ field.label_tag }}
+                </div>
+                <div class="flex-grow">
+                    {{ field }}
+                    {% if field.help_text %}
+                        <span class="help"><small><em>{{ field.help_text|safe }}</em></small></span>
+                    {% endif %}
+                </div>
+            </div>
         {% else %}
             {{ field }}
         {% endif %}
-    </div>
-{% endfor %}
+    {% endfor %}
+</div>
