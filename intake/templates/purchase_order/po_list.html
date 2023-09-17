@@ -9,6 +9,12 @@
     <a href="{% url 'create_po' partner_slug=partner|slugify %}">
         Create PO
     </a>
+    <form>
+        <input type="date" id="start" name="start_date" value="{{ filter_start|date:"Y-m-d" }}"/>
+        <input type="date" id="end" name="end_date" value="{{ filter_end|date:"Y-m-d" }}"/>
+        <button class='btn btn-secondary' type="submit">Filter by Date</button>
+
+    </form>
     <table class="table">
         <tr>
             <th>Date</th>

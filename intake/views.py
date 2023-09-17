@@ -1,3 +1,5 @@
+import datetime
+
 from PIL import Image, ImageDraw, ImageFont
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -273,10 +275,25 @@ def edit_rule(request, partner_slug, rule_id=None):
 
 def po_list(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
     purchase_orders = PurchaseOrder.objects.filter(partner=partner).order_by('-date')
+    if start_date:
+        if not start_date:
+            start_date = datetime.date.today() - datetime.timedelta(days=90)
+        else:
+            start_date = datetime.date.fromisoformat(start_date)  # Convert to format for template
+        purchase_orders = purchase_orders.filter(date__gte=start_date)
+    if end_date:
+        end_date = datetime.date.fromisoformat(end_date)  # Convert to format for template
+
+        purchase_orders = purchase_orders.filter(date__lte=end_date)
     context = {
         'partner': partner,
         'po_list': purchase_orders,
+        'filter_start': start_date,
+        'filter_end': end_date,
     }
     return TemplateResponse(request, "purchase_order/po_list.html", context)
 
