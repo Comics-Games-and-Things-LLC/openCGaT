@@ -1744,7 +1744,7 @@ __metadata:
     browserlist: latest
     laravel-mix: ^6.0.30
     nodemon: ^2.0.22
-    postcss: ^8.4.16
+    postcss: ^8.4.31
     postcss-cli: ^8.3.1
     postcss-import: ^14.0.0
     tailwindcss: latest
@@ -9838,7 +9838,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:^8.0.9, postcss@npm:^8.4.16, postcss@npm:^8.4.23":
+"postcss@npm:^8.0.9, postcss@npm:^8.4.23":
   version: 8.4.24
   resolution: "postcss@npm:8.4.24"
   dependencies:
@@ -9857,6 +9857,17 @@ __metadata:
     picocolors: ^1.0.0
     source-map-js: ^1.0.2
   checksum: 248e3d0f9bbb8efaafcfda7f91627a29bdc9a19f456896886330beb28c5abea0e14c7901b35191928602e2eccbed496b1e94097d27a0b2a980854cd00c7a835f
+  languageName: node
+  linkType: hard
+
+"postcss@npm:^8.4.31":
+  version: 8.4.31
+  resolution: "postcss@npm:8.4.31"
+  dependencies:
+    nanoid: ^3.3.6
+    picocolors: ^1.0.0
+    source-map-js: ^1.0.2
+  checksum: 1d8611341b073143ad90486fcdfeab49edd243377b1f51834dc4f6d028e82ce5190e4f11bb2633276864503654fb7cab28e67abdc0fbf9d1f88cad4a0ff0beea
   languageName: node
   linkType: hard
 
