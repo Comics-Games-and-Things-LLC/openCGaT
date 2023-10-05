@@ -7,7 +7,7 @@ from checkout.models import Cart
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        for cart in Cart.objects.filter(status__in=[Cart.SUBMITTED, Cart.PROCESSING]).order_by('id'):
+        for cart in Cart.objects.filter(status__in=[Cart.SUBMITTED, Cart.PROCESSING, Cart.FROZEN]).order_by('id'):
             if cart.is_processing:  # Resubmit processing carts, as they could be in-store pickup.
                 cart.submit()
             if cart.stripepaymentintent_set.exists():
