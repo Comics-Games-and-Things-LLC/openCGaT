@@ -6,7 +6,7 @@ node {
     def nodeImage
     stage('Build') {
         echo 'Building...'
-        nodeImage = docker.image('node:12.22.7')
+        nodeImage = docker.image('node:18')
         nodeImage.inside('-v /output/:/output/ -u root'){
             sh 'rm -r ./tailwind/static/* ./openCGaT/static/js/* ./static/* || true'
             sh 'rm -r /output/css/* /output/js/* || true'
