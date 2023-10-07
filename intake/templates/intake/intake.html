@@ -26,7 +26,7 @@
             {% if po %}
                 <div>
                     <p>
-                        <a href="{% url 'po_details' partner_slug=partner|slugify po_id=po_line.po.po_number %}">
+                        <a href="{% url 'po_details' partner_slug=partner|slugify po_id=po.po_number %}">
                             {{ edit }}
                         </a>
                     </p>
