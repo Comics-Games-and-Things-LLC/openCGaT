@@ -1,18 +1,18 @@
 rfc3339
 gunicorn
-Django == 4.2.3
-django-allauth
+Django==4.2.6
+django-allauth==0.57.0
 django-b2
 django-debug-toolbar
 django-debug-toolbar-template-profiler
 django-polymorphic
-django-money == 3.1.0
+django-money==3.1.0
 django-rest-framework
 django-react-templatetags
 django-cors-headers
 django-storages[azure]
 
-azure-common == 1.1.28
+azure-common==1.1.28
 boto3
 
 django-imagekit
@@ -23,7 +23,7 @@ split-settings
 psycopg2-binary
 
 squareup
-wagtail==5.0.2
+wagtail==5.1.2
 wagtail_non_admin_draftail==0.18.2
 whitenoise
 
@@ -52,7 +52,7 @@ requests
 xlrd
 beautifulsoup4
 django-treebeard
-django-oscar @ git+https://github.com/django-oscar/django-oscar@master
+django-oscar@git+https://github.com/django-oscar/django-oscar@master
 pytz
 
 python-dateutil

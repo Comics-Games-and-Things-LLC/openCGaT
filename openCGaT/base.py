@@ -122,6 +122,7 @@ MIDDLEWARE = [
     'checkout.middleware.CartMiddleware',
     # site level redirects from wagtail
     'wagtail.contrib.redirects.middleware.RedirectMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'openCGaT.urls'
