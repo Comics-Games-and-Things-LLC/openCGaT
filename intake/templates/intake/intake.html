@@ -25,6 +25,11 @@
             </div>
             {% if po %}
                 <div>
+                    <p>
+                        <a href="{% url 'po_details' partner_slug=partner|slugify po_id=po_line.po.po_number %}">
+                            {{ edit }}
+                        </a>
+                    </p>
                     <p>{{ po.date }}</p>
                     <p> Total:
                         {% if po.subtotal %}
@@ -114,7 +119,7 @@
             {% endif %}
         </div>
 
-        <div class=" {% if square_enabled %} col-md-4 {% else %} col-md-6 {% endif %} ">
+        <div class="col-md-6">
             <h3>Local:</h3>
 
             {% if local_product %}
@@ -133,10 +138,13 @@
             {% if local_item %}
                 Price: {{ local_item.price }}
                 <br>
-                {% if not local_item.use_linked_inventory %}
-                    Inventory: {{ local_item.current_inventory }}
-                {% else %}
-                    Pulling inventory information from square
+                Inventory: {{ local_item.current_inventory }}
+                {% if x_sold %}
+                    <br>
+                    {{ x_sold }} sold / {{ x_purchased }} purchased
+                    {% if x_sold >= x_purchased %}
+                        <h1> Check to see if this is for someone's order</h1>
+                    {% endif %}
                 {% endif %}
 
             {% else %}
@@ -180,77 +188,62 @@
             {% endif %}
 
         </div>
-        <div class=" col-md-4 ">
-            {% if square_enabled %}
-                <h3>Square:</h3>
-                {% if square_item %}
-                    <h3>
-                        <span id="name">{{ square_item.name }}</span>
-                    </h3>
-                    In Category: {{ square_item.category_id }}
-                    <br>
-                    Square Price:
-                    <span id="price">{{ square_item.local_item.price }}</span>
-                    <br>
-                    We have {{ count }}
-                    <br>
-
-                {% else %}
-                    Item not in Square Inventory.
-                {% endif %}
-            {% endif %}
-        </div>
     </div>
     {% if local_item %}
-        <div class="row">
-            <form action="{% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %} " method="post"
-                  id="print_form">
-                {% csrf_token %}
-                {{ print_form }}
-                <button type="submit" class="btn btn-primary" id="print">Print Label</button>
-                <img id="preview_image"/>
+        <div class="row grid {% if x_sold %} grid-cols-6 {% endif %} gap-4 px-4">
+            <div class="w-full">
 
-            </form>
-            <script>
+                <form action="{% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %} " method="post"
+                      id="print_form">
+                    {% csrf_token %}
+                    {{ print_form }}
+                    <button type="submit" class="btn btn-primary" id="print">Print Label</button>
+                </form>
+                <script>
 
-                function ImagetoPrint(source) {
-                    return "<html><head><scri" + "pt>function step1(){\n" +
-                        "setTimeout('step2()', 10);}\n" +
-                        "function step2(){window.print();window.close()}\n" +
-                        "</scri" + "pt></head><body onload='step1()'>\n" +
-                        "<img src='" + source + "' /></body></html>";
-                }
+                    function ImagetoPrint(source) {
+                        return "<html><head><scri" + "pt>function step1(){\n" +
+                            "setTimeout('step2()', 10);}\n" +
+                            "function step2(){window.print();window.close()}\n" +
+                            "</scri" + "pt></head><body onload='step1()'>\n" +
+                            "<img src='" + source + "' /></body></html>";
+                    }
 
-                {#  https://stackoverflow.com/questions/2909033/using-javascript-to-print-images #}
+                    {#  https://stackoverflow.com/questions/2909033/using-javascript-to-print-images #}
 
-                function PrintImage(source) {
-                    var Pagelink = "about:blank";
-                    var pwa = window.open(Pagelink, "_new");
-                    pwa.document.open();
-                    pwa.document.write(ImagetoPrint(source));
-                    pwa.document.close();
-                }
+                    function PrintImage(source) {
+                        var Pagelink = "about:blank";
+                        var pwa = window.open(Pagelink, "_new");
+                        pwa.document.open();
+                        pwa.document.write(ImagetoPrint(source));
+                        pwa.document.close();
+                    }
 
-                $('#print_form').submit(function (e) {
-                    e.preventDefault();
-                    console.log("attempting print")
+                    $('#print_form').submit(function (e) {
+                        e.preventDefault();
+                        console.log("attempting print")
 
-                    let request = new Request(
-                        " {% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %} ",
-                        {headers: {'X-CSRFToken': csrftoken}}
-                    );
-                    fetch(request, {
-                        method: 'POST',
-                        mode: 'same-origin', // Do not send CSRF token to another domain.
-                    }).then(response => response.blob()
-                    ).then(imageBlob => PrintImage(URL.createObjectURL(imageBlob))
-                    );
-                    return false;
-                })
-                ;
-            </script>
-            <img src="{% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %} ">
+                        let request = new Request(
+                            " {% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %} ",
+                            {headers: {'X-CSRFToken': csrftoken}}
+                        );
+                        fetch(request, {
+                            method: 'POST',
+                            mode: 'same-origin', // Do not send CSRF token to another domain.
+                        }).then(response => response.blob()
+                        ).then(imageBlob => PrintImage(URL.createObjectURL(imageBlob))
+                        );
+                        return false;
+                    })
+                    ;
+                </script>
+                <img src="{% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %}" class="w-full">
+            </div>
+            <div class="col-span-5">
+                {% include 'shop/snippets/sales_history.html' %}
+            </div>
         </div>
+
     {% endif %}
     <br>
     <script>
