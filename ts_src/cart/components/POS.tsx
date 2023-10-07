@@ -1,5 +1,6 @@
 import * as React from "react";
 import {FormEvent, useEffect, useRef, useState} from "react";
+import * as path from "path";
 
 import {IPOSProps, IUser} from "../interfaces";
 import POSPayment from "./POSPayment"
@@ -20,6 +21,9 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
     const debouncedEmailString = useDebounce<string>(currentEmail, 500)
     const [userSuggestions, setUserSuggestions] = useState<IUser[]>([])
     const emailFieldRef = useRef();
+
+    const ordersURL = path.normalize(path.join(props.url, '..'));
+    console.log(ordersURL)
 
     useEffect(() => {
         dispatch(setPOS(props));
@@ -154,7 +158,10 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                         <>
                             <h1>
                                 {" "}
-                                Cart Number: {currentStatus.active_cart.id}{" "}
+                                Cart Number: {currentStatus.active_cart.open ?
+                                currentStatus.active_cart.id :
+                                <a href={path.join(ordersURL, currentStatus.active_cart.id.toString())}>{currentStatus.active_cart.id}</a>
+                            }
                                 <input type={"number"} step='1' id={'id_cart_id'} hidden={true} readOnly={true}
                                        value={currentStatus.active_cart.id}>
                                 </input>

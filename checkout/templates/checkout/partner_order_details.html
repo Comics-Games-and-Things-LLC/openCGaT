@@ -33,6 +33,10 @@
                 </td>
                 <td>
                     {{ past_cart.id }}
+                    <a class="btn btn-primary"
+                       href="{% url 'pos' cart_id=past_cart.id partner_slug=partner.slug %}">
+                        POS
+                    </a>
                 </td>
             </tr>
         </table>

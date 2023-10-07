@@ -13,6 +13,9 @@ module.exports = {
     },
     resolve: {
         extensions: [".js", ".jsx", ".json", ".ts", ".tsx"],
+        alias: {
+            path: require.resolve("path-browserify")
+        }
     },
     module: {
         rules: [
