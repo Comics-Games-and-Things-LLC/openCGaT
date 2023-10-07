@@ -603,15 +603,37 @@ def pos_add_item(request, partner_slug, cart_id, barcode):
     return HttpResponse(status=200)
 
 
-def pos_set_owner(request, partner_slug, cart_id):
+def pos_suggest_owner(request, partner_slug, cart_id):
     partner = get_partner_or_401(request, partner_slug)
-    cart = get_object_or_404(Cart, id=cart_id)
     if request.method == "POST":
         body = json.loads(request.body.decode('utf-8'))
         email = body['email']
         print(email)
+        users = User.objects.filter(emailaddress__email__icontains=email).distinct()
+        users = users | User.objects.filter(username__icontains=email).distinct()
+        users = users.distinct()
+        print(users)
+        serialized_users = []
+        for user in users[:5]:
+            serialized_users.append({
+                "username": user.username,
+                "email": user.email,
+            })
+        return JsonResponse({'users': serialized_users})
+    return HttpResponse(status=400)
+
+
+def pos_set_owner(request, partner_slug, cart_id):
+    partner = get_partner_or_401(request, partner_slug)
+    cart = Cart.objects.get(id=cart_id)
+    if request.method == "POST":
+        body = json.loads(request.body.decode('utf-8'))
+        email = body['email']
+        print(email)
+        if " " in email:
+            return HttpResponse(status=400)
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(emailaddress__email=email)
             cart.owner = user
             print("Set Owner")
         except Exception:

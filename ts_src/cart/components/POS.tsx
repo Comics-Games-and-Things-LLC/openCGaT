@@ -1,25 +1,25 @@
 import * as React from "react";
-import {FormEvent, useEffect, useState} from "react";
+import {FormEvent, useEffect, useRef, useState} from "react";
 
-import {IPOSProps} from "../interfaces";
+import {IPOSProps, IUser} from "../interfaces";
 import POSPayment from "./POSPayment"
 import CartBody from "./CartBody";
 import CartSelector from "./CartSelector";
-import getCookie from "./get_cookie";
 import {RootState, useAppDispatch} from "../store";
-import {
-    addCustomPOSItem,
-    addNewPOSItem,
-    removeFromCart,
-    setPOS,
-    setPOSOwner,
-    updateLine,
-} from "../reducers/cartSlice";
+import {addCustomPOSItem, addNewPOSItem, setPOS, setPOSOwner,} from "../reducers/cartSlice";
 import {useSelector} from "react-redux";
+import {Autocomplete, TextField} from "@mui/material";
+import getCookie from "./get_cookie";
+import {useDebounce} from 'usehooks-ts'
+
 
 const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element => {
     const dispatch = useAppDispatch();
     const currentStatus = useSelector((state: RootState) => state.cart.pos);
+    const [currentEmail, setCurrentEmail] = useState<string>('')
+    const debouncedEmailString = useDebounce<string>(currentEmail, 500)
+    const [userSuggestions, setUserSuggestions] = useState<IUser[]>([])
+    const emailFieldRef = useRef();
 
     useEffect(() => {
         dispatch(setPOS(props));
@@ -33,6 +33,19 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                 "",
                 `${currentStatus.url}/${currentStatus.active_cart.id}/`
             );
+        }
+        console.log("Selected cart changed!")
+
+        if (emailFieldRef.current) {
+            //https://github.com/mui/material-ui/issues/4736
+            const field = emailFieldRef.current as HTMLInputElement;
+            const clearButton = field.getElementsByClassName('MuiAutocomplete-clearIndicator')[0] as HTMLButtonElement;
+            if (clearButton) {
+                clearButton.click();
+                console.log("Attempted to clear the field")
+
+            }
+
         }
     }, [currentStatus.active_cart]);
 
@@ -73,12 +86,49 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
     const HandleOwner = (event: FormEvent) => {
         event.preventDefault()
         const data = new FormData(event.target as HTMLFormElement);
+        const raw_str = data.get("email") as string
+        //The raw string could be a value from the dropdown.
+        const email = raw_str.includes(" ") ? raw_str.split(" ")[0] : raw_str;
         dispatch(
             setPOSOwner({
-                email: data.get("email") as string,
+                email: email,
             })
         );
+        (event.target as HTMLFormElement).reset()
     }
+
+    const handleEmailChange = (event: React.SyntheticEvent, value: string, reason: string) => {
+        console.log(reason)
+        setCurrentEmail(value)
+    }
+    useEffect(() => {
+        const value = debouncedEmailString
+        if (value) {
+            fetch(
+                `${currentStatus.url}/${currentStatus.active_cart.id}/suggest_owner/`,
+                {
+                    method: "post",
+                    body: JSON.stringify({
+                        email: value,
+                    }),
+                    headers: {"X-CSRFToken": getCookie("csrftoken")},
+                })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (myJson) {
+                    console.log(
+                        "search term: " + value + ", results: ", myJson.users
+                    );
+                    const updatedOptions = myJson.users.map((p: IUser) => {
+                        return {label: p.email + " - " + p.username, email: p.email};
+                    });
+                    setUserSuggestions(updatedOptions);
+                });
+        } else {
+            setUserSuggestions([]);
+        }
+    }, [debouncedEmailString]);
 
     React.useEffect(() => {
         document.addEventListener('scan', HandleScan)
@@ -110,31 +160,24 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                                 </input>
                             </h1>
                             {currentStatus.active_cart.status}
+                            <form onSubmit={HandleOwner}>
+                                <Autocomplete ref={emailFieldRef}
+                                              freeSolo
+                                              onInputChange={handleEmailChange}
+                                              options={userSuggestions}
+                                              filterOptions={(x) => x}
+                                              renderInput={(params) => <TextField {...params} name="email"
+                                                                                  label="Email"/>}
+                                />
+                                <input type="submit" value="Set"/>
+                            </form>
+
+
+                            <p>
+                                Owner:{" "} {currentStatus.active_cart.owner_info}
+                            </p>
                             {currentStatus.active_cart.open ? (
                                 <>
-                                    {currentStatus.active_cart.owner_info ==
-                                    "Anonymous" ? (
-                                        <form onSubmit={HandleOwner}>
-                                            <label>
-                                                Email:
-                                                <input
-                                                    type="text"
-                                                    name="email"
-                                                />
-                                            </label>
-                                            <input type="submit" value="Set"/>
-                                        </form>
-                                    ) : (
-                                        <p>
-                                            {" "}
-                                            Owner:{" "}
-                                            {
-                                                currentStatus.active_cart
-                                                    .owner_info
-                                            }{" "}
-                                        </p>
-                                    )}
-
                                     <form onSubmit={HandleAdd}>
                                         <h3>Add Item (Or Scan):</h3>
                                         <label>

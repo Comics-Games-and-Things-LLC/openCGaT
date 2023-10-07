@@ -12,6 +12,11 @@ export interface IButtonStatus {
     style?: ButtonStyles;
 }
 
+export interface IUser {
+    username?: string;
+    email?: string;
+}
+
 export interface IItem {
     id: number;
     partner: IPartner;
