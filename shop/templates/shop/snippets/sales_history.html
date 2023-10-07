@@ -1,0 +1,84 @@
+{% if sales %}
+    <div class="row mb-3 p-0.5">
+        <h2> Sales ({{ x_sold }} Sold)</h2>
+        <table class="table">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">User</th>
+                <th scope="col">Date</th>
+                <th scope="col">Price per unit</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Subtotal</th>
+                <th scope="col">Location</th>
+                <th scope="col">Status</th>
+            </tr>
+            {% for line in sales %}
+                <tr>
+
+                    <td>
+                        <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=line.cart.id %}">
+                            {{ line.cart.id }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if line.cart.owner %}
+                            <a href="{% url 'partner_customer_details' partner_slug=partner.slug user_id=line.cart.owner.id %}">
+                                {{ line.cart.owner.username }} ({{ line.cart.owner.email }})
+                            </a>
+                        {% else %}
+                            {{ line.cart.email }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=line.cart.id %}">
+                            {{ line.cart.date_submitted }}
+                        </a>
+                    </td>
+                    <td>{{ line.price_per_unit_at_submit }}</td>
+                    <td>{{ line.quantity }}</td>
+
+                    <td>{{ line.get_subtotal }}</td>
+
+                    <td>
+                        {% if line.cart.at_pos %}
+                            {{ line.cart.payment_partner }}
+                        {% else %}
+                            Online
+                        {% endif %}
+                    </td>
+                    <td>{{ line.status_text }}</td>
+                </tr>
+
+            {% endfor %}
+        </table>
+
+    </div>
+{% endif %}
+{% if po_lines %}
+    <div class="row mb-3 p-0.5">
+        <h2> Purchase Order Lines ({{ x_purchased }} Purchased)</h2>
+        <table class="table">
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Distributor</th>
+                <th scope="col">Invoice/PO Number</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Cost Per Item (with fees)</th>
+            </tr>
+            {% for po_line in po_lines %}
+                <tr>
+                    <td>{{ po_line.po.date }}</td>
+                    <td>{{ po_line.po.distributor }}</td>
+                    <td>
+                        <a href="{% url 'po_details' partner_slug=partner|slugify po_id=po_line.po.po_number %}">
+                            {{ po_line.po.po_number }}
+                        </a>
+                    </td>
+                    <td>{{ po_line.received_quantity }}</td>
+                    <td>{{ po_line.cost_per_item }} ({{ po_line.actual_cost }})</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+    </div>
+{% endif %}

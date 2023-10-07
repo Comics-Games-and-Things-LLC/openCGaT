@@ -124,8 +124,10 @@ def intake_item_view(request, barcode, partner_slug):
         'partner': partner,
         'print_form': PrintForm(),
         'print_x_on_load': print_x_on_load,
-
     }
+    if local_product:
+        context.update(local_product.get_sold_info(partner=partner))
+
     return render(request, "intake/intake.html", context)
 
 
