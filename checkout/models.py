@@ -151,6 +151,9 @@ class Cart(RepresentationMixin, models.Model):
     final_tax = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
     final_ship = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
 
+    cart_tax_rate = models.FloatField(help_text="Percent in decimal form( ex .055)", blank=True,
+                                      null=True)  # Assumes all items have the same tax rate
+
     final_digital_tax = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
     final_physical_tax = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
 
@@ -851,6 +854,7 @@ class Cart(RepresentationMixin, models.Model):
                 rate = TaxRateCache.taxes.get_tax_rate(address)
 
             tax = subtotal * rate
+            self.cart_tax_rate = rate
             self.final_tax = tax
             self.tax_error = False
             self.save()
@@ -1148,7 +1152,7 @@ class CheckoutLine(models.Model):
     partner_at_time_of_submit = models.ForeignKey(Partner, on_delete=models.PROTECT, null=True)
 
     tax_per_unit = MoneyField(max_digits=19, decimal_places=2, null=True)
-    name_of_item = models.TextField(null=True) # Name at submit (in case it changed)
+    name_of_item = models.TextField(null=True)  # Name at submit (in case it changed)
 
     paid_in_cart = models.ForeignKey(Cart, null=True,
                                      on_delete=models.PROTECT,
