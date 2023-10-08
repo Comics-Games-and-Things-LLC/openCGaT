@@ -930,7 +930,9 @@ def partner_split_line(request, cart_id, line_id, partner_slug):
             return HttpResponse(status=401)
         split_num = 1
         if len(request.GET) != 0:
-            split_num = request.GET.get('split_num', "")
+            split_num = request.GET.get('split_num', "1")
+            if not split_num:
+                split_num = 1
         split_num = int(split_num)
         line.split(split_num)
         return HttpResponseRedirect(
