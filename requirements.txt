@@ -31,7 +31,7 @@ django-treewidget
 django-mathfilters
 
 
-stripe=5.5.0
+stripe==5.5.0
 django-address
 django-mptt
 
