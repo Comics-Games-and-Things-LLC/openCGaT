@@ -52,13 +52,33 @@
                             {% if manage and cart.status != "Cancelled" and cart.status != "Completed" and not line.fulfilled %}
                                 <form method="get"
                                       action="{% url 'partner_complete_line' cart_id=past_cart.id line_id=line.id partner_slug=partner.slug %}">
-                                    <label for="cart">Order:</label><input type="number" id="cart" name="cart"/>
-                                    <input class="btn btn-primary" type="submit" value="Complete">
+                                    <button type="button"
+                                            class="collapsible btn btn-secondary fa-solid fa-paper-plane"></button>
+                                    <div class="collapse-content"> <!-- Order field is big, hide it when not needed -->
+                                        <label for="cart">Order:</label><input type="number" id="cart" name="cart"/>
+                                    </div>
+                                    <input class="btn btn-primary" type="submit" value="Complete"/>
                                 </form>
                             {% endif %}
                         </td>
                     {% endif %}
-                    <td>{{ line.quantity }}</td>
+                    <td>{{ line.quantity }}
+                        {% if manage and cart.status != "Cancelled" and cart.status != "Completed" and not line.fulfilled and line.quantity > 1 %}
+                            <button type="button"
+                                    class="collapsible btn btn-secondary fa-solid fa-code-branch fa-rotate-90">
+                            </button>
+                            <div class="collapse-content">
+                                <form method="get"
+                                      action="{% url 'partner_split_line' cart_id=past_cart.id line_id=line.id partner_slug=partner.slug %}">
+                                    <label for="split_num">Split:</label>
+                                    <input type="number" id="split_num" name="split_num"
+                                           min="1" max="{{ line.quantity|add:-1 }}"/>
+                                    <input class="btn btn-primary" type="submit" value="Split"/>
+                                </form>
+                            </div>
+
+                        {% endif %}
+                    </td>
 
                     <td>{{ line.get_price }}
                         {% if line.get_price != line.get_pre_discount_price %}

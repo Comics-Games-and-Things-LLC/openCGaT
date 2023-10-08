@@ -919,3 +919,22 @@ def update_partner_comments(request, partner_slug, cart_id):
 
     except Cart.DoesNotExist:
         return HttpResponse(status=404)
+
+
+def partner_split_line(request, cart_id, line_id, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+    cart = Cart.objects.get(id=cart_id)
+    try:
+        line = cart.lines.get(id=line_id)
+        if partner != line.partner_at_time_of_submit:
+            return HttpResponse(status=401)
+        split_num = 1
+        if len(request.GET) != 0:
+            split_num = request.GET.get('split_num', "")
+        split_num = int(split_num)
+        line.split(split_num)
+        return HttpResponseRedirect(
+            reverse('partner_order_details', kwargs={'partner_slug': partner_slug, 'cart_id': cart_id}))
+    except Exception as e:
+        print(e)
+        return HttpResponse(status=400)

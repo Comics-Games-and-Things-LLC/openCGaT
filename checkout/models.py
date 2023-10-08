@@ -1413,9 +1413,11 @@ class StripePaymentIntent(models.Model):
         self.save()
 
     def get_json(self):
-        pi = stripe.PaymentIntent.retrieve(self.id)
-        print(pi)
-        return pi
+        try:
+            pi = stripe.PaymentIntent.retrieve(self.id)
+            return pi
+        except stripe.error.InvalidRequestError:
+            return  # This prevents the system from breaking when viewing production data with the test API key
 
 
 class TaxRateManager(models.Manager):
