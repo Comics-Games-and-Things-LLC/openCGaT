@@ -1171,7 +1171,8 @@ class CheckoutLine(models.Model):
     cancelled = models.BooleanField(default=False)
     cancelled_timestamp = models.DateTimeField(null=True)
 
-    back_or_pre_order = models.BooleanField(default=False)
+    back_or_pre_order = models.BooleanField(default=False)  # If the quantity was zero at time of submit.
+    is_preorder = models.BooleanField(default=False)  # If we were in the preorder window at the time of submit.
 
     discount_code_message = models.TextField(blank=True, null=True)
 
@@ -1219,7 +1220,9 @@ class CheckoutLine(models.Model):
                         delivery_method = "to ship"
                     return "Ready {}".format(delivery_method)
                 if self.cart.status != Cart.COMPLETED and self.back_or_pre_order:
-                    return backorder_or_preorder
+                    if self.is_preorder:
+                        return "Preorder"
+                    return backorder_or_preorder.title()  # make the first letter capital
                 # Return the cart status if we don't have any line specific overrides
                 return self.cart.status
             else:
@@ -1331,6 +1334,10 @@ class CheckoutLine(models.Model):
         self.fulfilled_timestamp = datetime.datetime.utcnow()
 
     def reduce_inventory(self):
+        """
+        Reduces inventory status and sets back_or_pre_order and "is_preorder"
+        Does not save, expects caller to save the line.
+        """
         if isinstance(self.item, InventoryItem):
             qty_at_submit = self.item.get_inventory()
             back_or_preorder = not self.completely_in_stock
@@ -1339,6 +1346,8 @@ class CheckoutLine(models.Model):
             if success:
                 self.qty_at_submit = qty_at_submit
                 self.back_or_pre_order = back_or_preorder
+                if self.item.product.is_preorder:
+                    self.is_preorder = True
 
     def cancellable(self):
         if isinstance(self.item, DigitalItem):
