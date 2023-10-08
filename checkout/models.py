@@ -1148,7 +1148,7 @@ class CheckoutLine(models.Model):
     partner_at_time_of_submit = models.ForeignKey(Partner, on_delete=models.PROTECT, null=True)
 
     tax_per_unit = MoneyField(max_digits=19, decimal_places=2, null=True)
-    name_of_item = models.TextField(null=True)
+    name_of_item = models.TextField(null=True) # Name at submit (in case it changed)
 
     paid_in_cart = models.ForeignKey(Cart, null=True,
                                      on_delete=models.PROTECT,
@@ -1180,10 +1180,8 @@ class CheckoutLine(models.Model):
         ordering = ["-date_added"]
 
     def __str__(self):
-        start = "{} line {}".format(self.cart, self.id)
-        if self.submitted:
-            return "{}: {}".format(start, self.name_of_item)
-        return "{}: {}".format(start, self.item)
+        name = self.name_of_item if self.submitted else self.item
+        return f"{self.cart} line {self.id}: {name} x {self.quantity}"
 
     @property
     def completely_in_stock(self):
