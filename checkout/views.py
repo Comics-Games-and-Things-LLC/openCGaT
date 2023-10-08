@@ -660,7 +660,7 @@ def pos_add_custom(request, partner_slug, cart_id):
 
         # Add item to  cart
         cart.add_item(custom_charge_item)
-        HttpResponse(status=200)
+        return HttpResponse(status=200)
     return HttpResponse(status=400)
 
 
