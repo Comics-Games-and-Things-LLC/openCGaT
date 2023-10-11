@@ -222,8 +222,12 @@ def generate_image(item):
 
     if item.product.msrp:
         draw.text((0, 0), "MSRP: $" + str(item.product.msrp.amount), font=fnt_med)
-        w, h = draw.textsize(str(item.product.msrp.amount), font=fnt_med)
-        draw.line((275, h / 2 + 20, 275 + w, h / 2), width=5)
+        price_start = draw.textlength("MSRP: $", font=fnt_med)
+
+        l, t, r, b = draw.textbbox((price_start, 0), text=str(item.product.msrp.amount), font=fnt_med)
+        # PIL 10.0.1 updated and replaced textsize with textbox, so we have to manually calculate the size
+        draw.line(((l, b / 2 + 20), (r, t + 20)), width=5)
+
     draw.text((0, 350), item.partner.name, font=fnt_small)
     return im
 

@@ -47,7 +47,7 @@ pydot
 py-moneyed
 djangorestframework
 pilkit
-Pillow
+Pillow==10.0.1 # was 9.5
 requests
 xlrd
 beautifulsoup4
