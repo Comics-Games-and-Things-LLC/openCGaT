@@ -1,5 +1,5 @@
 import * as React from "react";
-import {FormEvent, useEffect, useRef, useState} from "react";
+import {FormEvent, useCallback, useEffect, useRef, useState} from "react";
 import * as path from "path";
 
 import {IPOSProps, IUser} from "../interfaces";
@@ -21,6 +21,12 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
     const debouncedEmailString = useDebounce<string>(currentEmail, 500)
     const [userSuggestions, setUserSuggestions] = useState<IUser[]>([])
     const emailFieldRef = useRef();
+
+    const [showCost, setShowCost] = useState<boolean>(false)
+
+    const toggleCost = useCallback(() => {
+        setShowCost(!showCost)
+    }, [showCost])
 
     const ordersURL = path.normalize(path.join(props.url, '..'));
     console.log(ordersURL)
@@ -181,7 +187,7 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                                               renderInput={(params) => <TextField {...params} name="email"
                                                                                   label="Email"/>}
                                 />
-                                <input type="submit" value="Set"/>
+                                <input type="submit" value="Set" className="btn btn-secondary"/>
                             </form>
 
 
@@ -196,7 +202,7 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                                             Barcode:
                                             <input type="text" name="barcode"/>
                                         </label>
-                                        <input type="submit" value="Add"/>
+                                        <input type="submit" value="Add" className="btn btn-secondary"/>
                                     </form>
                                     <form onSubmit={HandleCustom}>
                                         <h3>Add Custom Item:</h3>
@@ -215,16 +221,19 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                                                 step=".01"
                                             />
                                         </label>
-                                        <input type="submit" value="Add"/>
+                                        <input type="submit" value="Add" className="btn btn-secondary"/>
                                     </form>
                                 </>
                             ) : (
                                 <></>
                             )}
+                            <button onClick={toggleCost}
+                                    className="btn btn-secondary">{showCost ? "Hide Cost" : "Show Cost"}</button>
                             <CartBody
                                 cart={currentStatus.active_cart}
                                 full={true}
                                 pos={true}
+                                showCost={showCost}
                             />
                         </>
                     ) : (

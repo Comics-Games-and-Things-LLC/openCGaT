@@ -11,6 +11,7 @@ export interface ICartBodyProps {
     cart: ICart;
     full: boolean;
     pos: boolean;
+    showCost?: boolean;
 }
 
 
@@ -20,16 +21,16 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
     let type_header = null
     let partner_header = null
     let subtotal_header = null
-    let summary = null
 
 
     let show_status_col = props.cart.show_status_col && props.full && !props.pos
+    let show_cost_col = props.showCost && props.pos
 
     let num_empty_cols = 4;
     if (show_status_col) {
         num_empty_cols = 5
     } else if (props.pos) {
-        num_empty_cols = 3
+        num_empty_cols = show_cost_col ? 3 : 2;
     }
 
     const remaining_balance = props.cart.final_total ?
@@ -55,32 +56,12 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
     const total_paid_string = "$" + (Number(props.cart.total_paid).toFixed(2))
     const cash_paid_string = "$" + (Number(props.cart.cash_paid).toFixed(2))
 
+    let cost_estimate = 0;
+
     if (props.full) {
         partner_header = <th> Partner </th>
         type_header = <th scope="col">Type</th>
         subtotal_header = <th> Subtotal </th>
-
-
-        summary = <>
-            <FooterRow label={"Subtotal"} value={subtotal_string}
-                       empty_cols={num_empty_cols} remove_col={props.cart.open}/>
-            {is_shipping_required && <FooterRow label={"Shipping"} value={shipping_string}
-                                                empty_cols={num_empty_cols} remove_col={props.cart.open}/>}
-            <FooterRow label={tax_label} value={tax_string}
-                       empty_cols={num_empty_cols} remove_col={props.cart.open}/>
-            <FooterRow label={total_label} value={total_string}
-                       empty_cols={num_empty_cols} remove_col={props.cart.open}/>
-            {props.pos ? <>
-                <FooterRow label={"Total Paid"} value={total_paid_string}
-                           empty_cols={num_empty_cols} remove_col={props.cart.open}/>
-                <FooterRow label={"Cash Paid"} value={cash_paid_string}
-                           empty_cols={num_empty_cols} remove_col={props.cart.open}/>
-                <FooterRow label={balance_label} value={balance_string}
-                           empty_cols={num_empty_cols} remove_col={props.cart.open}/>
-
-            </> : <></>}
-        </>
-
     }
 
     let content = props.cart.loaded ?
@@ -102,7 +83,7 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
                 {show_status_col ? <th>Status</th> : <></>}
                 <th>#</th>
                 <th>Price</th>
-                {props.pos ? <th>Cost</th> : <></>}
+                {show_cost_col ? <th>Cost</th> : <></>}
                 {subtotal_header}
                 {props.cart.open ?
                     <th>Remove</th> : <></>
@@ -117,13 +98,38 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
                 rowdata.open = props.cart.open
                 rowdata.show_status_col = show_status_col
                 rowdata.pos = props.pos
+                rowdata.show_cost_col = show_cost_col
                 let row = React.createElement(CartRow, rowdata)
                 count += rowdata.quantity
+                cost_estimate += rowdata.estimated_cost
                 return row
             })}
-            {summary}
+            {props.full ? <>
+                    <FooterRow label={"Subtotal"} value={subtotal_string}
+                               empty_cols={num_empty_cols} remove_col={props.cart.open}/>
+                    {is_shipping_required && <FooterRow label={"Shipping"} value={shipping_string}
+                                                        empty_cols={num_empty_cols} remove_col={props.cart.open}/>}
+                    <FooterRow label={tax_label} value={tax_string}
+                               empty_cols={num_empty_cols} remove_col={props.cart.open}/>
+                    <FooterRow label={total_label} value={total_string}
+                               empty_cols={num_empty_cols} remove_col={props.cart.open}/>
+                    {props.pos ? <>
+                        <FooterRow label={"Total Paid"} value={total_paid_string}
+                                   empty_cols={num_empty_cols} remove_col={props.cart.open}/>
+                        <FooterRow label={"Cash Paid"} value={cash_paid_string}
+                                   empty_cols={num_empty_cols} remove_col={props.cart.open}/>
+                        <FooterRow label={balance_label} value={balance_string}
+                                   empty_cols={num_empty_cols} remove_col={props.cart.open}/>
+                        {show_cost_col ? <>
+                            <FooterRow label={"Cost"} value={`$${cost_estimate.toFixed(2)}`}
+                                       empty_cols={num_empty_cols} remove_col={props.cart.open}/>
+                            <FooterRow label={"Profit"} value={`$${(props.cart.subtotal - cost_estimate).toFixed(2)}`}
+                                       empty_cols={num_empty_cols} remove_col={props.cart.open}/>
+                        </> : <></>}
+                    </> : <></>}
+                </>
+                : null}
             </tbody>
-
         </Table>
     }
     const codeRef = useRef(null)

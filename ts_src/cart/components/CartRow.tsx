@@ -109,7 +109,7 @@ const CartRow: React.FunctionComponent<IRowProps> = (props: IRowProps): JSX.Elem
                            defaultValue={props.price_per_unit_override} max={9999} min={-9999}/>
                     : <></>}
             </td>
-            {props.pos ? <td>
+            {props.show_cost_col ? <td>
                 ${props.estimated_cost ? props.estimated_cost.toFixed(2) : ""}
             </td> : <></>
             }

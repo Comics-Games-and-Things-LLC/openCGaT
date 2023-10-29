@@ -45,6 +45,7 @@ export interface IRowProps {
     show_status_col: boolean
     description: string
     discount_code_message: string
+    show_cost_col?: boolean;
 }
 
 export interface ICart {
