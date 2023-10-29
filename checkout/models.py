@@ -855,7 +855,8 @@ class Cart(RepresentationMixin, models.Model):
 
             tax = subtotal * rate
             self.cart_tax_rate = rate
-            self.final_tax = tax
+            if final:
+                self.final_tax = tax
             self.tax_error = False
             self.save()
             return tax
