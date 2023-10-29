@@ -20,5 +20,7 @@ urlpatterns = [
     path('api/set/pickup_partner/', cart_set_pickup_partner, name='cart_set_pickup_partner'),
     path('api/set/mark_free_as_paid/', mark_free_as_paid, name='mark_free_as_paid'),
 
-    path('code/<slug:code>/', apply_code, name='apply_discount_code')
+    path('code/<slug:code>/', apply_code, name='apply_discount_code'),
+    path('code//', apply_code, name='apply_discount_code'),  # Special handling for blank code
+
 ]

@@ -44,7 +44,7 @@ class DiscountCode(models.Model):
         :return:
         """
         if self.in_store_only and not cart.at_pos:
-            cart.discount_code_message = f"The code {self} is only available in-store. Please come in person."
+            cart.discount_code_message = f"The code '{self}' is only available in-store. Please come in person."
             cart.discount_code = None
             cart.save()
             return False

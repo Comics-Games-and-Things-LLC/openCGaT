@@ -131,18 +131,24 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
 
     const [codeLoading, setCodeLoading] = useState(false)
     useEffect(() => setCodeLoading(false), [props.cart])
-    const handleDiscountCode = useCallback((e: FormEvent) => {
-        e.preventDefault()
+    const handleDiscountCode = useCallback((e?: FormEvent) => {
+        if (e) {
+            e.preventDefault()
+        }
         setCodeLoading(true)
-        if (codeRef.current) {
+        const code_to_set = code //Cache the value
+        setCode(""); // Clear the value for subsequent runs
+        if (codeRef.current) { //Clear the discount code field
             codeRef.current.value = "";
         }
+        console.log(`Attempting to set code to '${code_to_set}'`)
+
         if (props.pos) {
-            dispatch(setPOSDiscountCode({code: code}))
+            dispatch(setPOSDiscountCode({code: code_to_set})) // This also runs updateCart
             return
         }
         fetch(
-            `/cart/code/${code}/`,
+            `/cart/code/${code_to_set}/`,
             {
                 method: "post",
                 body: JSON.stringify({}),
@@ -154,6 +160,12 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
 
 
     }, [code, codeRef])
+
+    const clearDiscountCode = useCallback(() => {
+        setCode("");
+        handleDiscountCode();
+    }, []);
+
     return <div className="w-full">
         {content}
         {props.full && !props.pos ? <div>
@@ -166,6 +178,9 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
                     {props.cart.discount_code_message ? <React.Fragment>
                         <span className="font-medium font-italic">{props.cart.discount_code_message}</span>
                     </React.Fragment> : ""}
+                    {codeLoading ? <i className="fas fa-spinner fa-pulse"></i> :
+                        <button className="btn btn-warning" onClick={clearDiscountCode}>Clear</button>
+                    }
                 </div>
                 : ""}
             {props.cart.open ? <div className="flex-grow p-2">
