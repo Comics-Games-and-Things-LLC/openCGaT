@@ -62,12 +62,16 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
     const HandleAdd = (event: FormEvent) => {
         event.preventDefault()
         const data = new FormData(event.target as HTMLFormElement);
-        AddItem(data.get('barcode') as string)
+        AddItem(data.get('barcode') as string);
+        (event.target as HTMLFormElement).reset()
 
     }
 
 
     const AddItem = (barcode: string) => {
+        if (barcode.trim() == "") {
+            return
+        }
         dispatch(
             addNewPOSItem({
                 barcode,
@@ -84,6 +88,7 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                 price: Number(data.get("price") as string),
             })
         );
+        (event.target as HTMLFormElement).reset()
     }
 
 
