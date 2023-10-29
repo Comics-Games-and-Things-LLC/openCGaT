@@ -35,6 +35,7 @@ class DiscountCode(models.Model):
     exclude_publishers = models.BooleanField(default=False)
     publishers = models.ManyToManyField("shop.Publisher", blank=True)
     min_cart_for_discount = MoneyField(decimal_places=2, max_digits=19, null=True)
+    in_store_only = models.BooleanField(default=False)
 
     def validate_code_for_cart(self, cart):
         """
@@ -42,6 +43,11 @@ class DiscountCode(models.Model):
         :param cart:
         :return:
         """
+        if self.in_store_only and not cart.at_pos:
+            cart.discount_code_message = f"The code {self} is only available in-store. Please come in person."
+            cart.discount_code = None
+            cart.save()
+            return False
         if self.expires_on and datetime.datetime.now().replace(tzinfo=utc) > self.expires_on:
             cart.discount_code_message = "The code '{}' has expired".format(self)
             cart.discount_code = None
