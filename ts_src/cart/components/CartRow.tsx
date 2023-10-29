@@ -113,11 +113,11 @@ const CartRow: React.FunctionComponent<IRowProps> = (props: IRowProps): JSX.Elem
                 ${props.estimated_cost ? props.estimated_cost.toFixed(2) : ""}
             </td> : <></>
             }
-            {props.full ? <td>${props.price * props.quantity}
+            {props.full ? <td>${(props.price * props.quantity).toFixed(2)}
                 {
                     props.price != props.item.default_price &&
                     <span
-                        style={{textDecoration: "line-through"}}> ${props.item.default_price * props.quantity} </span>
+                        style={{textDecoration: "line-through"}}> ${(props.item.default_price * props.quantity).toFixed(2)} </span>
                 }
 
             </td> : <></>
