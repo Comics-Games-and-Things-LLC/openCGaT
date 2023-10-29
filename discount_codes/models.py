@@ -74,17 +74,22 @@ class DiscountCode(models.Model):
         :return: (applicable, new_price)
         """
         found_partner = False
-        for discount in self.partner_discounts.filter(partner=line.item.partner):  # get the appropriate partner
+        for discount in self.partner_discounts.filter(partner=line.item.partner):  # Try each discount from the partner
             found_partner = True
             if self.min_cart_for_discount and (line.cart.get_pre_discount_subtotal() < self.min_cart_for_discount):
                 line.discount_code_message = "The code '{}' requires {} to activate".format(self,
                                                                                             self.min_cart_for_discount)
-                break  # exit loop, saving message, returning false
-            if (self.exclude_publishers and self.publishers.filter(id=line.item.product.publisher.id)) or (
-                    self.restrict_to_publishers and not self.publishers.filter(id=line.item.product.publisher.id)):
-                line.discount_code_message = "The code '{}' is not applicable to items from {}".format(self,
-                                                                                                       line.item.product.publisher)
-                break
+                break  # exit the loop early to mark this line as not eligible.
+            if line.item.product.publisher is None:
+                if self.restrict_to_publishers:
+                    line.discount_code_message = f"The code '{self}' is not applicable to items with no publisher"
+                    break  # exit the loop early to mark this line as not eligible.
+            else:
+                if (self.exclude_publishers and self.publishers.filter(id=line.item.product.publisher.id)) or (
+                        self.restrict_to_publishers and not self.publishers.filter(id=line.item.product.publisher.id)):
+                    line.discount_code_message = "The code '{}' is not applicable to items from {}".format(self,
+                                                                                                           line.item.product.publisher)
+                    break  # exit the loop early to mark this line as not eligible.
             line.discount_code_message = None
             line.save()
             return True, line.item.price * ((100 - discount.discount_percentage) / Decimal(100))
