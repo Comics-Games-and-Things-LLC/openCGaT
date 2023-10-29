@@ -42,6 +42,8 @@ urlpatterns = [
     path('pos/<int:cart_id>/set_owner/', pos_set_owner, name='pos_set_owner'),
     path('pos/<int:cart_id>/suggest_owner/', pos_suggest_owner, name='pos_suggest_owner'),
 
+    path('pos/<int:cart_id>/set_code/', pos_set_code, name='pos_set_code'),
+
     path('pos/<int:cart_id>/cash/', pos_pay_cash, name='pos_pay_cash'),
     path('pos/<int:cart_id>/stripe/', pos_create_stripe_payment, name='pos_create_stripe_payment'),
 

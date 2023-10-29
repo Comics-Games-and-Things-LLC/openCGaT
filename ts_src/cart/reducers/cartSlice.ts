@@ -281,6 +281,43 @@ export const setPOSOwner = createAsyncThunk<// Return type of the payload creato
     }
 );
 
+
+interface setPOSDiscountCodeProps {
+    code: string;
+}
+
+export const setPOSDiscountCode = createAsyncThunk<// Return type of the payload creator
+    object,
+    // First argument to the payload creator
+    setPOSDiscountCodeProps,
+    // Types for ThunkAPI
+    {
+        state: RootState;
+    }>(
+    "cart/setDiscountCodePOS",
+    async (payload: setPOSDiscountCodeProps, {getState, dispatch}) => {
+        const pos = getState().cart.pos;
+        let response = await fetch(
+            `${pos.url}/${pos.active_cart.id}/set_code/`,
+            {
+                method: "post",
+                body: JSON.stringify({
+                    code: payload.code,
+                }),
+                headers: {"X-CSRFToken": getCookie("csrftoken")},
+            }
+        );
+
+        if (response.ok) {
+            dispatch(updatePOS());
+            return response.json();
+        } else {
+            let text = await response.text();
+            throw new Error("Request Failed: " + text);
+        }
+    }
+);
+
 export const cartSlice = createSlice({
     name: "cart",
     initialState,

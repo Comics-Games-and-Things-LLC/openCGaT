@@ -8,10 +8,11 @@ from discount_codes.models import DiscountCode, CodeUsage
 # Create your views here.
 
 @csrf_exempt
-def apply_code(request, code):
+def apply_code(request, code, cart=None):
     potential_codes = DiscountCode.objects.filter(code=code.lower())
     print(potential_codes)
-    cart = request.cart
+    if cart is None:
+        cart = request.cart
     if potential_codes.exists():
         next_page = request.GET.get("next")
 
@@ -34,4 +35,4 @@ def apply_code(request, code):
         cart.discount_code_message = "The code {} does not exist".format(code)
     cart.discount_code = None
     cart.save()  # Clear code if we can't find the discount.
-    return HttpResponse(status=400)
+    return HttpResponse(status=200)

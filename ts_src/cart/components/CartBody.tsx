@@ -5,7 +5,7 @@ import CartRow from "./CartRow";
 import {ICart, IRowProps} from "../interfaces";
 import {useAppDispatch} from "../store";
 import getCookie from "./get_cookie";
-import {updateCart} from "../reducers/cartSlice";
+import {setPOSDiscountCode, updateCart} from "../reducers/cartSlice";
 
 export interface ICartBodyProps {
     cart: ICart;
@@ -137,6 +137,10 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
         if (codeRef.current) {
             codeRef.current.value = "";
         }
+        if (props.pos) {
+            dispatch(setPOSDiscountCode({code: code}))
+            return
+        }
         fetch(
             `/cart/code/${code}/`,
             {
@@ -164,7 +168,7 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
                     </React.Fragment> : ""}
                 </div>
                 : ""}
-            {props.cart.open && !props.pos ? <div className="flex-grow p-2">
+            {props.cart.open ? <div className="flex-grow p-2">
                 <form onSubmit={handleDiscountCode}>
                     <label>Code:</label>
                     <input type="text" name="discount_code" ref={codeRef} onChange={(e) => {

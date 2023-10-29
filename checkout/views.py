@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from djmoney.money import Money
 
+import discount_codes.views
 from digitalitems.models import DigitalItem
 from partner.models import get_partner_or_401
 from shop.models import CustomChargeItem, Product, Item, InventoryItem
@@ -645,6 +646,18 @@ def pos_set_owner(request, partner_slug, cart_id):
 
         cart.save()
         return HttpResponse(status=200)
+    return HttpResponse(status=400)
+
+def pos_set_code(request, partner_slug, cart_id):
+    partner = get_partner_or_401(request, partner_slug)
+    cart = Cart.objects.get(id=cart_id)
+    if request.method == "POST":
+        body = json.loads(request.body.decode('utf-8'))
+        code = body['code']
+        print(code)
+        if " " in code:
+            return HttpResponse(status=200)
+        return discount_codes.views.apply_code(request, code, cart)
     return HttpResponse(status=400)
 
 
