@@ -648,6 +648,7 @@ def pos_set_owner(request, partner_slug, cart_id):
         return HttpResponse(status=200)
     return HttpResponse(status=400)
 
+
 def pos_set_code(request, partner_slug, cart_id):
     partner = get_partner_or_401(request, partner_slug)
     cart = Cart.objects.get(id=cart_id)
@@ -726,7 +727,7 @@ def pos_create_stripe_payment(request, partner_slug, cart_id):
         capture_method='manual',
         amount=int(amount * 100),
         currency='usd',
-        description="CGT Cart Number: " + str(request.cart.id),
+        description=f"Cart Number {cart.id}",
     )
 
     cart.stripepaymentintent_set.create(id=intent.stripe_id, amount_to_pay=amount)
