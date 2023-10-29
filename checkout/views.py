@@ -609,6 +609,8 @@ def pos_suggest_owner(request, partner_slug, cart_id):
         body = json.loads(request.body.decode('utf-8'))
         email = body['email']
         print(email)
+        if email.strip() == "":
+            return JsonResponse({'users': []})
         users = User.objects.filter(emailaddress__email__icontains=email).distinct()
         users = users | User.objects.filter(username__icontains=email).distinct()
         users = users.distinct()
