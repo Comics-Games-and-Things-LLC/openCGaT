@@ -123,7 +123,7 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
                         {show_cost_col ? <>
                             <FooterRow label={"Cost"} value={`$${cost_estimate.toFixed(2)}`}
                                        empty_cols={num_empty_cols} remove_col={props.cart.open}/>
-                            <FooterRow label={"Profit"} value={`$${(props.cart.subtotal - cost_estimate).toFixed(2)}`}
+                            <FooterRow label={"Profit"} value={`$${(Number(props.cart.subtotal) - cost_estimate).toFixed(2)}`}
                                        empty_cols={num_empty_cols} remove_col={props.cart.open}/>
                         </> : <></>}
                     </> : <></>}
