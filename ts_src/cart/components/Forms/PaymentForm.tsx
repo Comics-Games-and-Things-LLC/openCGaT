@@ -1,6 +1,7 @@
 //@flow
 
 import * as React from "react";
+import {useEffect} from "react";
 
 // @ts-ignore
 import Button from "../components/Button/Button.jsx";
@@ -16,7 +17,6 @@ import Text from "../components/Text/Text.jsx";
 import TestPaymentMethods from "./TestPaymentMethods.jsx";
 
 import {ICart} from "../../interfaces";
-import {useEffect} from "react";
 
 interface IPaymentFormProps {
     onClickCollectCardPayments: () => void;
@@ -24,7 +24,8 @@ interface IPaymentFormProps {
     onClickCancelPayment: () => void
     onChangeTestCardNumber: (value: string) => void
     onChangeTestPaymentMethod: (value: string) => void
-    cashOnly? : boolean
+    onClickSubmit: (value: string) => void
+    cashOnly?: boolean
     cancelablePayment: boolean | null
     workFlowDisabled: string | true
     usingSimulator: boolean | null
@@ -65,21 +66,21 @@ const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPayment
                     )}
                     <input type={"number"} step='0.01' id={id_payment_amount}>
                     </input>
-                    { !props.cashOnly ?
+                    {!props.cashOnly ?
                         <Button
-                        color="white"
-                        onClick={props.onClickCollectCardPayments}
-                        disabled={props.workFlowDisabled}
-                        justifyContent="left"
-                    >
-                        <Group direction="row">
-                            <Icon icon="card"/>
-                            <Text color="blue" size={14}>
-                                Card
-                            </Text>
-                        </Group>
-                    </Button>
-                    : <></>}
+                            color="white"
+                            onClick={props.onClickCollectCardPayments}
+                            disabled={props.workFlowDisabled}
+                            justifyContent="left"
+                        >
+                            <Group direction="row">
+                                <Icon icon="card"/>
+                                <Text color="blue" size={14}>
+                                    Card
+                                </Text>
+                            </Group>
+                        </Button>
+                        : <></>}
                     <Button
                         color="white"
                         onClick={props.onClickCollectCashPayments}
@@ -103,6 +104,19 @@ const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPayment
                             <Icon icon="cancel"/>
                             <Text color="blue" size={14}>
                                 Cancel payment
+                            </Text>
+                        </Group>
+                    </Button>
+                    <Button
+                        color="white"
+                        onClick={props.onClickSubmit}
+                        disabled={props.workFlowDisabled || !(props.cart?.open)}
+                        justifyContent="left"
+                    >
+                        <Group direction="row">
+                            <Icon icon="lock"/>
+                            <Text color="blue" size={14}>
+                                Submit
                             </Text>
                         </Group>
                     </Button>

@@ -1,15 +1,14 @@
 import * as React from "react";
+import {useState} from "react";
 import {
     ConnectionStatus,
     DiscoverResult,
     ErrorResponse,
     IPaymentIntent,
     ISdkManagedPaymentIntent,
-    loadStripeTerminal, Reader, Terminal
+    Reader,
+    Terminal
 } from '@stripe/terminal-js';
-import {IErrorResponse} from "@stripe/terminal-js/types/terminal";
-import {type} from "os";
-import {useState} from "react";
 import POSClient from "../POSClient";
 
 import ConnectionInfo from "./ConnectionInfo/ConnectionInfo"
@@ -261,6 +260,12 @@ const POSPayment: React.FunctionComponent<IPOSPaymentProps> = (props): JSX.Eleme
         console.log(await client.payCash(Number(payment_amount.value), cart_id))
 
     }
+    const submitCart = async () => {
+        let cart_id = Number((document.getElementById('id_cart_id') as HTMLInputElement).value)
+        console.log("Submitting cart")
+        console.log(await client.payCash(0, cart_id))
+
+    }
 
 
     const onChangeTestPaymentMethod = (value: string) => {
@@ -294,6 +299,10 @@ const POSPayment: React.FunctionComponent<IPOSPaymentProps> = (props): JSX.Eleme
                     }
                     onClickCollectCashPayments={() =>
                         runWorkflow("collectCashPayment", collectCashPayment)
+
+                    }
+                    onClickSubmit={() =>
+                        runWorkflow("submitCart", submitCart)
 
                     }
                     onClickCancelPayment={cancelPendingPayment}
