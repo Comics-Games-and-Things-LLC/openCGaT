@@ -197,6 +197,10 @@ INTERNAL_IPS = [
     'localhost'
 ]
 
-SITE_ID = 1  # Default Site ID
+site_override = os.getenv("SITE_ID_OVERRIDE")
+if site_override:
+    SITE_ID = int(site_override)
+else:
+    SITE_ID = 1  # Default Site ID
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
