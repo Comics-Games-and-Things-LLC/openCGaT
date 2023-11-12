@@ -36,10 +36,9 @@ class CartLineSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_estimated_cost(line):
-        if line.cart.at_pos:
-            cost = line.get_estimated_store_cost()
-            if cost:
-                return float(cost.amount)
+        cost = line.get_estimated_store_cost()
+        if cost:
+            return float(cost.amount)
 
     @staticmethod
     def get_status(line):
