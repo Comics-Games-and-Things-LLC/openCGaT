@@ -38,18 +38,19 @@ def check_item_sales(product: Product):
     info = product.get_sold_info(product.partner)
 
     sales = info["sales"]
-    if len(sales) == 0:
-        return
-    if sales.first() is None or sales.first().cart.date_submitted is None:
-        return
-    if sales.first().cart.date_submitted > utc.localize(datetime.datetime.now() - datetime.timedelta(days=180)):
-        return
-    # hasn't been sold in 6 months.
+    if len(sales) > 0:
+        if not (sales.first() is None or sales.first().cart.date_submitted is None):
+            if sales.first().cart.date_submitted > utc.localize(datetime.datetime.now() - datetime.timedelta(days=180)):
+                return
+    # hasn't been sold in 6 months, or ever.
 
     item = product.item_set.first()
     if item is None:
         return
-    inventory = item.get_inventory()
+    try:
+        inventory = item.get_inventory()
+    except Exception:
+        return  # Skip customChargeItems
 
     if inventory <= 2:
         return
@@ -58,7 +59,7 @@ def check_item_sales(product: Product):
     try:
         cost = "$" + str(round(purchases.aggregate(Max("cost_per_item"))["cost_per_item__max"], 2))
     except Exception as e:
-        return  # Cost for this item is not set
+        cost = None  # Cost for this item is not known
     name = product.name
     inventory = item.get_inventory()
     print(name, inventory, cost)
@@ -72,7 +73,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         year = datetime.date.today().year
         out_lines = []
-        with open("reports/black_friday_out{}.csv".format(year), "w") as out_file:
+        with open("reports/black_friday_out_{}.csv".format(year), "w") as out_file:
             # Black_friday_in is a list of barcodes
             if os.path.exists("reports/black_friday_in.csv"):
                 with open("reports/black_friday_in.csv", "r") as fp:
