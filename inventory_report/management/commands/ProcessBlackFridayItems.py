@@ -90,8 +90,8 @@ class Command(BaseCommand):
                 # If we didn't have any lines to go off of, lets find some items:
                 for product in Product.objects.all():
                     result = check_item_sales(product)
-                    if result:
-                        out_lines.append(get_item_info(result))
+                    if result is not None:
+                        out_lines.append(result)
 
             # Write info to file
             writer = csv.DictWriter(out_file, list(out_lines[0].keys()))
