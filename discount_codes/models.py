@@ -92,7 +92,11 @@ class DiscountCode(models.Model):
                     break  # exit the loop early to mark this line as not eligible.
             line.discount_code_message = None
             line.save()
-            return True, line.item.price * ((100 - discount.discount_percentage) / Decimal(100))
+            old_price = line.item.price
+            if line.price_per_unit_override:
+                old_price = line.price_per_unit_override
+            new_price = old_price * ((100 - discount.discount_percentage) / Decimal(100))
+            return True, new_price
         if not found_partner:
             line.discount_code_message = "The code '{}' does not apply for items from the seller '{}'".format(self,
                                                                                                               line.item.partner)

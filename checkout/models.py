@@ -1267,6 +1267,10 @@ class CheckoutLine(models.Model):
         :return: item price
         """
         if self.price_per_unit_override:
+            if self.cart.discount_code and self.cart.discount_code.in_store_only:
+                (has_discount, new_price) = self.cart.discount_code.apply_discount_to_line_item(self)
+                if has_discount:
+                    return new_price
             return self.price_per_unit_override
         if self.cart.is_submitted and self.price_per_unit_at_submit:
             return self.price_per_unit_at_submit
