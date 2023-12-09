@@ -358,6 +358,8 @@ class Product(PolymorphicModel):
                 cancelled=True).aggregate(sum=Sum("quantity"))['sum']
         context["po_lines"] = purchases
         context["x_purchased"] = purchases.aggregate(sum=Sum("received_quantity"))['sum']
+        context["inventory_log"] = InventoryLog.objects.filter(
+            item__in=Item.objects.filter(product=self, partner=partner)).order_by("-timestamp")
         return context
 
 
@@ -522,7 +524,13 @@ class InventoryItem(Item):
     allow_extra_preorders = models.BooleanField(default=False,
                                                 help_text="If the item is preallocated and backorders are allowed, button will be backorder instead of marking as sold out of pre-orders")
 
-    def adjust_inventory(self, quantity, reason=None, line=None):
+    def save(self, *args, **kwargs):
+        reason = kwargs.pop('change_reason', "Manual edit or Other")
+        if not kwargs.pop('skip_log', False):
+            self.inv_log.create(after_quantity=self.current_inventory, reason=reason)
+        return super(InventoryItem, self).save(*args, **kwargs)
+
+    def adjust_inventory(self, quantity, reason=None, line=None, purchase_order=None):
         """
         Adjusts inventory
         :param quantity:
@@ -534,14 +542,16 @@ class InventoryItem(Item):
         with transaction.atomic():
             ii = InventoryItem.objects.select_for_update().get(id=self.id)
             if line:
-                if ii.log.filter(line=line).exists():
+                if ii.inv_log.filter(line=line).exists():
                     return False  # If we already have a log of updating the inventory, quit
+                    # This is how we prevent double submits affecting inventory twice.
             ii.current_inventory += quantity
             if ii.current_inventory <= 0:
                 backorder_count = -ii.current_inventory
                 ii.current_inventory = 0
-            ii.save()
-            ii.log.create(quantity=quantity, reason=reason, line=line)
+            ii.save(skip_log=True)
+            ii.inv_log.create(after_quantity=ii.current_inventory, change_quantity=quantity, reason=reason,
+                              line=line, po=purchase_order)
         if backorder_count > 0:
             backorder, _ = BackorderRecord.objects.get_or_create(item=self)
             backorder.quantity = backorder_count
@@ -581,11 +591,13 @@ class InventoryItem(Item):
 
 
 class InventoryLog(models.Model):
-    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='log')
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='inv_log')
     timestamp = models.DateTimeField(blank=True)
     reason = models.CharField(max_length=200, blank=True, null=True)
-    quantity = models.IntegerField()
+    after_quantity = models.IntegerField(null=True)  # null values only from before the log was implemented.
+    change_quantity = models.IntegerField(default=0)
     line = models.ForeignKey("checkout.CheckoutLine", on_delete=models.CASCADE, null=True, blank=True)
+    po = models.ForeignKey("intake.PurchaseOrder", on_delete=models.CASCADE, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.timestamp:

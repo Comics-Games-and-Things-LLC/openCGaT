@@ -95,6 +95,9 @@ class PurchaseOrder(models.Model):
     amount_charged = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True)
     subtotal = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.distributor} {self.po_number}"
+
     def fee_ratio(self):
         if not self.amount_charged:
             return 1

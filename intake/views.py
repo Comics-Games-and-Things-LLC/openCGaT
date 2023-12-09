@@ -83,6 +83,7 @@ def intake_item_view(request, barcode, partner_slug):
         if local_item:
             reason = "Intake (no purchase order)"
             if add_mode:
+                po = None
                 if po_id and po_id != 'None':
                     po, created = PurchaseOrder.objects.get_or_create(partner=partner, po_number=po_id,
                                                                       distributor=distributor)
@@ -94,7 +95,7 @@ def intake_item_view(request, barcode, partner_slug):
                     except Exception as e:
                         print(e)
                 # adjust inventory
-                local_item.adjust_inventory(quantity, reason=reason)
+                local_item.adjust_inventory(quantity, reason=reason, purchase_order=po)
                 count = local_item.get_inventory()
             else:
                 count = local_item.get_inventory()

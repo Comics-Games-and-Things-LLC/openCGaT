@@ -82,3 +82,58 @@
 
     </div>
 {% endif %}
+{% if inventory_log %}
+    <div class="row mb-3 p-0.5">
+        <h2> Inventory Log </h2>
+        <table class="table">
+            <tr>
+                <th scope="col">Timestamp</th>
+                <th scope="col">Reason</th>
+                <th scope="col">In</th>
+                <th scope="col">Change</th>
+                <th scope="col">Remaining</th>
+            </tr>
+            {% for line in inventory_log %}
+                <tr>
+
+                    <td>
+                        {{ line.timestamp }}
+                    </td>
+                    <td>
+                        {{ line.reason }}
+                    </td>
+                    <td>
+                        {% if line.line %}
+                            <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=line.line.cart.id %}">
+                                {{ line.line.cart.id }}
+                            </a>
+                        {% endif %}
+                        {% if line.po %}
+                            <a href="{% url 'po_details' partner_slug=partner|slugify po_id=line.po.po_number %}">
+                                {{ line.po }}
+                            </a>
+                        {% endif %}
+
+                    </td>
+                    <td>
+                        {% if line.change_quantity %}
+                            {{ line.change_quantity }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if line.after_quantity %}
+                            {{ line.after_quantity }}
+                        {% else %}
+                            Old
+                        {% endif %}
+
+                    </td>
+
+
+                </tr>
+
+            {% endfor %}
+        </table>
+
+    </div>
+{% endif %}
