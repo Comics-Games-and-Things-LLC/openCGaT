@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from django.db import models
 from django.db.models import Sum, F
@@ -98,9 +99,9 @@ class PurchaseOrder(models.Model):
     def __str__(self):
         return f"{self.distributor} {self.po_number}"
 
-    def fee_ratio(self):
+    def fee_ratio(self) -> Decimal:
         if not self.amount_charged:
-            return 1
+            return Decimal(1.0)
         if self.subtotal:
             return self.amount_charged.amount / self.subtotal.amount
         else:
