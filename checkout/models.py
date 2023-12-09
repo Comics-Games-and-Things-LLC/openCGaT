@@ -1261,7 +1261,7 @@ class CheckoutLine(models.Model):
             return second_line
         return None
 
-    def get_price(self):
+    def get_price(self) -> Money:
         """
         Returns price at submit, or if cart open, returns price with discount code or patreon discount.
         :return: item price
@@ -1271,7 +1271,7 @@ class CheckoutLine(models.Model):
                 (has_discount, new_price) = self.cart.discount_code.apply_discount_to_line_item(self)
                 if has_discount:
                     return new_price
-            return self.price_per_unit_override
+            return Money(self.price_per_unit_override.amount, 'USD')
         if self.cart.is_submitted and self.price_per_unit_at_submit:
             return self.price_per_unit_at_submit
         else:
@@ -1291,8 +1291,8 @@ class CheckoutLine(models.Model):
             else:
                 return Money(0, "USD")  # If item isn't present that's a big issue.
 
-    def get_subtotal(self):
-        return self.get_price() * self.quantity
+    def get_subtotal(self) -> Money:
+        return Money(self.get_price().amount * self.quantity, 'USD')
 
     def get_pre_discount_price(self):
         return self.item.default_price
@@ -1361,6 +1361,12 @@ class CheckoutLine(models.Model):
             if self.item.download_history.exists(user=self.cart.owner):
                 return False
         return True
+
+    def get_proportional_postage_paid(self) -> Money:
+        if self.cart.postage_paid:
+            return Money((self.cart.postage_paid.amount - self.cart.final_ship.amount) * (
+                    self.get_subtotal() / self.cart.get_total_subtotal()), 'USD')
+        return Money(0, "USD")
 
 
 class UserDefaultAddress(models.Model):

@@ -3,19 +3,20 @@ import datetime
 
 from django.core.management.base import BaseCommand
 from moneyed import Money
+from tqdm import tqdm
 
 from checkout.models import Cart
 from intake.models import PurchaseOrder, POLine
 from inventory_report.models import InventoryReport
 from partner.models import Partner
-from shop.models import Product
+from shop.models import Product, InventoryItem
 
-partner = Partner.objects.get(name__icontains="CG&T")
+partner = Partner.objects.get(name__icontains="Valhalla")
 
-year = 2022
+year = 2023
 
 
-def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True):
+def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True, po_out=None) -> Money:
     cost = Money(0, "USD")
     display_name = str(cart_line)
     if cart_line is None:
@@ -35,17 +36,19 @@ def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True):
         new_quantity = p_as.remaining_quantity - quantity
 
         fulfilled_quantity = quantity
+        if po_out:
+            po_out.append(p_as.po)
 
         if new_quantity < 0:
             fulfilled_quantity = quantity - p_as.remaining_quantity
             p_as.remaining_quantity = 0
             p_as.save()
-            cost += get_purchased_as(barcode, abs(new_quantity), logfile, cart_line, verbose)
+            cost += get_purchased_as(barcode, abs(new_quantity), logfile, cart_line, verbose, po_out)
         else:
             p_as.remaining_quantity = new_quantity
 
         if p_as.actual_cost:
-            cost += p_as.actual_cost * fulfilled_quantity
+            cost += Money(p_as.actual_cost.amount * fulfilled_quantity, 'USD')
         else:
             if verbose:
                 log(logfile, "{} does not have an actual cost in poline {}".format(display_name, p_as))
@@ -84,22 +87,25 @@ def get_purchased_as_line(barcode, display_name, logfile, verbose=True):
 
 def mark_previous_items_as_sold(f, year, verbose=True):
     log(f, "Resetting PO line remaining quantities")
-    for pol in POLine.objects.all():
+    for pol in tqdm(POLine.objects.all()):
         pol.remaining_quantity = pol.received_quantity
         pol.save()
 
-    # Get all carts for the year before to ensure we don't have sales from then.
+    # Get all carts for the years before to ensure those items are removed from inventory first.
     cost_of_goods_sold = Money("0", 'USD')
-    for cart in Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED]) \
-            .filter(date_submitted__year__lt=year) \
-            .order_by("date_submitted"):
-        for line in cart.lines.filter(partner_at_time_of_submit=partner):
-            if line.item and line.item.product and line.item.product:
-                cost_of_goods_sold += get_purchased_as(line.item.product.barcode, line.quantity,
-                                                       f, line, verbose=verbose)
-            else:
-                if verbose:
-                    log(f, "{} no longer has an item".format(line))
+    for cart in tqdm(Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED],
+                                           date_submitted__year__lt=year).order_by("date_submitted")):
+        for line in cart.lines.filter(partner_at_time_of_submit=partner, item__isnull=False):
+            try:
+                item = InventoryItem.objects.get(id=line.item_id)
+                if item.product:
+                    cost_of_goods_sold += get_purchased_as(item.product.barcode, line.quantity,
+                                                           f, line, verbose=verbose)
+                else:
+                    if verbose:
+                        log(f, "{} no longer has a product".format(line))
+            except InventoryItem.DoesNotExist:
+                log(f, f"{line} contains an item ID that does not exist: {line.item_id}")
 
     if verbose:
         log(f, "The total cost of goods sold before {} is {}".format(year, cost_of_goods_sold))
