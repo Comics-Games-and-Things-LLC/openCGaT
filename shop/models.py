@@ -526,9 +526,11 @@ class InventoryItem(Item):
 
     def save(self, *args, **kwargs):
         reason = kwargs.pop('change_reason', "Manual edit or Other")
-        if not kwargs.pop('skip_log', False):
+        skip_log = kwargs.pop('skip_log', False)  # must pop kwargs before passing to regular constructor
+        created_item = super(InventoryItem, self).save(*args, **kwargs)
+        if not skip_log:  # handle log after create to ensure log initial value
             self.inv_log.create(after_quantity=self.current_inventory, reason=reason)
-        return super(InventoryItem, self).save(*args, **kwargs)
+        return created_item
 
     def adjust_inventory(self, quantity, reason=None, line=None, purchase_order=None):
         """
