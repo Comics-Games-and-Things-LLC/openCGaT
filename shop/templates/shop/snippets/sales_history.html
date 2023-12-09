@@ -121,7 +121,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if line.after_quantity %}
+                        {% if line.after_quantity != None %}
                             {{ line.after_quantity }}
                         {% else %}
                             Old
