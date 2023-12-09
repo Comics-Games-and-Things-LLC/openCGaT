@@ -7,8 +7,7 @@ from checkout.models import Cart, CheckoutLine
 from game_info.models import Game
 from intake.distributors.utility import log
 from intake.models import POLine
-from inventory_report.management.commands.GetCogs import get_purchased_as, mark_previous_items_as_sold, year
-from partner.models import Partner
+from inventory_report.management.commands.GetCogs import get_purchased_as, mark_previous_items_as_sold, year, partner
 from shop.models import Product
 
 
@@ -16,6 +15,7 @@ class Command(BaseCommand):
     # Known bug: If a product is under multiple games, it will mark it as sold by the first game, and then not be
     # available to check for the second game. One way of solving this would be to reset the "sold" count between games.
 
+    # Update year in GetCogs
     def handle(self, *args, **options):
         f = open("reports/earnings by game.txt", "a")
         f2 = open("reports/earnings by game entries.csv", "w")
@@ -23,7 +23,6 @@ class Command(BaseCommand):
                                               "Collected", "Shipping", "Spent",
                                               "Total Costs", "Net", "Margin",
                                               "POs", "Distributors"])
-        partner = Partner.objects.get(name__icontains="CG&T")
 
         log(f, "End of year Earnings by Game report")
         cart_lines = CheckoutLine.objects.filter(partner_at_time_of_submit=partner,
