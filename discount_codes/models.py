@@ -131,4 +131,4 @@ class CodeUsage(models.Model):
     user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
-        return "{} was used at {} for cart {}".format(self.code, self.cart, self.timestamp)
+        return f"{self.code} was used at {self.timestamp} for cart {self.cart}"
