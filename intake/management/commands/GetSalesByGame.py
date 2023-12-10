@@ -115,7 +115,9 @@ def get_sales_by_thing(thing=GAME, **options):
         else:
             product_barcodes = Product.objects.filter(games=thing_instance).values_list('barcode', flat=True)
 
-        po_lines = POLine.objects.filter(po__partner=partner, po__date__year=year)
+        po_lines = POLine.objects.filter(po__partner=partner)
+        if year:
+            po_lines = po_lines.filter(po__date__year=year)
         for line in po_lines.filter(barcode__in=product_barcodes):
             try:
                 spent_on_game += Money(line.actual_cost.amount * line.expected_quantity, 'USD')
@@ -150,7 +152,7 @@ def get_sales_by_thing(thing=GAME, **options):
         else:
             affect = "made"
 
-        log(f, f"\t{spent_on_game} was spent on that {thing}'s inventory this year, "
+        log(f, f"\t{spent_on_game} was spent on that {thing}'s inventory{' this year' if year else ''}, "
                f"\t\t{abs(extra_spent)} {more_or_less} than on inventory sold, "
                f"\t\tso we {affect} {abs(net_counting_inventory)}")
 
