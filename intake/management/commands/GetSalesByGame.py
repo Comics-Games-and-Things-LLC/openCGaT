@@ -154,12 +154,14 @@ def get_sales_by_thing(thing=GAME):
              "Costs on Sold": costs_on_sold_for_game.amount,
              "Collected": collected_on_game.amount,
              "Collected for events": collected_on_game_events.amount,
-             "Collected Locally": collected_locally.amount}
+             "Collected Locally": collected_locally.amount,
+             "Spent this year": spent_on_game}
         )
 
     log(f, "End of report\n\n")
-    print(f"Results in '{f.name}'")
-    print(f"Detailed results in '{f2.name}'")
+    print(f"Results and errors in in '{f.name}'")
+    print(f"CSV results in '{f.name}'")
+    print(f"Per-line results in '{f2.name}'")
     f.close()
 
 
