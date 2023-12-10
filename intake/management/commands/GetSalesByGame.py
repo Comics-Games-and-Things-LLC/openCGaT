@@ -19,11 +19,15 @@ def get_sales_by_thing(thing=GAME):
 
     f = open(f"reports/earnings by {thing}.txt", "a")
     f2 = open(f"reports/earnings by {thing} entries.csv", "w")
-    detailed_writer = csv.DictWriter(f2, [f"{thing}", "Product", "Quantity", "Cart",
-                                          "Collected", "Shipping", "Spent",
-                                          "Total Costs", "Net", "Margin"])
-    detailed_writer.writeheader()
+    entries_writer = csv.DictWriter(f2, [f"{thing}", "Product", "Quantity", "Cart",
+                                         "Collected", "Shipping", "Spent",
+                                         "Total Costs", "Net", "Margin"])
+    entries_writer.writeheader()
 
+    f3 = open(f"reports/earnings by {thing}.csv", "w")
+    summary_writer = csv.DictWriter(f3, [f"{thing}", "Spent on Sold", "Shipping on Sold", "Costs on Sold",
+                                         "Collected", "Collected for events", "Collected Locally"])
+    summary_writer.writeheader()
     log(f, "End of year Earnings by Game report")
     cart_lines = CheckoutLine.objects.filter(partner_at_time_of_submit=partner,
                                              cart__status__in=[Cart.PAID, Cart.COMPLETED],
@@ -43,6 +47,7 @@ def get_sales_by_thing(thing=GAME):
         costs_on_sold_for_game = Money("0", 'USD')
         collected_on_game = Money("0", 'USD')
         collected_on_game_events = Money("0", 'USD')
+        collected_locally = Money("0", 'USD')
 
         if verbose:
             log(f, "Errors for {}:".format(thing_instance.name))
@@ -73,7 +78,7 @@ def get_sales_by_thing(thing=GAME):
                 if collected_on_line.amount > 0 and costs_on_line.amount > 0:
                     rowdata.update({"Margin": 1 - (costs_on_line.amount / collected_on_line.amount),
                                     })
-                detailed_writer.writerow(rowdata)
+                entries_writer.writerow(rowdata)
                 spent_on_sold_for_game += spent_on_line
                 costs_on_sold_for_game += costs_on_line
                 shipping_on_game += shipping_on_line
@@ -81,6 +86,8 @@ def get_sales_by_thing(thing=GAME):
                     collected_on_game_events += collected_on_line
                 else:
                     collected_on_game += collected_on_line
+                    if line.cart.final_ship.amount == 0:
+                        collected_locally += collected_on_line
 
             else:
                 log(f, "{} no longer has an item".format(line))
@@ -133,8 +140,22 @@ def get_sales_by_thing(thing=GAME):
                f"\t\tso we {affect} {abs(net_counting_inventory)}")
 
         if collected_on_game_events.amount > 0:
-            log(f, f"{collected_on_game_events} was collected on events,"
+            log(f, f"\t{collected_on_game_events} was collected on events,"
                    " which could make up for some of that?")
+
+        if collected_locally.amount > 0:
+            log(f, f"\t{collected_locally} was collected on pickup orders," +
+                " or {:.0f}%".format(collected_locally.amount * 100 / collected_on_game.amount))
+
+        summary_writer.writerow(
+            {f"{thing}": thing_instance.name,
+             "Spent on Sold": spent_on_sold_for_game.amount,
+             "Shipping on Sold": shipping_on_game.amount,
+             "Costs on Sold": costs_on_sold_for_game.amount,
+             "Collected": collected_on_game.amount,
+             "Collected for events": collected_on_game_events.amount,
+             "Collected Locally": collected_locally.amount}
+        )
 
     log(f, "End of report\n\n")
     print(f"Results in '{f.name}'")
