@@ -16,7 +16,7 @@ partner = Partner.objects.get(name__icontains="Valhalla")
 year = 2023
 
 
-def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True, po_out=None) -> Money:
+def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True) -> Money:
     cost = Money(0, "USD")
     display_name = str(cart_line)
     if cart_line is None:
@@ -36,14 +36,11 @@ def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True, p
         new_quantity = p_as.remaining_quantity - quantity
 
         fulfilled_quantity = quantity
-        if po_out:
-            po_out.append(p_as.po)
-
         if new_quantity < 0:
             fulfilled_quantity = quantity - p_as.remaining_quantity
             p_as.remaining_quantity = 0
             p_as.save()
-            cost += get_purchased_as(barcode, abs(new_quantity), logfile, cart_line, verbose, po_out)
+            cost += get_purchased_as(barcode, abs(new_quantity), logfile, cart_line, verbose)
         else:
             p_as.remaining_quantity = new_quantity
 
