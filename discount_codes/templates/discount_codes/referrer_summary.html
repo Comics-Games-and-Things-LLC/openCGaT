@@ -1,0 +1,49 @@
+{% extends 'container.html' %}
+{% load static %}
+
+{% block title %}Referrals by {{ referrer }}{% endblock %}
+{% block extrastyle %}
+
+
+{% endblock %}
+{% block content %}
+    <h2>{{ referrer }}</h2>
+    <h3>Kickback Earnings {{ kickback_earnings }}</h3>
+    <ul>
+        {% for discount_code in codes %}
+            <li>
+                {{ discount_code }}
+            </li>
+        {% endfor %}
+    </ul>
+    <table class="table">
+        <tr>
+            <th>Date Submitted</th>
+            <th>Cart</th>
+            <th>Items</th>
+            <th>Kickback</th>
+
+        </tr>
+        {% for cart, details in kickback_lines.items %}
+            <tr>
+                <td>
+                    <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=cart.id %}">
+                        {{ cart.date_submitted }}
+                    </a>
+                </td>
+                <td>
+                    <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=cart.id %}">
+                        {{ cart.id }}
+                    </a>
+                </td>
+                <td>
+                    {{ details.items|join:", " }}
+                </td>
+                <td>
+                    {{ details.kickback }}
+                </td>
+            </tr>
+        {% endfor %}
+
+    </table>
+{% endblock %}

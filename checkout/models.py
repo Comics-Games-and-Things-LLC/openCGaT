@@ -740,17 +740,6 @@ class Cart(RepresentationMixin, models.Model):
     # Query methods
     # =============
 
-    def item_quantity(self, item):
-        """
-        Return the quantity of an item in the cart
-        The cart could theorehically contain multiple lines with the same item, but
-        different options and stockrecords. Those quantities are summed up.
-        We don't use this functionality in CG&T
-        """
-        matching_lines = self.lines.filter(item=item)
-        quantity = matching_lines.aggregate(Sum('quantity'))['quantity__sum']
-        return quantity or 0
-
     def get_total_subtotal(self):
         total = Money(0, "USD")
         for line in self.lines.all():

@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.conf.global_settings import AUTH_USER_MODEL
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.template.defaultfilters import slugify
 from djmoney.models.fields import MoneyField
 from pytz import utc
 
@@ -16,9 +17,14 @@ PERCENTAGE_VALIDATOR = [MinValueValidator(0), MaxValueValidator(100)]
 class Referrer(models.Model):
     name = models.CharField(max_length=200)
     referrer_is_partner = models.ForeignKey("partner.Partner", on_delete=models.PROTECT, blank=True, null=True)
+    slug = models.SlugField(max_length=200)
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        return super(Referrer, self).save(*args, **kwargs)
 
 
 class DiscountCode(models.Model):

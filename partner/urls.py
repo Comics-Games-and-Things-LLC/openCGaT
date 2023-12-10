@@ -34,5 +34,6 @@ urlpatterns = [
     path('<partner_slug>/customers/<user_id>/', views.customer_details, name='partner_customer_details'),
 
     path('<partner_slug>/discount_all/', views.discount_all, name='partner_discount_all'),
+    path('<partner_slug>/', include('discount_codes.urls')),
 
 ]

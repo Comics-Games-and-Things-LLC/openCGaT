@@ -1,8 +1,12 @@
 from django.http import HttpResponseRedirect, HttpResponse
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from djmoney.money import Money
 
-from discount_codes.models import DiscountCode, CodeUsage
+from checkout.models import CheckoutLine, Cart
+from discount_codes.models import DiscountCode, CodeUsage, Referrer
+from partner.models import get_partner_or_401
 
 
 # Create your views here.
@@ -43,3 +47,45 @@ def apply_code(request, code: str = "", cart=None):
     cart.discount_code = None
     cart.save()  # Clear code if we can't find the discount.
     return HttpResponse(status=200)
+
+
+def referral_index(request, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+    referrers = Referrer.objects.all()
+    context = {"partner": partner,
+               "referrers": referrers}
+
+    return render(request, "discount_codes/referrer_index.html", context)
+
+
+def referral_report(request, partner_slug, referrer_slug):
+    partner = get_partner_or_401(request, partner_slug)
+    referrer = get_object_or_404(Referrer, slug=referrer_slug)
+    codes = DiscountCode.objects.filter(referrer=referrer, partner_discounts__partner=partner)
+
+    kickback_earnings = Money(0, "USD")
+
+    kickback_lines = {}  # Cart: {earnings: Money, items: str}
+    for code in codes:
+        kickback_percentage = code.partner_discounts.get(partner=partner).referrer_kickback
+        referred_lines = CheckoutLine.objects.exclude(cart__status=Cart.CANCELLED, cancelled=True).filter(
+            cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED], cart__discount_code=code).order_by(
+            "cart__date_paid")
+        for line in referred_lines:
+            print(line)
+            earnings_this_line = line.price_per_unit_at_submit * line.quantity * (kickback_percentage / 100)
+            kickback_earnings += earnings_this_line
+            if line.cart not in kickback_lines:
+                kickback_lines[line.cart] = {"kickback": earnings_this_line, "items": [line.item.product.name]}
+            else:
+                kickback_lines[line.cart]["kickback"] += earnings_this_line
+                kickback_lines[line.cart]["items"].append(line.item.product.name)
+
+    context = {"partner": partner,
+               "referrer": referrer,
+               "kickback_earnings": kickback_earnings,
+               "codes": codes,
+               "kickback_lines": kickback_lines,
+               }
+
+    return render(request, "discount_codes/referrer_summary.html", context)
