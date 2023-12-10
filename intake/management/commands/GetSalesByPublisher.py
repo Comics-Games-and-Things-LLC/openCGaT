@@ -8,5 +8,9 @@ class Command(BaseCommand):
 
     # Update year in GetCogs
 
+    def add_arguments(self, parser):
+        parser.add_argument("--year", type=int)
+        parser.add_argument("--all", type=bool)
+
     def handle(self, *args, **options):
-        get_sales_by_thing(PUBLISHER)
+        get_sales_by_thing(PUBLISHER, **options)

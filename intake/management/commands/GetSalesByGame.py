@@ -1,4 +1,5 @@
 import csv
+import datetime
 
 from django.core.management.base import BaseCommand
 from moneyed import Money
@@ -7,17 +8,28 @@ from checkout.models import Cart, CheckoutLine
 from game_info.models import Game
 from intake.distributors.utility import log
 from intake.models import POLine
-from inventory_report.management.commands.GetCogs import get_purchased_as, mark_previous_items_as_sold, year, partner
+from inventory_report.management.commands.GetCogs import get_purchased_as, mark_previous_items_as_sold, partner
 from shop.models import Product, Publisher
 
 GAME = "Game"
 PUBLISHER = "Publisher"
 
 
-def get_sales_by_thing(thing=GAME):
+def get_sales_by_thing(thing=GAME, **options):
     verbose = True  # if we want to print errors.
 
+    year = options.pop('year')  # Last year by default
+    if year is None:
+        year = datetime.date.today().year - 1
+    all = options.pop("all")
+    if all:
+        year = None
+    display_year = year
+    if year is None:
+        display_year = "all time"
+
     f = open(f"reports/earnings by {thing}.txt", "a")
+
     f2 = open(f"reports/earnings by {thing} entries.csv", "w")
     entries_writer = csv.DictWriter(f2, [f"{thing}", "Product", "Quantity", "Cart",
                                          "Collected", "Shipping", "Spent",
@@ -26,12 +38,15 @@ def get_sales_by_thing(thing=GAME):
 
     f3 = open(f"reports/earnings by {thing}.csv", "w")
     summary_writer = csv.DictWriter(f3, [f"{thing}", "Spent on Sold", "Shipping on Sold", "Costs on Sold",
-                                         "Collected", "Collected for events", "Collected Locally"])
+                                         "Collected", "Collected for events", "Collected Locally", "Spent this year"])
     summary_writer.writeheader()
-    log(f, "End of year Earnings by Game report")
+
+    log(f, f"Earnings by {thing} for {display_year}:")
+
     cart_lines = CheckoutLine.objects.filter(partner_at_time_of_submit=partner,
-                                             cart__status__in=[Cart.PAID, Cart.COMPLETED],
-                                             cart__date_paid__year=year).order_by("cart__date_paid")
+                                             cart__status__in=[Cart.PAID, Cart.COMPLETED]).order_by("cart__date_paid")
+    if year:
+        cart_lines = cart_lines.filter(cart__date_paid__year=year)
 
     # Cleanup previous purchased as data first
     mark_previous_items_as_sold(f, year, verbose=verbose)
@@ -169,7 +184,9 @@ class Command(BaseCommand):
     # Known bug: If a product is under multiple games, it will mark it as sold by the first game, and then not be
     # available to check for the second game. One way of solving this would be to reset the "sold" count between games.
 
-    # Update year in GetCogs
+    def add_arguments(self, parser):
+        parser.add_argument("year", type=int)
+        parser.add_argument("all", type=bool)
 
     def handle(self, *args, **options):
-        get_sales_by_thing(GAME)
+        get_sales_by_thing(GAME, **options)

@@ -13,10 +13,7 @@ from shop.models import Product, InventoryItem
 
 partner = Partner.objects.get(name__icontains="Valhalla")
 
-year = 2023
-
-
-def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True) -> Money:
+def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True, year=None) -> Money:
     cost = Money(0, "USD")
     display_name = str(cart_line)
     if cart_line is None:
@@ -29,8 +26,9 @@ def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True) -
 
     if quantity is None:
         quantity = cart_line.quantity
-    purchased_as_options = POLine.objects.filter(po__partner=partner, po__date__year__lte=year)
-    purchased_as_options = purchased_as_options.filter(barcode=barcode, remaining_quantity__gte=1)
+    purchased_as_options = POLine.objects.filter(po__partner=partner, barcode=barcode, remaining_quantity__gte=1)
+    if year:
+        purchased_as_options = purchased_as_options.filter(po__date__year__lte=year)
     if purchased_as_options.exists():
         p_as = purchased_as_options.order_by('po__date').first()
         new_quantity = p_as.remaining_quantity - quantity
@@ -40,7 +38,7 @@ def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True) -
             fulfilled_quantity = quantity - p_as.remaining_quantity
             p_as.remaining_quantity = 0
             p_as.save()
-            cost += get_purchased_as(barcode, abs(new_quantity), logfile, cart_line, verbose)
+            cost += get_purchased_as(barcode, abs(new_quantity), logfile, cart_line, verbose, year)
         else:
             p_as.remaining_quantity = new_quantity
 
@@ -55,7 +53,9 @@ def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True) -
             log(logfile,
                 "{} did not have any quantity to allocate. It could be a pre or backorder as of the end of the year".format(
                     display_name))
-        ever_purchased = POLine.objects.filter(po__partner=partner, po__date__year__lte=year).filter(barcode=barcode)
+        ever_purchased = POLine.objects.filter(po__partner=partner, barcode=barcode)
+        if year:
+            ever_purchased = ever_purchased.filter(po__date__year__lte=year)
         if not ever_purchased.exists():
             log(logfile,
                 "{} ({}) has never never been on a purchase order in or before {}".format(display_name, barcode, year))
@@ -82,11 +82,14 @@ def get_purchased_as_line(barcode, display_name, logfile, verbose=True):
                 "{} ({}) has never never been on a purchase order in or before {}".format(display_name, barcode, year))
 
 
-def mark_previous_items_as_sold(f, year, verbose=True):
+def mark_previous_items_as_sold(f, year=None, verbose=True):
     log(f, "Resetting PO line remaining quantities")
     for pol in tqdm(POLine.objects.all()):
         pol.remaining_quantity = pol.received_quantity
         pol.save()
+
+    if year == None:
+        return
 
     # Get all carts for the years before to ensure those items are removed from inventory first.
     cost_of_goods_sold = Money("0", 'USD')
