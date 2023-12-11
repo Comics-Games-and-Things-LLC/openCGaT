@@ -286,12 +286,11 @@ def po_list(request, partner_slug):
     end_date = request.GET.get('end_date')
 
     purchase_orders = PurchaseOrder.objects.filter(partner=partner).order_by('-date')
-    if start_date:
-        if not start_date:
-            start_date = datetime.date.today() - datetime.timedelta(days=90)
-        else:
-            start_date = datetime.date.fromisoformat(start_date)  # Convert to format for template
-        purchase_orders = purchase_orders.filter(date__gte=start_date)
+    if not start_date:
+        start_date = datetime.date.today() - datetime.timedelta(days=90)
+    else:
+        start_date = datetime.date.fromisoformat(start_date)  # Convert to format for template
+    purchase_orders = purchase_orders.filter(date__gte=start_date)
     if end_date:
         end_date = datetime.date.fromisoformat(end_date)  # Convert to format for template
 
