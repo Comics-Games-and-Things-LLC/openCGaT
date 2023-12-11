@@ -83,7 +83,7 @@ def referral_report(request, partner_slug, referrer_slug):
             kickback_earnings += kickback_amount
             code_details[code]["kickback"] = kickback_amount
             sales_total += Money(sales_amount, "USD")
-            code_details[code]["sales"] = sales_total
+            code_details[code]["sales"] = sales_amount
 
             code_details[code]["cart_count"] = Cart.submitted.filter(discount_code=code).count()
             code_details[code]["click_count"] = CodeUsage.objects.filter(code=code).count()
