@@ -7,33 +7,31 @@
 
 {% endblock %}
 {% block content %}
-    <h2>{{ referrer }}</h2>
+    <h2>{{ referrer }} - Code: {{ code }}</h2>
     <h3>Kickback Earnings {{ kickback_earnings }}</h3>
+    <p>{{ kickback_lines|length }} entries</p>
     <table class="table">
         <tr>
-            <th>Code</th>
-            <th>Clicks</th>
-            <th>Submitted Carts</th>
-            <th>Sales Total</th>
-
+            <th>Date Submitted</th>
+            <th>Cart</th>
+            <th>Items</th>
             <th>Kickback</th>
 
         </tr>
-        {% for code, details in code_details.items %}
+        {% for cart, details in kickback_lines.items %}
             <tr>
                 <td>
-                    <a href="{% url 'referrer_code_report' partner_slug=partner.slug referrer_slug=referrer.slug code=code %}">
-                        {{ code }}
+                    <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=cart.id %}">
+                        {{ cart.date_submitted }}
                     </a>
                 </td>
                 <td>
-                    {{ details.click_count }}
+                    <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=cart.id %}">
+                        {{ cart.id }}
+                    </a>
                 </td>
                 <td>
-                    {{ details.cart_count }}
-                </td>
-                <td>
-                    {{ details.sales }}
+                    {{ details.items|join:", " }}
                 </td>
                 <td>
                     {{ details.kickback }}
