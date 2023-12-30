@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -177,9 +178,10 @@ def product_list(request, partner_slug=None):
 
     if search_query:
         displayed_products = displayed_products.filter(
-            name__search=SearchQuery(search_query, search_type='websearch')) | displayed_products.filter(
-            barcode__search=SearchQuery(search_query, search_type='plain')) | displayed_products.filter(
-            description__search=SearchQuery(search_query, search_type='websearch'))
+            Q(name__search=SearchQuery(search_query, search_type='websearch'))
+            | Q(barcode__search=SearchQuery(search_query, search_type='plain'))
+            | Q(description__search=SearchQuery(search_query, search_type='websearch'))
+        )
 
     if len(categories_to_include) != 0:
         displayed_products = displayed_products.filter(
