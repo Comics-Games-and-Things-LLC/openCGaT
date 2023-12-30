@@ -85,10 +85,12 @@
             barcode_cell.innerText = sCode
             fetch(url + "add/" + sCode + "/").then(response => response.json()).then((data) => {
                     console.log(data)
+                    var has_error = false
                     if (data.hasOwnProperty('success')) {
                         row.insertCell().innerText = data.success
                     } else {
                         row.insertCell().innerText = "Failure"
+                        has_error = true;
                     }
                     if (data.hasOwnProperty('product')) {
                         let link = document.createElement("a")
@@ -97,19 +99,47 @@
                         row.insertCell().appendChild(link)
                     } else {
                         row.insertCell().innerText = "No Product"
+                        has_error = true;
+
                     }
                     if (data.hasOwnProperty('item')) {
                         row.insertCell().innerText = `${data.item.count} in inventory`
                     } else {
                         row.insertCell().innerText = "No Inventory Item"
+                        has_error = true;
+
+                    }
+                    if (has_error) {
+                        playError()
+                    } else {
+                        playSuccess()
                     }
                 }
             )
         }
 
+        function playSound(type, frequency, length) {
+            const context = new AudioContext();
+            const soundGen = context.createOscillator();
+            soundGen.frequency = frequency;
+            soundGen.type = type;
+            soundGen.connect(context.destination);
+            soundGen.start();
+            soundGen.stop(context.currentTime + length);
+        }
+
+        function playSuccess() {
+            playSound("sine", 196, .1)
+        }
+
+        function playError() {
+            playSound("sawtooth", 440, .5)
+        }
+
+
         onScan.attachTo(document, {
             keyCodeMapper: function (oEvent) {
-                if (oEvent.which == 189) {
+                if (oEvent.which === 189) {
                     return '-';
                 }
                 // Fall back to the default decoder in all other cases
