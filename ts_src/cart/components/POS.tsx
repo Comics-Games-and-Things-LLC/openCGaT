@@ -7,7 +7,7 @@ import POSPayment from "./POSPayment"
 import CartBody from "./CartBody";
 import CartSelector from "./CartSelector";
 import {RootState, useAppDispatch} from "../store";
-import {addCustomPOSItem, addNewPOSItem, setPOS, setPOSOwner,} from "../reducers/cartSlice";
+import {addCustomPOSItem, addNewPOSItem, errorsClear, setPOS, setPOSOwner,} from "../reducers/cartSlice";
 import {useSelector} from "react-redux";
 import {Autocomplete, TextField} from "@mui/material";
 import getCookie from "./get_cookie";
@@ -17,6 +17,7 @@ import {useDebounce} from 'usehooks-ts'
 const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element => {
     const dispatch = useAppDispatch();
     const currentStatus = useSelector((state: RootState) => state.cart.pos);
+    const errors = useSelector((state: RootState) => state.cart.errors);
     const [currentEmail, setCurrentEmail] = useState<string>('')
     const debouncedEmailString = useDebounce<string>(currentEmail, 500)
     const [userSuggestions, setUserSuggestions] = useState<IUser[]>([])
@@ -153,8 +154,18 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
     }, [HandleScan]); // <--- This hook is called only once
 
 
+    const error_section = errors.length > 0 ? <div>
+        <ul> Errors:
+            {errors.map((error: String) => {
+                return <li><h3>{error}</h3></li>
+            })}
+        </ul>
+        <button onClick={() => dispatch(errorsClear())} className={'btn btn-danger'}>Clear Errors</button>
+    </div> : null
+
     return (
         <>
+            {error_section}
             <div className="flex flex-row">
                 <div>
                     <POSPayment

@@ -8,7 +8,8 @@ const initialState = {
     pos: {} as IPOSProps,
     popoverOpen: false,
     buttonItems: [] as IItem[],
-};
+    errors: [] as string[],
+}
 
 interface IUpdateCart extends ICart {
     buttonItems: IItem[],
@@ -201,11 +202,15 @@ export const addNewPOSItem = createAsyncThunk<// Return type of the payload crea
     "cart/addNewPOSItem",
     async (payload: AddNewPOSItemProps, {getState, dispatch}) => {
         const pos = getState().cart.pos;
-        return fetch(`${pos.url}/${pos.active_cart.id}/add/${payload.barcode}/`).then(() => {
-            return dispatch(updatePOS());
-        });
+        console.log(`Attempting to add ${payload.barcode}`)
+        let response = await fetch(`${pos.url}/${pos.active_cart.id}/add/${payload.barcode}/`) //Don't actually do anything with the return value
+        if (!response.ok) {
+            console.log("Could not add that item, logging error")
+            dispatch(errorAdded(`Could not add '${payload.barcode}'`));
+        }// or check for response.status
+        return dispatch(updatePOS());
     }
-);
+)
 
 interface AddCustomPOSItemProps {
     description: string;
@@ -343,6 +348,12 @@ export const cartSlice = createSlice({
                 state.buttonItems.push(newItem)
             }
         },
+        errorAdded(state, action) {
+            state.errors.push(action.payload)
+        },
+        errorsClear(state) {
+            state.errors = [];
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -373,5 +384,7 @@ export const {
     setPOSCartID,
     setPopoverOpen,
     addButtonItem,
+    errorAdded,
+    errorsClear,
 } = cartSlice.actions;
 export default cartSlice.reducer;

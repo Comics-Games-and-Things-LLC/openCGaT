@@ -23,8 +23,9 @@ import RefundForm from "./Forms/RefundForm"
 import CartForm from "./Forms/CartForm"
 
 import {ICart} from "../interfaces";
-import {useAppDispatch} from "../store";
+import {RootState, useAppDispatch} from "../store";
 import {updatePOS} from "../reducers/cartSlice";
+import {useSelector} from "react-redux";
 
 
 interface IPOSPaymentProps {
@@ -55,9 +56,10 @@ const POSPayment: React.FunctionComponent<IPOSPaymentProps> = (props): JSX.Eleme
     const [testCardNumber, setTestCardNumber] = useState("")
     const [testPaymentMethod, setTestPaymentMethod] = useState("visa")
 
+    const errors = useSelector((state: RootState) => state.cart.errors);
 
     const isWorkflowDisabled = () =>
-        cancelablePayment || workFlowInProgress;
+        cancelablePayment || (workFlowInProgress != null) || (errors.length > 0);
 
     const runWorkflow = async (workflowName: string, workflowFn: any) => {
         console.log(workflowName, workflowFn);

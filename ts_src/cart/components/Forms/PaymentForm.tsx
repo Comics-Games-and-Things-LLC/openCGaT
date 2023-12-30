@@ -27,7 +27,7 @@ interface IPaymentFormProps {
     onClickSubmit: (value: string) => void
     cashOnly?: boolean
     cancelablePayment: boolean | null
-    workFlowDisabled: string | true
+    workFlowDisabled: boolean | null
     usingSimulator: boolean | null
     cart: ICart
 }
