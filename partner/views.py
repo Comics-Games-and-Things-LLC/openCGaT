@@ -181,9 +181,8 @@ def customer_list(request, partner_slug=None, admin=False):
     partner = None
     if not admin:
         partner = get_partner_or_401(request, partner_slug=partner_slug)
-    User = get_user_model()
 
-    customers = User.objects.all()
+    customers = get_user_model().objects.all().order_by(F("last_login").desc(nulls_last=True))
 
     form = FiltersForm()
     if request.method == 'GET':
