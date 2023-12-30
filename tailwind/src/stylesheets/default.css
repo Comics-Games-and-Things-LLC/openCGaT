@@ -84,7 +84,7 @@ input[type="checkbox"] {
 }
 
 #filter_form .treewidget {
-    @apply h-48 overflow-auto;
+    @apply h-52 overflow-auto;
 }
 
 #filter_form .select-dropdown {
