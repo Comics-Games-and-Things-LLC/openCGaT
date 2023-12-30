@@ -225,7 +225,6 @@ def product_list(request, partner_slug=None):
         'filters_form': form,
         'manual_form_fields': manual_form_fields,
         'page_number': int(page_number),
-        'num_total': new_product_list.count(),
         'partner_slug': partner_slug,
         'manage': manage,
     }

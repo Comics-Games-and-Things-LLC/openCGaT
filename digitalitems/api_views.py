@@ -87,7 +87,6 @@ def account_downloads_v2(request, refresh=0):
             'filters_form': form,
             'page': page,
             'page_number': page_number,
-            'num_total': downloads.count(),
             'manual_form_fields': []
         }
         return TemplateResponse(request, "digital/downloadsv2.html", context=context)

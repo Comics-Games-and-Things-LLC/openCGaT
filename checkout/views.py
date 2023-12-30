@@ -418,7 +418,6 @@ def partner_orders(request, partner_slug):
         'page': page,
         'filters_form': form,
         'page_number': int(page_number),
-        'num_total': orders.count(),
         'partner': partner,
     }
     return TemplateResponse(request, "checkout/partner_orders.html", context=context)
@@ -838,7 +837,6 @@ def all_orders_tax(request):
         'page': page,
         'filters_form': form,
         'page_number': int(page_number),
-        'num_total': orders.count(),
     }
     return TemplateResponse(request, "all_orders_tax.html", context=context)
 

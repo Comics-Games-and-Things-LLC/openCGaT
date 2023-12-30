@@ -86,7 +86,6 @@ def partner_billing(request, partner_slug):
         'balance': partner.acct_balance,
         'page': page,
         'page_number': page_number,
-        'num_total': billing_history.count(),
         'staff_payment_log_form': form
     }
     return render(request, "partner/partner_billing.html", context)
@@ -105,7 +104,6 @@ def summary_breakout(request, partner_slug, summary_id):
         'summary_breakout': get_object_or_404(PartnerTransaction, id=summary_id),
         'page': page,
         'page_number': page_number,
-        'num_total': billing_history.count(),
 
     }
     return render(request, "partner/partner_billing.html", context)
@@ -120,7 +118,6 @@ def admin_summary_breakout(request, summary_id):
     context = {
         'page': page,
         'page_number': page_number,
-        'num_total': billing_history.count(),
         'summary_breakout': get_object_or_404(PartnerTransaction, id=summary_id)
     }
     return render(request, "partner/admin_billing.html", context)
@@ -208,7 +205,6 @@ def customer_list(request, partner_slug=None, admin=False):
         'admin': admin,
         'page': page,
         'page_number': page_number,
-        'num_total': customers.count()
     }
     return render(request, "partner/customer_list.html", context)
 
