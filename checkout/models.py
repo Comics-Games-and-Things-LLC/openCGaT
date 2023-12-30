@@ -14,7 +14,6 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.mail import EmailMessage
 from django.db import models, transaction
 from django.db.models import F
-from django.db.models import Sum
 from django.template.loader import get_template
 from django.utils import timezone
 from django.utils.timezone import now
@@ -743,6 +742,14 @@ class Cart(RepresentationMixin, models.Model):
     def get_total_subtotal(self):
         total = Money(0, "USD")
         for line in self.lines.all():
+            total += line.get_subtotal()
+        return total
+
+    def get_subtotal_after_cancellations(self):
+        total = Money(0, "USD")
+        if self.status == Cart.CANCELLED:
+            return total
+        for line in self.lines.filter(is_cancelled=False):
             total += line.get_subtotal()
         return total
 

@@ -13,6 +13,7 @@ from shop.models import Product, InventoryItem
 
 partner = Partner.objects.get(name__icontains="Valhalla")
 
+
 def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True, year=None) -> Money:
     cost = Money(0, "USD")
     display_name = str(cart_line)
@@ -62,7 +63,7 @@ def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True, y
     return cost
 
 
-def get_purchased_as_line(barcode, display_name, logfile, verbose=True):
+def get_purchased_as_line(year, barcode, display_name, logfile, verbose=True):
     purchased_as_options = POLine.objects.filter(po__partner=partner, po__date__year__lte=year)
     purchased_as_options = purchased_as_options.filter(barcode=barcode, remaining_quantity__gte=1)
     if purchased_as_options.exists():
@@ -111,66 +112,71 @@ def mark_previous_items_as_sold(f, year=None, verbose=True):
         log(f, "The total cost of goods sold before {} is {}".format(year, cost_of_goods_sold))
 
 
-class Command(BaseCommand):
-    def handle(self, *args, **options):
-        f = open("reports/cogs_{}.txt".format(year), "a")
-        f2 = open("reports/missing costs {}.txt".format(datetime.date.today()), "a")
+def handle_get_cogs(year, have_inv_report=False):
+    f = open("reports/cogs_{}.txt".format(year), "a")
+    f2 = open("reports/missing costs {}.txt".format(datetime.date.today()), "a")
 
-        log(f, "End of year Cost of Goods Sold Report")
+    log(f, "End of year Cost of Goods Sold Report")
 
-        total_inventory_purchased = Money("0", 'USD')
-        for po in PurchaseOrder.objects.filter(date__year=year, partner=partner):
-            for line in po.lines.all():
-                if line.actual_cost:
-                    total_inventory_purchased += (line.actual_cost * line.received_quantity)
-        log(f, "{} of inventory was purchased in {}".format(total_inventory_purchased, year))
+    total_inventory_purchased = Money("0", 'USD')
+    for po in PurchaseOrder.objects.filter(date__year=year, partner=partner):
+        for line in po.lines.all():
+            if line.actual_cost:
+                total_inventory_purchased += (line.actual_cost * line.received_quantity)
+    log(f, "{} of inventory was purchased in {}".format(total_inventory_purchased, year))
 
-        # Get cogs for the year in question
-        cost_of_goods_sold = Money("0", 'USD')
+    # Get cogs for the year in question
+    cost_of_goods_sold = Money("0", 'USD')
 
-        mark_previous_items_as_sold(f, year)
+    mark_previous_items_as_sold(f, year)
 
-        for cart in Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED]) \
-                .filter(date_submitted__year=year) \
-                .order_by("date_submitted"):
-            for line in cart.lines.filter(partner_at_time_of_submit=partner):
-                if line.item and line.item.product and line.item.product:
-                    cost_of_goods_sold += get_purchased_as(line.item.product.barcode, line.quantity, f2, line)
-                else:
-                    log(f, "{} no longer has an item".format(line))
-        log(f, "The total cost of goods sold for the year {} is {}"
-            .format(year, cost_of_goods_sold))
+    for cart in tqdm(Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED]) \
+                             .filter(date_submitted__year=year) \
+                             .order_by("date_submitted")):
+        for line in cart.lines.filter(partner_at_time_of_submit=partner):
+            try:
+                cost_of_goods_sold += get_purchased_as(line.item.product.barcode, line.quantity, f2, line)
+            except Exception:
+                log(f, "{} no longer has an item".format(line))
+    log(f, "The total cost of goods sold for the year {} is {}"
+        .format(year, cost_of_goods_sold))
 
-        mark_previous_items_as_sold(f, year, verbose=False)
+    mark_previous_items_as_sold(f, year, verbose=False)
 
-        unsold_inventory_po_cost = Money("0", 'USD')
-        for po in PurchaseOrder.objects.filter(date__year__lte=year, partner=partner):
-            for line in po.lines.all():
-                if line.actual_cost:
-                    unsold_inventory_po_cost += (line.actual_cost * line.remaining_quantity)
-                else:
-                    log(f, "PO Line {} is missing actual cost".format(line))
+    # Now that we've marked all the items from this year as sold, find the remaining items according to purchase orders.
+    # That'll be our remaining inventory for the year.
+    unsold_inventory_po_cost = Money("0", 'USD')
+    for po in tqdm(PurchaseOrder.objects.filter(date__year__lte=year, partner=partner)):
+        for line in po.lines.all():
+            if line.actual_cost:
+                unsold_inventory_po_cost += (line.actual_cost * line.remaining_quantity)
+            else:
+                log(f, "PO Line {} is missing actual cost".format(line))
 
-        log(f, "Unsold inventory up to the end of {} according to purchase orders: {}".format(year,
-                                                                                              unsold_inventory_po_cost))
+    log(f, "Unsold inventory up to the end of {} according to purchase orders: {}".format(year,
+                                                                                          unsold_inventory_po_cost))
 
-        unsold_inventory_cost = Money("0", 'USD')
+    # Also get the same number from the inventory report if we have it, might be slightly different
+    # This also spits out a CSV file, so we can add any missing costs in manually in a spreadsheet.
+    unsold_inventory_cost = Money("0", 'USD')
 
-        with open('reports/cogs_{}.csv'.format(datetime.date.today().isoformat()), 'w',
+    if have_inv_report:
+
+        with open('reports/cogs_{}.csv'.format(year), 'w',
                   newline='') as csvfile:
             fieldnames = ['Display Name', 'Barcode', 'Purchase order', 'Actual cost']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
-            for line in InventoryReport.objects.order_by("-id") \
-                    .first().report_lines.all():  # Load most recent inventory report
+            for line in tqdm(InventoryReport.objects.order_by("-id") \
+                                     .first().report_lines.all()):  # Load most recent inventory report
                 display_name = ""
                 if line.barcode is not None:
                     try:
                         display_name = Product.objects.get(barcode=line.barcode).name
                     except Product.DoesNotExist:
                         pass
-                p_as = get_purchased_as_line(line.barcode, display_name, f2)
+                p_as = get_purchased_as_line(year, line.barcode, display_name, f2)
                 row_info = {
                     'Display Name': display_name,
                     'Barcode': line.barcode,
@@ -184,12 +190,27 @@ class Command(BaseCommand):
 
         log(f, "Inventory from the inventory report costs {} ".format(unsold_inventory_cost))
 
-        log(f, "Cost of inventory purchased minus cost of goods sold (Theoretically equal to above?) : {}".format(
-            total_inventory_purchased - cost_of_goods_sold))
+    log(f, "Cost of inventory purchased minus cost of goods sold (Theoretically equal to above?) : {}".format(
+        total_inventory_purchased - cost_of_goods_sold))
+
+    if have_inv_report:
         log(f, "Cost of inventory purchased minus remaining inventory (COGS) : {}".format(
             total_inventory_purchased - unsold_inventory_cost))
-        log(f, "End of report\n\n")
-        f.close()
+
+    log(f, "End of report\n\n")
+    f.close()
+
+
+class Command(BaseCommand):
+
+    def add_arguments(self, parser):
+        parser.add_argument("--year", type=int)
+
+    def handle(self, *args, **options):
+        year = options.pop('year')  # Last year by default
+        if year is None:
+            year = datetime.date.today().year - 1
+        handle_get_cogs(year, True)
 
 
 def log(f, string):
