@@ -199,7 +199,7 @@ def handle_get_cogs(year, have_inv_report=False):
             except Exception:
                 log(f, f"Could not get cost for {item.current_inventory} x {item.product.name}")
 
-        log(f, "Remaining Inventory cost estimate ".format(unsold_inventory_cost))
+        log(f, f"Remaining Inventory cost estimate {unsold_inventory_cost}")
 
     log(f, "Cost of inventory purchased minus cost of goods sold (Theoretically equal to above?) : {}".format(
         total_inventory_purchased - cost_of_goods_sold))
