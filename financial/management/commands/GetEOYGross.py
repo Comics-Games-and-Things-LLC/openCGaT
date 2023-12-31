@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from moneyed import Money
+from tqdm import tqdm
 
 from checkout.models import Cart
 from intake.distributors.utility import log
@@ -17,8 +18,8 @@ class Command(BaseCommand):
         shipping = Money(0, 'USD')
         tax = Money(0, 'USD')
         total = Money(0, 'USD')
-        for cart in Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED], date_paid__year=year) \
-                .order_by("date_paid"):
+        for cart in tqdm(Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED], date_paid__year=year)
+                                 .order_by("date_paid")):
             gross += cart.get_total_subtotal()
             gross += cart.final_ship
             shipping += cart.final_ship
