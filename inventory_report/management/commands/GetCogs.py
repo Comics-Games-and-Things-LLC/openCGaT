@@ -189,13 +189,24 @@ def handle_get_cogs(year, have_inv_report=False):
                 writer.writerow(row_info)
 
         log(f, "Inventory from the inventory report costs {} ".format(unsold_inventory_cost))
+    else:
+        for item in InventoryItem.objects.filter(current_inventory__gt=0):
+            estimated_cost = Money(0, 'USD')
+            try:
+                estimated_cost = POLine.objects.filter(po__partner=partner, barcode=item.product.barcode).order_by(
+                    '-po__date').first().cost_per_item
+            except Exception:
+                log(f, f"Could not get cost for {item.current_inventory} x {item.product.name}")
+
+            unsold_inventory_cost += estimated_cost * item.current_inventory
+
+        log(f, "Remaining Inventory cost estimate ".format(unsold_inventory_cost))
 
     log(f, "Cost of inventory purchased minus cost of goods sold (Theoretically equal to above?) : {}".format(
         total_inventory_purchased - cost_of_goods_sold))
 
-    if have_inv_report:
-        log(f, "Cost of inventory purchased minus remaining inventory (COGS) : {}".format(
-            total_inventory_purchased - unsold_inventory_cost))
+    log(f, "Cost of inventory purchased minus remaining inventory: (COGS) : {}".format(
+        total_inventory_purchased - unsold_inventory_cost))
 
     log(f, "End of report\n\n")
     f.close()
