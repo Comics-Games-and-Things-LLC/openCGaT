@@ -9,7 +9,7 @@ from checkout.models import Cart, StripeCustomerId
 class Command(BaseCommand):
     def handle(self, *args, **options):
         year = 2023
-        fieldnames = ['Customer Name', 'Stripe Customer ID', 'Total Purchases']
+        fieldnames = ['Customer', 'Stripe Customer ID', 'Total Purchases']
 
         customers = {}
 
@@ -42,7 +42,7 @@ class Command(BaseCommand):
                     name = customer.name
 
                 writer.writerow({
-                    'Customer name': name,
+                    'Customer': name,
                     'Total Purchases': customers[customer]
                 })
 
