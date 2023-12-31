@@ -749,7 +749,7 @@ class Cart(RepresentationMixin, models.Model):
         total = Money(0, "USD")
         if self.status == Cart.CANCELLED:
             return total
-        for line in self.lines.filter(is_cancelled=False):
+        for line in self.lines.filter(cancelled=False):
             total += line.get_subtotal()
         return total
 
