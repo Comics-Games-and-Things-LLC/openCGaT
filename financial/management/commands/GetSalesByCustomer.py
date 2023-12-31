@@ -54,12 +54,14 @@ def get_customer_for_cart(cart):
     # TODO: Check if they made an account later with the same email
 
     # Check if they bought some stuff with a card they use with an account.
+    # As far as I can tell, there's no way to pull the "guest" customer created by stripe,
+    # so this does nothing right now. Line that would slow things down a lot commented out.
     stripe_id = None
     if cart.at_pos and cart.stripepaymentintent_set.exists():
         for in_store_PI in cart.stripepaymentintent_set.all():
-            json = in_store_PI.get_json()
-            if json and json["customer"]:
-                stripe_id = json["customer"]
+            pi_json = {}  # in_store_PI.get_json()
+            if pi_json and pi_json["customer"]:
+                stripe_id = pi_json["customer"]
     if stripe_id:
         if StripeCustomerId.objects.filter(id=stripe_id).exists():
             return StripeCustomerId.objects.get(id=stripe_id).user
