@@ -1396,7 +1396,7 @@ class StripePaymentIntent(models.Model):
     captured = models.BooleanField(default=False)
 
     def __str__(self):
-        name = "Stripe Intent {} for {}".format(self.id, self.amount_to_pay / 100)
+        name = "Stripe Intent {} for {}".format(self.id, self.amount_to_pay)
         if self.captured:
             name += ", captured"
         return name
