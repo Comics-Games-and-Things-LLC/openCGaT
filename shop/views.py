@@ -179,8 +179,11 @@ def product_list(request, partner_slug=None):
     if search_query:
         displayed_products = displayed_products.filter(
             Q(name__search=SearchQuery(search_query, search_type='websearch'))
-            | Q(barcode__search=SearchQuery(search_query, search_type='plain'))
+            | Q(barcode=search_query)
+            | Q(publisher_short_sku=search_query)
+            | Q(publisher_sku=search_query)
             | Q(description__search=SearchQuery(search_query, search_type='websearch'))
+
         )
 
     if len(categories_to_include) != 0:

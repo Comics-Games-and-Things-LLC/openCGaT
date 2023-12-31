@@ -9,7 +9,7 @@ from checkout.models import Cart, StripeCustomerId
 class Command(BaseCommand):
     def handle(self, *args, **options):
         year = 2023
-        fieldnames = ['Customer', 'Stripe Customer ID', 'Total Purchases']
+        fieldnames = ['Customer', 'Email', 'Stripe Customer ID', 'Total Purchases']
 
         customers = {}
 
@@ -38,11 +38,14 @@ class Command(BaseCommand):
             for customer in tqdm(customers.keys()):
                 print(f"{customer} purchased {customers[customer]}")
                 name = customer
+                email = customer
                 if hasattr(customer, 'name'):
                     name = customer.name
-
+                if hasattr(customer, 'email'):
+                    email = customer.email
                 writer.writerow({
                     'Customer': name,
+                    'Email': email,
                     'Total Purchases': customers[customer]
                 })
 
