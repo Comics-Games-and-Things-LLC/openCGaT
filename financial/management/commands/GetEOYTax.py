@@ -12,7 +12,7 @@ from partner.models import Partner, PartnerTransaction
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        year = 2022
+        year = 2023
         f = open("reports/partner_tax_info.txt", "a")
         for partner in Partner.objects.all().order_by('name'):
             log(f, "{} for {} generated at {}".format(partner.name, year, datetime.now()))
