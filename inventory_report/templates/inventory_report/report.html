@@ -55,7 +55,7 @@
 
                     <a href="
                     {% if location %}
-                    {% url "delete_inv_report_line" partner_slug=partner.slug report_id=report.id location=location.id report_line_id=line.id confirm=0 %}
+                    {% url "delete_inv_report_line" partner_slug=partner.slug report_id=report.id location_id=location.id report_line_id=line.id confirm=0 %}
                     {% else %}
                     {% url "delete_inv_report_line" partner_slug=partner.slug report_id=report.id report_line_id=line.id confirm=0 %}
                     {% endif %}
