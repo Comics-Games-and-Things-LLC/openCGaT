@@ -7,7 +7,7 @@ def create_valhalla_item(product, f=None):
     if f is None:
         f = open("reports/valhalla_inventory_price_adjustments.txt", "a")
 
-    partner = Partner.objects.get(name__icontains="CG&T")
+    partner = Partner.objects.get(name__icontains="Valhalla")
 
     price = product.get_price_from_rule(partner)
     if price:

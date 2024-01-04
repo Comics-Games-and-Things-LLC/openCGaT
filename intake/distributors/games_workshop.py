@@ -1,3 +1,4 @@
+import os
 import traceback
 
 import pandas
@@ -88,6 +89,7 @@ def import_records():
     spacemarines, _ = imperium40k.subfactions.get_or_create(name=SPACE_MARINES, game=wh40k)
     create_subfactions(spacemarines, ['Space Wolves',
                                       'Blood Angels',
+                                      'Dark Angels',
                                       'Ultramarines',
                                       'Iron Hands',
                                       ('%s' % GREY_KNIGHTS),
@@ -111,7 +113,8 @@ def import_records():
         "Chaos Knights",
         CHAOS_SPACE_MARINES,
         ("%s" % DEATH_GUARD),
-        "Thousand Sons"
+        "Thousand Sons",
+        "World Eaters",
     ])
 
     eldar40k, _ = wh40k.factions.get_or_create(name='Eldar')
@@ -176,8 +179,14 @@ def import_records():
     # reset existing trade ranges:
     TradeRange.objects.filter(distributor=distributor).delete()
 
-    file = pandas.ExcelFile('./intake/inventories/March 6th Price File - 021023 Updated US.xlsx')
-    dataframe = pandas.read_excel(file, header=0, sheet_name='Sheet1', converters={'Product': str, 'Barcode': str})
+    trade_range_name = ""
+    inventories_path = './intake/inventories/'
+    for file in os.listdir(inventories_path):
+        if "Trade Range" in file:
+            trade_range_name = file
+
+    file = pandas.ExcelFile(os.path.join(inventories_path, trade_range_name))
+    dataframe = pandas.read_excel(file, header=0, sheet_name='USA', converters={'Product': str, 'Barcode': str})
 
     records = dataframe.to_dict(orient='records')
     f = open("reports/products_with_price_adjustments.txt", "a")
@@ -186,12 +195,12 @@ def import_records():
         # print(row)
         try:
             product_code = row.get('Product')
-            short_code = row.get('SS Code')
-            name = row.get('Description')  # Space at end of string is necessary.
+            short_code = row.get('Short Code')
+            name = row.get('Description')
             barcode = row.get('Barcode')
-            msrp = Money(row.get('NEW US/$ Retail'), currency='USD')
+            msrp = Money(row.get('US/$ Retail'), currency='USD')
             maprice = msrp * .85
-            dist_price = Money(row.get('NEW US/$ Trade'), currency='USD')
+            dist_price = Money(row.get('US/$ Trade'), currency='USD')
             games, factions, categories = get_product_information_from_product_code(product_code)
             range_code = row.get("Module")
             trade_range = None
@@ -217,35 +226,45 @@ def import_records():
                 item.quantity_per_pack = row.get("Pack Qty")
                 item.save()
 
-                old_products = Product.objects.filter(slug=slugify(name.title()))
-                old_product = None
-                if Product.objects.filter(name=name.title()):
-                    product = Product.objects.get(name=name.title())
-                else:
-                    # If the product already exists, make a 2023 version.
-                    if old_products.exists():
-                        old_product = Product.objects.filter(slug=slugify(name.title())).get()
-                        name = name.title() + " 2023"
+                create_products_and_items = False  # Stop creating products for now
+                if not create_products_and_items:
+                    potential_products = Product.objects.filter(barcode=barcode)
+                    if potential_products.exists():
+                        product = potential_products.first()
+                        if product.publisher_short_sku is None:
+                            product.publisher_short_sku = short_code
+                            print(f"Set short code on {product.name} to {short_code}")
+                        product.save()
+                if create_products_and_items:
+                    old_products = Product.objects.filter(slug=slugify(name.title()))
+                    old_product = None
+                    if Product.objects.filter(name=name.title()):
+                        product = Product.objects.get(name=name.title())
+                    else:
+                        # If the product already exists, make a 2023 version.
+                        if old_products.exists():
+                            old_product = Product.objects.filter(slug=slugify(name.title())).get()
+                            name = name.title() + " 2023"
 
-                    product, created = Product.objects.get_or_create(
-                        barcode=barcode,
-                        defaults={'release_date': datetime.today(),
-                                  'name': name.title()}
-                    )
-                    if created:
-                        product.games.set(games)
-                        product.factions.set(factions)
-                        product.categories.set(categories)
-                        if old_product:
-                            old_product.replaced_by = product
-                            old_product.save()
-                product.all_retail = True
-                product.publisher = publisher
-                product.msrp = msrp
-                product.map = maprice
-                product.save()
+                        product, created = Product.objects.get_or_create(
+                            barcode=barcode,
+                            defaults={'release_date': datetime.today(),
+                                      'name': name.title()}
+                        )
+                        if created:
+                            product.games.set(games)
+                            product.factions.set(factions)
+                            product.categories.set(categories)
+                            if old_product:
+                                old_product.replaced_by = product
+                                old_product.save()
+                    product.all_retail = True
+                    product.publisher = publisher
+                    product.msrp = msrp
+                    product.map = maprice
+                    product.save()
 
-                create_valhalla_item(product, f)
+                    create_valhalla_item(product, f)
 
         except Exception as e:
             traceback.print_exc()
@@ -261,7 +280,7 @@ def get_product_information_from_product_code(product_code):
     elif game_code == "02":
         games.append(Game.objects.get_or_create(name=AGE_OF_SIGMAR)[0])
     elif game_code == "03":
-        games.append(Game.objects.get_or_create(name="Adeptus Titanicus")[0])
+        games.append(Game.objects.get_or_create(name="Legions Imperialis")[0])
     elif game_code == "05":
         games.append(Game.objects.get_or_create(name="Necromunda")[0])
     elif game_code == "06":
