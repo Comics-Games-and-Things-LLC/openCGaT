@@ -96,6 +96,50 @@
         </table>
         {% include 'checkout/snippets/cart_address_info.html' with cart=past_cart %}
         {% include 'checkout/snippets/static_cart_summary.html' with cart=past_cart manage=partner.slug %}
+
+        {% if other_items_for_customer %}
+            <h2> Other Items for customer</h2>
+            <table class="table">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Product</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Status</th>
+                </tr>
+                {% for line in other_items_for_customer %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=line.cart.id %}">
+                                {{ line.cart.id }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=line.cart.id %}">
+                                {{ line.cart.date_submitted }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if line.item.product %}
+                                <a href="{% url  'manage_product' partner_slug=partner.slug product_slug=line.item.product.slug %}">
+                                {{ line.item.product.name }}
+                            {% endif %}
+                            </a>
+                        </td>
+                        <td>{{ line.quantity }}</td>
+                        <td>{{ line.status_text }}
+                            {% if line.ready %}
+                                <a class="btn btn-primary"
+                                   href="{% url 'partner_complete_line' cart_id=past_cart.id line_id=line.id partner_slug=partner.slug %}">
+                                    Complete with this order
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            </div>
+        {% endif %}
     </div>
     <div>
         <a class="btn btn-secondary"

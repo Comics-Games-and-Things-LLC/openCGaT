@@ -18,9 +18,18 @@
             {% for line in cart.lines.all %}
                 <tr>
                     <td>
-                        <a href="{% site_url cart %}{% url 'product_detail' product_slug=line.item.product.slug %}">
-                            {{ line.item.product.name }}
-                        </a>
+                        {% if manage %}
+                            {% if line.item.product %}
+                                <a href="{% url  'manage_product' partner_slug=partner.slug product_slug=line.item.product.slug %}">
+                                    {{ line.item.product.name }}
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% site_url cart %}{% url 'product_detail' product_slug=line.item.product.slug %}">
+                                {{ line.item.product.name }}
+                            </a>
+                        {% endif %}
+
                         {% if line.item.description %}
                             <br>
                             {{ line.item.description }}

@@ -443,6 +443,13 @@ def partner_order_details(request, partner_slug, cart_id):
                 past_cart.mark_shipped()
                 print(past_cart)
         context['comments_form'] = PartnerCommentsForm(instance=past_cart)
+        if past_cart.owner:
+            context['other_items_for_customer'] = CheckoutLine.objects.filter(cart__owner=past_cart.owner,
+                                                                              cart__status=Cart.PAID,
+                                                                              fulfilled=False
+                                                                              ).exclude(
+                cart__id=past_cart.id
+            )
 
         return TemplateResponse(request, "checkout/partner_order_details.html", context=context)
     except Cart.DoesNotExist:
@@ -876,8 +883,10 @@ def partner_ready_line(request, cart_id, line_id, partner_slug):
 def partner_complete_line(request, cart_id, line_id, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
     cart = Cart.objects.get(id=cart_id)
+    # Cart is the cart page that's open, will be used as the fulfilment cart unless there's a get param.
+    # Cart is not necessarily this item's cart.`
     try:
-        line = cart.lines.get(id=line_id)
+        line = CheckoutLine.objects.get(id=line_id)
         if partner != line.partner_at_time_of_submit:
             return HttpResponse(status=401)
         fulfilment_cart = cart
