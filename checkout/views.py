@@ -333,7 +333,9 @@ def past_orders(request):
     context = {'past_orders': orders,
                'other_items_for_customer': CheckoutLine.objects.filter(cart__owner=request.user,
                                                                        fulfilled=False,
-                                                                       ).exclude(cart__status=Cart.COMPLETED
+                                                                       cancelled=False,
+                                                                       ).exclude(cart__status__in=[Cart.COMPLETED,
+                                                                                                   Cart.CANCELLED]
                                                                                  ).order_by('-cart__date_submitted')}
     return TemplateResponse(request, "checkout/past_orders.html", context=context)
 
