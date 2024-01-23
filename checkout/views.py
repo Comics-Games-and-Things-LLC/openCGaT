@@ -330,7 +330,11 @@ def checkout_complete(request, order_id):
 @login_required
 def past_orders(request):
     orders = Cart.submitted.filter(owner=request.user).order_by('date_submitted')
-    context = {'past_orders': orders}
+    context = {'past_orders': orders,
+               'other_items_for_customer': CheckoutLine.objects.filter(cart__owner=request.user,
+                                                                       fulfilled=False,
+                                                                       ).exclude(cart__status=Cart.COMPLETED
+                                                                                 ).order_by('-cart__date_submitted')}
     return TemplateResponse(request, "checkout/past_orders.html", context=context)
 
 

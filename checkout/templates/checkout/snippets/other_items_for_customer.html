@@ -1,0 +1,44 @@
+{% if other_items_for_customer %}
+
+    <h2>Your Open Items</h2>
+    <table class="table">
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Date</th>
+            <th scope="col">Product</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Status</th>
+            <th scope="col">Cost</th>
+        </tr>
+        {% for line in other_items_for_customer %}
+            <tr>
+                <td>
+                    <a href="{% url 'past_order_details'  cart_id=line.cart.id %}">
+                        {{ line.cart.id }}
+                    </a>
+                </td>
+                <td>
+                    <a href="{% url 'past_order_details'  cart_id=line.cart.id %}">
+                        {{ line.cart.date_submitted }}
+                    </a>
+                </td>
+                <td>
+                    {% if line.item.product %}
+                        <a href="{% url 'product_detail' product_slug=line.item.product.slug %}">
+                        {{ line.item.product.name }}
+                    {% endif %}
+                    </a>
+                </td>
+                <td>{{ line.quantity }}</td>
+                <td>{{ line.status_text }}</td>
+                <td>
+                    {% if not line.cart.is_paid %}
+                        {{ line.get_subtotal }}
+                    {% else %}
+                        Paid
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endif %}
