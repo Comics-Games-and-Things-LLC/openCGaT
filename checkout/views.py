@@ -334,6 +334,7 @@ def past_orders(request):
                'other_items_for_customer': CheckoutLine.objects.filter(cart__owner=request.user,
                                                                        fulfilled=False,
                                                                        cancelled=False,
+                                                                       cart__date_submitted__isnull=False
                                                                        ).exclude(cart__status__in=[Cart.COMPLETED,
                                                                                                    Cart.CANCELLED]
                                                                                  ).order_by('-cart__date_submitted')}
