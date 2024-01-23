@@ -162,14 +162,14 @@ def handle_get_cogs(year, have_inv_report=False):
 
     if have_inv_report:
 
-        with open('reports/cogs_{}.csv'.format(year), 'w',
+        with open('reports/cogs_inventory_{}.csv'.format(year), 'w',
                   newline='') as csvfile:
             fieldnames = ['Display Name', 'Barcode', 'Purchase order', 'Actual cost']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
             for line in tqdm(InventoryReport.objects.order_by("-id") \
-                                     .first().report_lines.all()):  # Load most recent inventory report
+                                     .first().report_lines.all().order_by('-id')):  # Load most recent inventory report
                 display_name = ""
                 if line.barcode is not None:
                     try:
