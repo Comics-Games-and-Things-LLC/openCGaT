@@ -1,3 +1,4 @@
+import csv
 import datetime
 
 from django.core.management.base import BaseCommand
@@ -21,6 +22,12 @@ class Command(BaseCommand):
         if year is None:
             year = datetime.date.today().year - 1
 
+        f2 = open(f"reports/Inventory Mismatches for {year} entries.csv", "w")
+        entries_writer = csv.DictWriter(f2, ["Product", "PO Count", "Sold Count", "Inventory Report Count", "Barcode",
+                                             "POs", "Carts"
+                                             ])
+        entries_writer.writeheader()
+
         report = InventoryReport.objects.get(partner=partner, date__year=year + 1)  # Since the report is dated jan 1st
 
         for product in Product.objects.filter(barcode__isnull=False):
@@ -40,9 +47,16 @@ class Command(BaseCommand):
             x_purchased = int(po_lines.aggregate(sum=Sum("received_quantity"))['sum'] or 0)
 
             count_from_inventory_report = report.report_lines.filter(barcode=product.barcode).count()
-            if count_from_inventory_report != x_sold-x_purchased:
+            if count_from_inventory_report != x_sold - x_purchased:
                 print(f"\tPurchased: {x_purchased}, ", po_lines)
                 print(f"\tSold: {x_sold}, ", cart_lines)
                 print(f"\tOn inventory report: {count_from_inventory_report}")
-                exit()
+                entries_writer.writerow({"Product": str(product),
+                                         "PO Count": x_purchased,
+                                         "Sold Count": x_sold,
+                                         "Inventory Report Count": count_from_inventory_report,
+                                         "Barcode": product.barcode,
 
+                                         "POs": " | ".join([str(po_line.po) for po_line in po_lines]),
+                                         "Carts": " | ".join([str(cart_line.cart) for cart_line in cart_lines]),
+                                         })
