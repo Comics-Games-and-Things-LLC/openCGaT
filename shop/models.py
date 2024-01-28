@@ -607,7 +607,7 @@ class InventoryLog(models.Model):
         return super(InventoryLog, self).save(*args, **kwargs)
 
     def __str__(self):
-        return
+        return f"{self.item.product.name} adjusted at {self.timestamp}"
 
 
 class MadeToOrder(Item):
