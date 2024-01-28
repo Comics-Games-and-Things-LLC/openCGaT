@@ -47,7 +47,7 @@ class Command(BaseCommand):
             x_purchased = int(po_lines.aggregate(sum=Sum("received_quantity"))['sum'] or 0)
 
             count_from_inventory_report = report.report_lines.filter(barcode=product.barcode).count()
-            if count_from_inventory_report != x_sold - x_purchased:
+            if count_from_inventory_report != x_purchased-x_sold:
                 print(f"\tPurchased: {x_purchased}, ", po_lines)
                 print(f"\tSold: {x_sold}, ", cart_lines)
                 print(f"\tOn inventory report: {count_from_inventory_report}")
