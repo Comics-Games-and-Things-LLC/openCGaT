@@ -79,7 +79,7 @@ class Command(BaseCommand):
                                          "Sold Count": x_sold,
                                          "Inventory Report Count": count_from_inventory_report,
                                          "Off by": report_discrepancy,
-                                         "Off by (all time)": current_inventory,
+                                         "Off by (all time)": current_discrepancy,
                                          "Barcode": product.barcode,
                                          "Current Inventory": current_inventory,
                                          f"Sold Since {year}": sold_after,
