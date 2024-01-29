@@ -295,6 +295,8 @@ def po_list(request, partner_slug):
         end_date = datetime.date.fromisoformat(end_date)  # Convert to format for template
 
         purchase_orders = purchase_orders.filter(date__lte=end_date)
+    if start_date or end_date:
+        purchase_orders = (PurchaseOrder.objects.filter(date__isnull=True) | purchase_orders).distinct()
     context = {
         'partner': partner,
         'po_list': purchase_orders,
