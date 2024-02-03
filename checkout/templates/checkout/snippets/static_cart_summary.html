@@ -12,7 +12,7 @@
                 {% endif %}
                 <th scope="col">Quantity</th>
                 <th scope="col">Price</th>
-                <th scope="col">Subtotal</th>
+                <th scope="col">Subtotal {% if manage %}(with tax){% endif %}</th>
             </tr>
             </thead>
             {% for line in cart.lines.all %}
@@ -46,10 +46,10 @@
                     {% if extra_col %}
                         <td>
                             <text>{{ line.status_text|linebreaks }}</text>
-                            {% if manage and cart.status != "Cancelled" and cart.status != "Completed" and not line.cancelled %}
+                            {% if manage and cart.status != "Cancelled" and not line.cancelled %}
                                 <a class="btn btn-danger"
                                    href="{% url 'partner_cancel_line' cart_id=past_cart.id line_id=line.id partner_slug=partner.slug %}">
-                                    Cancel
+                                    {% if  cart.status != "Completed" %} Cancel {% else %} Return {% endif %}
                                 </a>
                             {% endif %}
                             {% if manage and cart.status != "Cancelled" and cart.status != "Completed" and not line.ready and not line.fulfilled %}
@@ -72,7 +72,7 @@
                         </td>
                     {% endif %}
                     <td>{{ line.quantity }}
-                        {% if manage and cart.status != "Cancelled" and cart.status != "Completed" and not line.fulfilled and line.quantity > 1 %}
+                        {% if manage and cart.status != "Cancelled" and line.quantity > 1 %}
                             <button type="button"
                                     class="collapsible btn btn-secondary fa-solid fa-code-branch fa-rotate-90">
                             </button>
@@ -97,6 +97,9 @@
                     <td>{{ line.get_subtotal }}
                         {% if line.get_price != line.get_pre_discount_price %}
                             <span style="text-decoration: line-through;">{{ line.get_pre_discount_subtotal }}</span>
+                        {% endif %}
+                        {% if manage %}
+                            ({{ line.get_subtotal_with_tax }})
                         {% endif %}
                     </td>
                 </tr>

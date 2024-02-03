@@ -1287,6 +1287,19 @@ class CheckoutLine(models.Model):
             else:
                 return Money(0, "USD")  # If item isn't present that's a big issue.
 
+    def get_proportional_tax(self):
+        if self.cart.final_tax:
+            final_tax = self.cart.final_tax.amount
+            proportion = self.get_subtotal().amount / (self.cart.final_total.amount - final_tax)
+            return Money(final_tax * proportion, "USD")
+
+        return 0
+
+    def get_subtotal_with_tax(self):
+        if self.cart.final_tax:
+            return Money(self.get_proportional_tax().amount + self.get_subtotal().amount, 'USD')
+
+
     def get_subtotal(self) -> Money:
         return Money(self.get_price().amount * self.quantity, 'USD')
 
