@@ -37,6 +37,12 @@
                        href="{% url 'pos' cart_id=past_cart.id partner_slug=partner.slug %}">
                         POS
                     </a>
+                    {% if user.is_staff %}
+                        <a class="btn btn-warning"
+                           href="{% url 'admin:checkout_cart_change' object_id=past_cart.id %}" target="_blank">
+                            Edit in Admin
+                        </a>
+                    {% endif %}
                 </td>
             </tr>
         </table>

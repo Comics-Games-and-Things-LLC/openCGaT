@@ -48,6 +48,8 @@ class Cart(RepresentationMixin, models.Model):
 
     site = models.ForeignKey(Site, on_delete=models.PROTECT)
 
+    lost_damaged_or_stolen = models.BooleanField(default=False)
+
     at_pos = models.BooleanField(default=False)
     store_initiated_charge = models.BooleanField(default=False)
     owner = models.ForeignKey(
@@ -1298,7 +1300,6 @@ class CheckoutLine(models.Model):
     def get_subtotal_with_tax(self):
         if self.cart.final_tax:
             return Money(self.get_proportional_tax().amount + self.get_subtotal().amount, 'USD')
-
 
     def get_subtotal(self) -> Money:
         return Money(self.get_price().amount * self.quantity, 'USD')

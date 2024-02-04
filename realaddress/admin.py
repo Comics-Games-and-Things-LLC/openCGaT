@@ -1,9 +1,10 @@
 from django.contrib import admin
+
 from realaddress.models import UserAddress, RealCountry
 
 
 class UserAddressAdmin(admin.ModelAdmin):
-    readonly_fields = ('num_orders_as_billing_address', 'num_orders_as_shipping_address')
+    search_fields = ['search_text']
 
 
 class CountryAdmin(admin.ModelAdmin):
