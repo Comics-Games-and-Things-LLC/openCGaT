@@ -46,7 +46,10 @@ class Payment(PolymorphicModel):
         result = {"requested_amount": str(self.requested_payment),
                   "status": self.get_status()
                   }
-        result.update(self.get_remote_status())
+        try:
+            result.update(self.get_remote_status())
+        except stripe.error.InvalidRequestError:
+            result["remote_status"] = "Could not properly read payment intent"
         return result
 
     def apply_to_cart(self):
