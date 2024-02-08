@@ -62,6 +62,7 @@ export interface ICart {
     final_total: string;
     estimated_tax: string;
     estimated_total: string;
+    cancelled_amount: string;
     total_paid: string;
     cash_paid: string;
     owner_info?: string;

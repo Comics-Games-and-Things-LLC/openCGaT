@@ -52,6 +52,8 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
     const shipping_string = has_final_shipping ? "$" + (Number(props.cart.final_ship).toFixed(2)) : "Needs Address";
 
     const subtotal_string = "$" + (Number(props.cart.subtotal).toFixed(2))
+    const cancelled_string = Number(props.cart.cancelled_amount) > 0 ?
+        "$" + (Number(props.cart.total_paid).toFixed(2)) : null;
 
     const total_paid_string = "$" + (Number(props.cart.total_paid).toFixed(2))
     const cash_paid_string = "$" + (Number(props.cart.cash_paid).toFixed(2))
@@ -114,6 +116,9 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
                     <FooterRow label={total_label} value={total_string}
                                empty_cols={num_empty_cols} remove_col={props.cart.open}/>
                     {props.pos ? <>
+                        {cancelled_string ?
+                            <FooterRow label={"Cancelled Amount"} value={cancelled_string}
+                                       empty_cols={num_empty_cols} remove_col={props.cart.open}/> : <></>}
                         <FooterRow label={"Total Paid"} value={total_paid_string}
                                    empty_cols={num_empty_cols} remove_col={props.cart.open}/>
                         <FooterRow label={"Cash Paid"} value={cash_paid_string}
@@ -123,7 +128,8 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
                         {show_cost_col ? <>
                             <FooterRow label={"Cost"} value={`$${cost_estimate.toFixed(2)}`}
                                        empty_cols={num_empty_cols} remove_col={props.cart.open}/>
-                            <FooterRow label={"Profit"} value={`$${(Number(props.cart.subtotal) - cost_estimate).toFixed(2)}`}
+                            <FooterRow label={"Profit"}
+                                       value={`$${(Number(props.cart.subtotal) - cost_estimate).toFixed(2)}`}
                                        empty_cols={num_empty_cols} remove_col={props.cart.open}/>
                         </> : <></>}
                     </> : <></>}

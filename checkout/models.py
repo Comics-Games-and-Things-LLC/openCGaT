@@ -758,6 +758,27 @@ class Cart(RepresentationMixin, models.Model):
     def get_estimated_total(self):
         return self.get_total_subtotal() + self.get_tax()
 
+    @property
+    def final_subtotal_no_shipping(self) -> Money:
+        return (handle_null_money(self.final_total)
+                - handle_null_money(self.final_ship)
+                - handle_null_money(self.final_tax))
+
+    @property
+    def final_tax_percentage(self) -> Decimal:
+        if not self.final_subtotal_no_shipping:
+            return Decimal(0)
+        return handle_null_money(self.final_tax) / self.final_subtotal_no_shipping
+
+    def get_cancelled_amount(self) -> Decimal:
+        if self.status == Cart.CANCELLED:
+            return self.final_total.amount
+        total = Money(0, "USD")
+        for line in self.lines.filter(cancelled=True):
+            total += line.get_subtotal()
+
+        return total.amount * (1 + self.final_tax_percentage)
+
     def get_pre_discount_subtotal(self):
         total = Money(0, "USD")
         for line in self.lines.all():
@@ -1500,3 +1521,11 @@ class TaxRateCache(models.Model):
             return "{}% rate for {}".format(self.rate * 100, self.location)
         else:
             return "{} (no tax set)".format(self.location)
+
+
+def handle_null_money(val: Money or Decimal or None) -> Money:
+    if isinstance(val, Money):
+        return val
+    if val is None:
+        return Money(0, 'USD')
+    return Money(val, 'USD')

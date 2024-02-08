@@ -41,7 +41,7 @@ const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPayment
                 let payment_amount: HTMLInputElement = document.getElementById(id_payment_amount) as HTMLInputElement
                 let remaining_balance = ""
                 if (props.cart.final_total) {
-                    remaining_balance = (Number(props.cart.final_total) - Number(props.cart.total_paid)).toFixed(2)
+                    remaining_balance = (Number(props.cart.final_total) - Number(props.cart.total_paid) - Number(props.cart.cancelled_amount)).toFixed(2)
                 } else {
                     remaining_balance = Number(props.cart.estimated_total).toFixed(2)
                 }
