@@ -1154,9 +1154,9 @@ class CheckoutLine(models.Model):
 
     cart = models.ForeignKey(Cart,
                              on_delete=models.PROTECT,
-                             related_name='lines')
+                             related_name='lines', blank=True, null=True)
 
-    submitted_in_cart = models.ForeignKey(Cart, null=True,
+    submitted_in_cart = models.ForeignKey(Cart, null=True, blank=True,
                                           on_delete=models.PROTECT,
                                           related_name='lines_submitted')
 
@@ -1167,14 +1167,14 @@ class CheckoutLine(models.Model):
         return self.submitted_in_cart is not None
 
     qty_before_submit = models.PositiveIntegerField(blank=True, null=True)
-    price_per_unit_at_submit = MoneyField(max_digits=19, decimal_places=2, null=True)
-    price_per_unit_override = MoneyField(max_digits=19, decimal_places=2, null=True)
-    partner_at_time_of_submit = models.ForeignKey(Partner, on_delete=models.PROTECT, null=True)
+    price_per_unit_at_submit = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True)
+    price_per_unit_override = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True)
+    partner_at_time_of_submit = models.ForeignKey(Partner, on_delete=models.PROTECT, null=True, blank=True)
 
-    tax_per_unit = MoneyField(max_digits=19, decimal_places=2, null=True)
-    name_of_item = models.TextField(null=True)  # Name at submit (in case it changed)
+    tax_per_unit = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True)
+    name_of_item = models.TextField(null=True, blank=True)  # Name at submit (in case it changed)
 
-    paid_in_cart = models.ForeignKey(Cart, null=True,
+    paid_in_cart = models.ForeignKey(Cart, null=True, blank=True,
                                      on_delete=models.PROTECT,
                                      related_name='lines_paid')
 
@@ -1182,18 +1182,18 @@ class CheckoutLine(models.Model):
     def paid(self):
         return self.paid_in_cart is not None
 
-    fulfilled_in_cart = models.ForeignKey(Cart, null=True,
+    fulfilled_in_cart = models.ForeignKey(Cart, null=True, blank=True,
                                           on_delete=models.PROTECT,
                                           related_name='lines_fulfilled')
 
     fulfilled = models.BooleanField(default=False)
-    fulfilled_timestamp = models.DateTimeField(null=True)
+    fulfilled_timestamp = models.DateTimeField(null=True, blank=True)
 
     ready = models.BooleanField(default=False)
-    ready_timestamp = models.DateTimeField(null=True)
+    ready_timestamp = models.DateTimeField(null=True, blank=True)
 
     cancelled = models.BooleanField(default=False)
-    cancelled_timestamp = models.DateTimeField(null=True)
+    cancelled_timestamp = models.DateTimeField(null=True, blank=True)
 
     back_or_pre_order = models.BooleanField(default=False)  # If the quantity was zero at time of submit.
     is_preorder = models.BooleanField(default=False)  # If we were in the preorder window at the time of submit.
