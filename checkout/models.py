@@ -54,11 +54,11 @@ class Cart(RepresentationMixin, models.Model):
     store_initiated_charge = models.BooleanField(default=False)
     owner = models.ForeignKey(
         AUTH_USER_MODEL,
-        null=True,
+        null=True, blank=True,
         related_name='carts',
         on_delete=models.SET_NULL,
     )
-    email = models.EmailField(null=True)  # If no owner, use the email instead.
+    email = models.EmailField(null=True, blank=True)  # If no owner, use the email instead.
 
     discount_code = models.ForeignKey('discount_codes.DiscountCode', on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -148,18 +148,18 @@ class Cart(RepresentationMixin, models.Model):
                                         blank=True)
     as_guest = models.BooleanField(null=True, default=None)
 
-    final_total = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
-    final_tax = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
-    final_ship = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
+    final_total = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
+    final_tax = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
+    final_ship = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
 
     cart_tax_rate = models.FloatField(help_text="Percent in decimal form( ex .055)", blank=True,
                                       null=True)  # Assumes all items have the same tax rate
 
-    final_digital_tax = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
-    final_physical_tax = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
+    final_digital_tax = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
+    final_physical_tax = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
 
-    cash_paid = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
-    total_paid = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
+    cash_paid = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
+    total_paid = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
 
     partner_transactions = models.ManyToManyField(PartnerTransaction, blank=True)
 
@@ -168,7 +168,7 @@ class Cart(RepresentationMixin, models.Model):
     tracking_number = models.CharField(max_length=40, blank=True, null=True)
     ready_for_pickup = models.BooleanField(default=False)
 
-    postage_paid = MoneyField(max_digits=19, decimal_places=2, null=True, default_currency='USD')
+    postage_paid = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
 
     expense_not_sale = models.BooleanField(default=False)
 
@@ -178,7 +178,7 @@ class Cart(RepresentationMixin, models.Model):
     tax_error = models.TextField(blank=True, null=True)
     address_error = models.JSONField(blank=True, null=True)
 
-    discount_code_message = models.TextField(max_length=True, null=True)
+    discount_code_message = models.TextField(null=True, blank=True)
 
     invoice_been_printed = models.BooleanField(default=False)
 
