@@ -271,4 +271,33 @@
             </table>
         {% endif %}
     </div>
+    <script src="{% static "js/onscan.min.js" %}"></script>
+    <script>
+        onScan.attachTo(document, {
+            keyCodeMapper: function (oEvent) {
+                if (oEvent.which === 189) {
+                    return '-';
+                }
+                // Fall back to the default decoder in all other cases
+                return onScan.decodeKeyEvent(oEvent);
+            },
+            suffixKeyCodes: [13], // enter-key expected at the end of a scan
+            reactToPase: true, // Compatibility to built-in scanners in paste-mode (as opposed to keyboard-mode)
+            avgTimeByChar: 60, //Slowed down for newer scanner
+            onScan: function (sCode, iQty) { // Alternative to document.addEventListener('scan')
+                console.log('Scanned: ' + iQty + 'x ' + sCode);
+                if (sCode.startsWith('420') && sCode.length === 30) {
+                    // First 8 characters will be the barcode and the zip code
+                    console.log("Populating tracking number")
+
+                    document.getElementById("id_tracking_number").value = sCode.substring(8)
+                }
+            },
+            {% comment %}
+                    onKeyDetect: function (iKeyCode) { // output all potentially relevant key events - great for debugging!
+                       console.log('Pressed: ' + iKeyCode);
+                   }
+           {% endcomment %}
+        });
+    </script>
 {% endblock %}
