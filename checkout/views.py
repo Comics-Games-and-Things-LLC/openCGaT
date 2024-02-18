@@ -462,6 +462,8 @@ def partner_order_details(request, partner_slug, cart_id):
                         continue
                     for i in range(count - existing):
                         past_cart.used_boxes.create(box=box)
+                        box.current_inventory -= 1
+                        box.save()
                     print(barcode, count)
 
                 past_cart.mark_shipped()
