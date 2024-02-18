@@ -58,6 +58,7 @@
             {% else %}
                 <div></div>
             {% endif %}
+
             <div class="text-right self-end text-sm">
                 {% if item|is_inventory_item %}
                     {% with inventory_items=all_items|inventory_items %}
@@ -81,7 +82,11 @@
                     <p class="text-gray-400">
                         MSRP {{ product.msrp }}
                     </p>
-
+                {% endif %}
+                {% if partner and product.publisher_short_sku %}
+                    <p class="text-gray-400">
+                        Short SKU: {{ product.publisher_short_sku }}
+                    </p>
                 {% endif %}
                 {% if product.in_store_pickup_only and not item|is_download_item %}
                     <p class="text-gray-400">
