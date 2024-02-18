@@ -8,6 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
+from django.db.models import Prefetch, Count, OuterRef, Subquery
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -989,3 +990,28 @@ def partner_split_line(request, cart_id, line_id, partner_slug):
     except Exception as e:
         print(e)
         return HttpResponse(status=400)
+
+
+def all_pre_and_back_orders(request, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+    lines = CheckoutLine.objects.filter(item__partner=partner,
+                                        cart__status=Cart.PAID,
+                                        fulfilled=False
+                                        ).prefetch_related('item', 'item__product', 'cart')
+
+    # Subquery to count CheckoutLine instances for each Item
+    lines_count_subquery = (
+        lines
+        .filter(item=OuterRef('pk'))
+        .values('item')
+        .annotate(num_checkout_lines=Count('pk'))
+        .values('num_checkout_lines')
+    )
+
+    items = Item.objects.filter(checkoutline__in=lines).prefetch_related(
+        Prefetch('checkoutline_set', queryset=lines, to_attr='lines')
+    ).prefetch_related('product').annotate(
+        num_checkout_lines=Subquery(lines_count_subquery)).distinct().order_by('product__publisher', 'product__name')
+    context = {'partner': partner,
+               'items': items}
+    return TemplateResponse(request, "partner/all_open_items.html", context)

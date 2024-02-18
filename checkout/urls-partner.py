@@ -52,4 +52,6 @@ urlpatterns = [
 
     path('pos/<int:cart_id>/capture/', stripe_capture, name='stripe_capture'),
 
+    path('pre_and_back_orders/', all_pre_and_back_orders, name='partner_pre_and_back_orders'),
+
 ]
