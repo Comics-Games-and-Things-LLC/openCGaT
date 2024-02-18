@@ -728,7 +728,9 @@ def create_custom_charge(request, partner_slug):
 
 def backorders(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
-    backorder_items = BackorderRecord.objects.filter(item__partner=partner).prefetch_related('item', 'item__product')
+    backorder_items = (BackorderRecord.objects.filter(item__partner=partner)
+                       .prefetch_related('item', 'item__product').order_by('item__product__publisher')
+                       )
     context = {
         'partner': partner,
         'backorders': backorder_items,
