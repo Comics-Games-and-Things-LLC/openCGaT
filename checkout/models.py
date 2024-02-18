@@ -1166,7 +1166,6 @@ class CheckoutLine(models.Model):
     def submitted(self):
         return self.submitted_in_cart is not None
 
-    qty_before_submit = models.PositiveIntegerField(blank=True, null=True)
     price_per_unit_at_submit = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True)
     price_per_unit_override = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True)
     partner_at_time_of_submit = models.ForeignKey(Partner, on_delete=models.PROTECT, null=True, blank=True)
@@ -1377,12 +1376,10 @@ class CheckoutLine(models.Model):
         Does not save, expects caller to save the line.
         """
         if isinstance(self.item, InventoryItem):
-            qty_at_submit = self.item.get_inventory()
             back_or_preorder = not self.completely_in_stock
             success = self.item.adjust_inventory(quantity=-self.quantity, reason="Sold in cart {}".format(self.cart_id),
                                                  line=self)
             if success:
-                self.qty_at_submit = qty_at_submit
                 self.back_or_pre_order = back_or_preorder
                 if self.item.product.is_preorder:
                     self.is_preorder = True
