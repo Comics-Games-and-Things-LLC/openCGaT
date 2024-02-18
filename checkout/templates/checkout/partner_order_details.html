@@ -291,6 +291,9 @@
                     console.log("Populating tracking number")
 
                     document.getElementById("id_tracking_number").value = sCode.substring(8)
+                } else if (sCode.length === 12 && sCode.startsWith('')) {
+                    console.log("Probably a box barcode")
+                    document.getElementById("id_used_box_barcodes").value += sCode + ";"
                 }
             },
             {% comment %}

@@ -138,6 +138,8 @@ class PaymentMethodForm(forms.ModelForm):
 
 
 class TrackingInfoForm(forms.ModelForm):
+    used_box_barcodes = forms.CharField(required=False)
+
     class Meta:
         model = Cart
         fields = ['tracking_number', 'carrier', 'postage_paid']

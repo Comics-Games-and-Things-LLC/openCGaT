@@ -1,5 +1,6 @@
 import json
 from _decimal import Decimal
+from collections import Counter
 
 import stripe
 from django.conf import settings
@@ -16,6 +17,7 @@ from django.views.decorators.http import require_POST
 from djmoney.money import Money
 
 import discount_codes.views
+from box_counter.models import BoxInventory
 from digitalitems.models import DigitalItem
 from partner.models import get_partner_or_401
 from shop.models import CustomChargeItem, Product, Item, InventoryItem
@@ -442,11 +444,26 @@ def partner_order_details(request, partner_slug, cart_id):
         if request.method == 'POST':
             # create a form instance and populate it with data from the request:
             form = TrackingInfoForm(request.POST, instance=past_cart)
-
+            context['form'] = form
             # check whether it's valid:
             if form.is_valid():
                 # process the data in form.cleaned_data as required
+
                 past_cart = form.save()
+                barcode_counts = Counter(form.cleaned_data.get('used_box_barcodes', "").split(";"))
+                for barcode, count in barcode_counts.items():
+                    if BoxInventory.objects.filter(barcode=barcode).count() == 0:
+                        continue
+                    box = BoxInventory.objects.get(barcode=barcode)
+                    if not barcode:
+                        continue
+                    existing = past_cart.used_boxes.filter(box__barcode=barcode).count()
+                    if existing > count:
+                        continue
+                    for i in range(count - existing):
+                        past_cart.used_boxes.create(box=box)
+                    print(barcode, count)
+
                 past_cart.mark_shipped()
                 print(past_cart)
         context['comments_form'] = PartnerCommentsForm(instance=past_cart)

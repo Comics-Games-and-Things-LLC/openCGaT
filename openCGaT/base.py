@@ -47,6 +47,7 @@ apps_to_install = [
     'userinfo',
     'user_list',
     'financial',
+    'box_counter',
     'tailwind',  # Tailwind is not a real app, it's just where our CSS is stored
     # ^ Our Apps
     # v Dependencies

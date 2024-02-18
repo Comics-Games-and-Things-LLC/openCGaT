@@ -65,6 +65,12 @@
                             {% include 'snippets/form_body.html' %}
                             <button type="submit" class="btn btn-primary">Submit</button>
                         </form>
+                        {% if cart.used_boxes.exists %}
+                            <h3>Used Boxes:</h3>
+                        {% endif %}
+                        {% for box_use in cart.used_boxes.all %}
+                            <div> {{ box_use.box.description }}</div>
+                        {% endfor %}
                     {% endif %}
                 </td>
             </tr>
