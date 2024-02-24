@@ -7,8 +7,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Sum, F, DecimalField
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
 
 from checkout.models import Cart, CheckoutLine
 from digitalitems.models import DigitalItem
@@ -46,7 +47,11 @@ def partner_list(request):
 @login_required
 def partner_select(request):
     partners = request.user.admin_of.all().order_by('name')
-    print(partners)
+    if len(partners) == 1:
+        partner = partners.first()
+        return HttpResponseRedirect(
+            reverse("partner_homepage", kwargs={'partner_slug': partner.slug})
+        )
     context = {
         'partner_list': partners,
     }
