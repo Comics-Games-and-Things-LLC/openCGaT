@@ -221,7 +221,7 @@ def generate_image(item):
         if len(item.product.name) > 40:
             draw.text((0, 275), item.product.name[40:], font=fnt_small)
 
-    if item.product.msrp:
+    if item.product.msrp and item.product.msrp.amount != item.default_price.amount:
         draw.text((0, 0), "MSRP: $" + str(item.product.msrp.amount), font=fnt_med)
         price_start = draw.textlength("MSRP: $", font=fnt_med)
 
