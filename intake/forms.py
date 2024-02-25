@@ -64,25 +64,42 @@ class POLineForm(forms.ModelForm):
 
     class Meta:
         model = POLine
-        fields = ['name', 'barcode', 'cost_per_item', 'expected_quantity', 'received_quantity', 'subtotal',
-                  'line_number']
+        fields = ['name', 'barcode', 'line_number',
+                  'expected_quantity', 'received_quantity',
+                  'msrp_on_line',
+                  'cost_per_item',
+                  'pricing',
+                  'subtotal',
+                  ]
 
     def __init__(self, *args, **kwargs):
-        # partner = kwargs.pop('partner')
-        # distributor = kwargs.pop('distributor')
+        po = kwargs.pop('po', None)
+        self.expected_discount = None
         super(POLineForm, self).__init__(*args, **kwargs)
         self.fields['cost_per_item'].required = False
-        self.fields['cost_per_item'].help_text = "Set cost per line or subtotal and quantity"
+        self.fields['subtotal'].help_text = "Set cost per line or subtotal and expected quantity"
+        if self.instance and hasattr(self.instance, 'po'):
+            po = self.instance.po
+        if not (po and po.distributor.dist_has_pricing_col):
+            self.fields['pricing'].widget = forms.HiddenInput()
+        if not (self.instance and self.instance.product):
+            return
 
-        # products = Product.objects.filter(all_retail=True) | Product.objects.filter(partner=partner)
-        # self.fields['product'].queryset = products.distinct().order_by('name')
-        # self.fields['item'].queryset = DistItem.objects.filter(distributor=distributor).order_by('dist_name')
+        msrp = self.instance.product.msrp
+        self.fields['msrp_on_line'].help_text = str(msrp)
+        self.expected_discount = po.get_distributor_discount(self.instance)
+        if not (self.expected_discount and msrp):
+            return
+        expected_cost = msrp - (msrp * self.expected_discount.discount_percentage / 100)
+        self.fields['cost_per_item'].help_text = f"{expected_cost} at {self.expected_discount.discount_percentage}% off"
 
     def clean(self):
         cleaned_data = super().clean()
         if cleaned_data['subtotal'] and not cleaned_data['cost_per_item']:
             cpi = cleaned_data['subtotal'] / cleaned_data['expected_quantity']
-            TWO_PLACES = decimal.Decimal("0.0001")
-            cpi = Money(cpi.amount.quantize(TWO_PLACES), 'USD', decimal_places=4)
+            cpi = Money(cpi.amount.quantize(FOUR_PLACES), 'USD', decimal_places=4)
             cleaned_data['cost_per_item'] = cpi
         return cleaned_data
+
+
+FOUR_PLACES = decimal.Decimal("0.0001")

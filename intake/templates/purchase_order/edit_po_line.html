@@ -1,0 +1,25 @@
+{% extends 'create_from_form.html' %}
+{% load static %}
+
+{% block title %}{% if line %}Edit {{ line }}{% else %}Create PO Line{% endif %}{% endblock %}
+
+{% block info_before %}
+    {% if line.product %}
+        <div>
+            <a href=" {% url  'manage_product' partner_slug=partner.slug product_slug=line.product.slug %}">
+                Product
+            </a>
+            <br>
+            MSRP: {{ line.product.msrp }}
+            {% if form.expected_discount %}
+                <br>
+                Discount: {{ form.expected_discount }}
+            {% endif %}
+        </div>
+
+    {% endif %}
+
+{% endblock %}
+
+{% block info_after %}
+{% endblock %}

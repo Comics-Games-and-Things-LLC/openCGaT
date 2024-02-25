@@ -1,19 +1,25 @@
 from datetime import datetime
 from decimal import Decimal
 
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q, Value
 from djmoney.models.fields import MoneyField
 from djmoney.money import Money
 
 from partner.models import Partner
 from shop.models import Category, Product
 
+PERCENTAGE_VALIDATOR = [MinValueValidator(0), MaxValueValidator(100)]
+
 
 class Distributor(models.Model):
     dist_name = models.CharField(max_length=200)
     expected_filename = models.CharField(max_length=200, blank=True, null=True)
     individual_warehouse_files = models.BooleanField(default=False)
+
+    dist_has_pricing_col = models.BooleanField(default=False,
+                                               help_text="Determines if that column shows on purchase orders")
 
     def __str__(self):
         return self.dist_name
@@ -22,7 +28,47 @@ class Distributor(models.Model):
         ordering = ["dist_name"]
 
 
+class DistributorDiscount(models.Model):
+    distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
+    discount_percentage = models.IntegerField(validators=PERCENTAGE_VALIDATOR)
+
+    default = models.BooleanField(default=False)
+    apply_to_publisher = models.ForeignKey('shop.Publisher', on_delete=models.CASCADE, blank=True, null=True,
+                                           help_text="Only apply if the distributor has various publishers")
+    apply_if_po_starts_with = models.CharField(max_length=10, blank=True, null=True)
+    apply_if_pricing_col = models.CharField(max_length=10, blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['distributor', 'default'],
+                condition=Q(default=True),
+                name='Only one default per distributor'
+            )
+        ]
+        unique_together = (
+            ("distributor", "apply_to_publisher"),
+            ("distributor", "apply_if_po_starts_with"),
+            ("distributor", "apply_if_pricing_col"),
+        )
+
+    def __str__(self):
+        description = f"{self.distributor} {self.discount_percentage}%"
+        if self.default:
+            return description
+        if self.apply_if_po_starts_with:
+            return f"{description} if po starts with '{self.apply_if_po_starts_with}'"
+        if self.apply_to_publisher:
+            return f"{description} if publisher is '{self.apply_to_publisher}'"
+        if self.apply_if_pricing_col:
+            return f"{description} if pricing column is '{self.apply_if_pricing_col}'"
+
+
 class Manufacturer(models.Model):
+    """
+    Deprecated, would like to switch all usages to shop publisher
+    """
+
     mfc_name = models.CharField(max_length=200)
 
     def __str__(self):
@@ -145,15 +191,40 @@ class PurchaseOrder(models.Model):
         return not (self.empty or self.missing_costs
                     or self.missing_quantities or self.cost_does_not_match_up)
 
+    def get_distributor_discount(self, line):
+        distributor_discounts = DistributorDiscount.objects.filter(distributor=self.distributor)
+        if distributor_discounts.count() == 1:
+            return distributor_discounts.first()
+
+        starts_with_discounts = distributor_discounts.alias(
+            po_name=Value(self.po_number)
+        ).filter(
+            po_name__startswith=F('apply_if_po_starts_with')
+        )
+        if starts_with_discounts.count() == 1:
+            return starts_with_discounts.first()
+
+        if line.pricing and distributor_discounts.filter(apply_if_pricing_col=line.pricing).exists():
+            return distributor_discounts.get(apply_if_pricing_col=line.pricing)
+
+        if line.product.publisher and distributor_discounts.filter(apply_to_publisher=line.product.publisher).exists():
+            return distributor_discounts.get(apply_to_publisher=line.product.publisher)
+
+        if distributor_discounts.filter(default=True).exists():
+            return distributor_discounts.get(default=True)
+        return None
+
 
 class POLine(models.Model):
     po = models.ForeignKey(PurchaseOrder, on_delete=models.PROTECT, related_name='lines')
     name = models.TextField(null=True, blank=True)
     barcode = models.CharField(max_length=20, blank=True, null=True)
     cost_per_item = MoneyField(max_digits=8, decimal_places=4, default_currency='USD', blank=True, null=True)
+    msrp_on_line = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', blank=True, null=True)
     expected_quantity = models.IntegerField(default=0)
     received_quantity = models.IntegerField(default=0)
     remaining_quantity = models.IntegerField(default=0)
+    pricing = models.CharField(max_length=20, null=True, blank=True)  # For distributors like ACD (SDI, etc)
     line_number = models.IntegerField(default=0, null=True, blank=True)  # Used for ordering on view.
 
     def line_subtotal(self):

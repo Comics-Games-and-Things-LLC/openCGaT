@@ -348,7 +348,7 @@ def po_details(request, partner_slug, po_id):
 def edit_po_line(request, partner_slug, po_id, po_line_id=None):
     partner = get_partner_or_401(request, partner_slug)
     po = get_object_or_404(PurchaseOrder, partner=partner, po_number=po_id)
-    form = POLineForm()
+    form = POLineForm(po=po)
     line = None
     if po_line_id:
         line = get_object_or_404(POLine, id=po_line_id)
@@ -369,9 +369,13 @@ def edit_po_line(request, partner_slug, po_id, po_line_id=None):
     context = {
         'form': form,
         'partner': partner,
-
+        'line': line,
     }
-    return TemplateResponse(request, "create_from_form.html", context)
+
+    # I could consider moving this to the form, but then I wouldn't be able to add this to context.
+
+
+    return TemplateResponse(request, "purchase_order/edit_po_line.html", context)
 
 
 def delete_po(request, partner_slug, po_id, confirm=None):
