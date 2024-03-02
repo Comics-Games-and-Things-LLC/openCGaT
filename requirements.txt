@@ -48,6 +48,7 @@ py-moneyed
 djangorestframework
 pilkit
 Pillow==10.2.0 # was 9.5
+python-barcode
 requests
 xlrd
 beautifulsoup4

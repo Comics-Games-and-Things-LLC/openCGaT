@@ -104,6 +104,8 @@ class Product(PolymorphicModel):
 
     name = models.CharField(max_length=200, unique=True)
     barcode = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    needs_barcode_printed = models.BooleanField(default=False)
+
     publisher_sku = models.CharField(max_length=30, blank=True, null=True)
     publisher_short_sku = models.CharField(max_length=10, blank=True, null=True, help_text="GW Short Code")
     weight = models.FloatField(blank=True, null=True)

@@ -1,6 +1,8 @@
 import datetime
 
+import barcode
 from PIL import Image, ImageDraw, ImageFont
+from barcode import Code128
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
@@ -210,8 +212,8 @@ fnt_small = ImageFont.truetype(FNTPATH, 50)
 
 
 def generate_image(item):
-    im = Image.new('L', (1000, 425), 'white')
-    draw = ImageDraw.Draw(im)
+    to_print = Image.new('L', (1000, 450), 'white')
+    draw = ImageDraw.Draw(to_print)
     draw.text((0, 100), "Our Price:", font=fnt_med)  # currency field
     draw.text((500, 100), str("$" + str(item.default_price.amount)), font=fnt)  # currency field
 
@@ -229,8 +231,18 @@ def generate_image(item):
         # PIL 10.0.1 updated and replaced textsize with textbox, so we have to manually calculate the size
         draw.line(((l, b / 2 + 20), (r, t + 20)), width=5)
 
-    draw.text((0, 350), item.partner.name, font=fnt_small)
-    return im
+    if item.product.needs_barcode_printed:
+        barcode_options = {'module_width': .4, 'module_height': 5}
+        barcode_prerender = Code128(item.product.barcode, writer=barcode.writer.ImageWriter())
+        barcode_image = barcode_prerender.render(writer_options=barcode_options)
+        print(barcode_image.width, barcode_image.height)
+        our_label = to_print
+        to_print = Image.new('L', (1000, 450), 'white')
+        to_print.paste(our_label)
+        to_print.paste(barcode_image, (500 - round(barcode_image.width / 2), 325))
+    else:
+        draw.text((0, 350), item.partner.name, font=fnt_small)
+    return to_print
 
 
 @login_required
@@ -376,7 +388,6 @@ def edit_po_line(request, partner_slug, po_id, po_line_id=None):
     }
 
     # I could consider moving this to the form, but then I wouldn't be able to add this to context.
-
 
     return TemplateResponse(request, "purchase_order/edit_po_line.html", context)
 
