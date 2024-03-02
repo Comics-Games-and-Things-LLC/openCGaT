@@ -41,10 +41,11 @@ class ShippingAddress(AbstractAddress):
 
 
 class Cart(RepresentationMixin, models.Model):
+    objects = models.Manager()
+
     open = OpenCartManager()
     saved = SavedCartManager()
     submitted = SubmittedCartManager()
-    objects = models.Manager()
 
     site = models.ForeignKey(Site, on_delete=models.PROTECT)
 
