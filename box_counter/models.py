@@ -13,9 +13,9 @@ class BoxPurchase(models.Model):
 
 class BoxInventory(models.Model):
     description = models.CharField(max_length=40)
-    length_inches = models.PositiveIntegerField()
-    width_inches = models.PositiveIntegerField()
-    height_inches = models.PositiveIntegerField()
+    length_inches = models.DecimalField(decimal_places=1, max_digits=4)
+    width_inches = models.DecimalField(decimal_places=1, max_digits=4)
+    height_inches = models.DecimalField(decimal_places=1, max_digits=4)
     barcode = models.CharField(max_length=40, unique=True)
 
     current_inventory = models.PositiveIntegerField()
