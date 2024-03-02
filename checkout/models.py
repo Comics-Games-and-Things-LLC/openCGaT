@@ -50,6 +50,8 @@ class Cart(RepresentationMixin, models.Model):
     site = models.ForeignKey(Site, on_delete=models.PROTECT)
 
     lost_damaged_or_stolen = models.BooleanField(default=False)
+    broken_down = models.BooleanField(default=False,
+                                      help_text="Removed from inventory as it was used for something else")
 
     at_pos = models.BooleanField(default=False)
     store_initiated_charge = models.BooleanField(default=False)
