@@ -56,7 +56,7 @@ class PricingRuleForm(forms.ModelForm):
 class POForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrder
-        fields = ['distributor', 'date', 'po_number', 'subtotal', 'amount_charged']
+        fields = ['distributor', 'date', 'date_received', 'po_number', 'subtotal', 'amount_charged']
 
 
 class POLineForm(forms.ModelForm):

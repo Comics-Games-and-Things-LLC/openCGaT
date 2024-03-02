@@ -136,7 +136,8 @@ class DistItem(models.Model):
 class PurchaseOrder(models.Model):
     partner = models.ForeignKey(Partner, on_delete=models.CASCADE)
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
-    date = models.DateField(null=True)
+    date = models.DateField(null=True, help_text="Date Invoiced")
+    date_received = models.DateField(null=True, blank=True, default=datetime.today)
     po_number = models.CharField(max_length=40, primary_key=True)
     archived = models.BooleanField(default=False)
     amount_charged = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True)
