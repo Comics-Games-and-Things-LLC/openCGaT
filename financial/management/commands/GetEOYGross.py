@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+import moneyed
 from django.core.management.base import BaseCommand
 from moneyed import Money
 from tqdm import tqdm
@@ -29,14 +30,17 @@ class Command(BaseCommand):
             tax += cart.final_tax
             total += cart.final_total
             valhalla_subtotal += cart.get_subtotal_after_cancellations()
-            if cart.total_paid:
-                if cart.total_paid.amount > (cart.final_total.amount + Decimal(.01)):
-                    log(f, f"{cart} was overpaid, we likely gave change")
-                if cart.total_paid.amount < (cart.final_total.amount - Decimal(.01)):
-                    log(f, f"{cart} was underpaid!")
+            try:
+                if cart.total_paid:
+                    if cart.total_paid.amount > (cart.final_total.amount + Decimal(.01)):
+                        log(f, f"{cart} was overpaid, we likely gave change")
+                    if cart.total_paid.amount < (cart.final_total.amount - Decimal(.01)):
+                        log(f, f"{cart} was underpaid!")
 
-            # Use the minimum of final total and total paid,
-            total_collected += min(cart.final_total, cart.total_paid or Money(0, 'USD'))
+                # Use the minimum of final total and total paid,
+                total_collected += min(cart.final_total, cart.total_paid or Money(0, 'USD'))
+            except moneyed.classes.CurrencyDoesNotExist:
+                pass  # If total_paid is not set, currency will be XYZ, which crashes moneyed
 
         log(f, "{} was collected gross (net sales tax) in {}".format(gross, year))
         log(f, "{} of that was shipping".format(shipping))
