@@ -46,7 +46,7 @@ class Command(BaseCommand):
         log(f, "{} of that was shipping".format(shipping))
         log(f, "{} was collected in tax ".format(tax))
         log(f, "{} was theoretically collected total".format(total))
-        log(f, "{} was actually collected total".format(total))
+        log(f, "{} was actually collected total".format(total_collected))
 
         log(f, "Valhalla subtotal {} (excluding cancelled lines)".format(valhalla_subtotal))
 
