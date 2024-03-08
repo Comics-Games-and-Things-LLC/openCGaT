@@ -995,8 +995,10 @@ def partner_split_line(request, cart_id, line_id, partner_slug):
 def all_pre_and_back_orders(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
     lines = CheckoutLine.objects.filter(item__partner=partner,
-                                        cart__status=Cart.PAID,
-                                        fulfilled=False
+                                        cart__status__in=[Cart.PAID, Cart.SUBMITTED],
+                                        fulfilled=False,
+                                        ready=False,
+                                        cart__ready_for_pickup=False,
                                         ).prefetch_related('item', 'item__product', 'cart')
 
     # Subquery to count CheckoutLine instances for each Item
