@@ -10,7 +10,7 @@
             <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=item.product.slug %}">
                 {{ item.product.name }}
 
-            </a> x {{ item.num_checkout_lines }}
+            </a> x {{ item.open_item_qty }}
             <button type="button" class="collapsible btn btn-secondary">Expand</button>
             <table class="table collapse-content">
                 <tr>

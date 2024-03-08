@@ -8,7 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Prefetch, Count, OuterRef, Subquery
+from django.db.models import Prefetch, Count, OuterRef, Subquery, F, Sum
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -1000,18 +1000,18 @@ def all_pre_and_back_orders(request, partner_slug):
                                         ).prefetch_related('item', 'item__product', 'cart')
 
     # Subquery to count CheckoutLine instances for each Item
-    lines_count_subquery = (
+    open_total_subquery = (
         lines
         .filter(item=OuterRef('pk'))
         .values('item')
-        .annotate(num_checkout_lines=Count('pk'))
-        .values('num_checkout_lines')
+        .annotate(open_item_qty=Sum(F('quantity')))
+        .values('open_item_qty')
     )
 
     items = Item.objects.filter(checkoutline__in=lines).prefetch_related(
         Prefetch('checkoutline_set', queryset=lines, to_attr='lines')
     ).prefetch_related('product').annotate(
-        num_checkout_lines=Subquery(lines_count_subquery)).distinct().order_by('product__publisher', 'product__name')
+        open_item_qty=Subquery(open_total_subquery)).distinct().order_by('product__publisher', 'product__name')
     context = {'partner': partner,
                'items': items}
     return TemplateResponse(request, "partner/all_open_items.html", context)
