@@ -50,7 +50,7 @@ const CheckoutUI: React.FunctionComponent = (props): JSX.Element => {
 
 
     return <>
-        <h2>Checkout v2</h2>
+        <h2>Checkout</h2>
 
         <div className={`flex flex-col ${gap} overflow-x-auto ${(xlView ? "xl:flex-row-reverse" : "")}`}>
 
