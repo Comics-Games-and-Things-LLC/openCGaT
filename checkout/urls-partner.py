@@ -27,7 +27,9 @@ urlpatterns = [
 
     path('pos/', pos, name='pos'),
     path('pos/data/', partner_cart_endpoint, name='partner_cart_endpoint'),
+    path('pos/cart_list/', pos_cart_list_endpoint, name='pos_cart_list_endpoint'),
     path('pos/<int:cart_id>/data/', partner_cart_endpoint, name='partner_cart_endpoint'),
+    path('pos/<int:cart_id>/cart/', pos_active_cart_endpoint, name='partner_cart_only_endpoint'),
 
     path('pos/new/', pos_create_cart, name='pos_new_cart'),
 

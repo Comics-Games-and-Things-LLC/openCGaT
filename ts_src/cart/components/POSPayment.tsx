@@ -24,7 +24,7 @@ import CartForm from "./Forms/CartForm"
 
 import {ICart} from "../interfaces";
 import {RootState, useAppDispatch} from "../store";
-import {updatePOS} from "../reducers/cartSlice";
+import {updatePOSFull, updatePOSCart} from "../reducers/cartSlice";
 import {useSelector} from "react-redux";
 
 
@@ -68,7 +68,7 @@ const POSPayment: React.FunctionComponent<IPOSPaymentProps> = (props): JSX.Eleme
             await workflowFn();
         } finally {
             setWorkflowInProgress(null)
-            dispatch(updatePOS());
+            dispatch(updatePOSCart());
         }
     };
 

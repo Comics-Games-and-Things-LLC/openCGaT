@@ -26,7 +26,7 @@ from shop.serializers import ItemSerializer
 from .forms import PickupForm, EmailForm, BillingAddressForm, PaymentMethodForm, ShippingAddressForm, FiltersForm, \
     TrackingInfoForm, PartnerCommentsForm
 from .models import Cart, CheckoutLine, StripeCustomerId, StripePaymentIntent
-from .serializers import CartSerializer, get_pos_props
+from .serializers import CartSerializer, get_pos_props, get_active_cart, get_pos_cart_list
 
 
 @csrf_exempt
@@ -795,6 +795,16 @@ def stripe_capture(request, partner_slug, cart_id=None):
 def partner_cart_endpoint(request, partner_slug, cart_id=None):
     partner = get_partner_or_401(request, partner_slug)
     return JsonResponse(get_pos_props(partner, cart_id))
+
+
+def pos_cart_list_endpoint(request, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+    return JsonResponse(get_pos_cart_list(partner))
+
+
+def pos_active_cart_endpoint(request, partner_slug, cart_id):
+    partner = get_partner_or_401(request, partner_slug)
+    return JsonResponse(get_active_cart(cart_id))
 
 
 def partner_update_quantity(request, cart_id, partner_slug, item_id, quantity):

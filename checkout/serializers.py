@@ -219,16 +219,27 @@ class CartSerializer(CartSummarySerializer):
 
 
 def get_pos_props(partner, cart_id=None):
+    url = reverse('pos', kwargs={'partner_slug': partner.slug})[:-1]
+    props = {
+        'url': url
+    }
+    props.update(get_active_cart(cart_id))
+    props.update(get_pos_cart_list(partner))
+    return props
+
+
+def get_active_cart(cart_id=None):
+    active_cart = None
+    if cart_id:
+        active_cart = Cart.objects.get(id=cart_id)
+    return {'active_cart': CartSerializer(active_cart).data}
+
+
+def get_pos_cart_list(partner):
     open_carts = Cart.open.filter(at_pos=True, payment_partner=partner)
     pay_in_store_carts = Cart.submitted.filter(payment_partner=partner, status=Cart.SUBMITTED)
     pickup_carts = Cart.submitted.filter(pickup_partner=partner, status=Cart.PAID)
-    active_cart = None
-    url = reverse('pos', kwargs={'partner_slug': partner.slug})[:-1]
-    if cart_id:
-        active_cart = Cart.objects.get(id=cart_id)
-    return {'active_cart': CartSerializer(active_cart).data,
-            'open_carts': CartSummarySerializer(open_carts, many=True).data,
+    return {'open_carts': CartSummarySerializer(open_carts, many=True).data,
             'pay_in_store_carts': CartSummarySerializer(pay_in_store_carts, many=True).data,
             'pickup_carts': CartSummarySerializer(pickup_carts, many=True).data,
-            'url': url
             }

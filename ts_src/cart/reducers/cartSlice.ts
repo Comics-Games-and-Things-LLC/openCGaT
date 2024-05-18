@@ -48,28 +48,44 @@ export const updateCart = createAsyncThunk<object, void, {
     return cart
 });
 
-export const updatePOS = createAsyncThunk<// Return type of the payload creator
+// Update POS Cart is our more performant function which only updates the active cart, not the sidebar list
+export const updatePOSCart = createAsyncThunk<// Return type of the payload creator
     object,
     // First argument to the payload creator
     void,
     // Types for ThunkAPI
     {
         state: RootState;
-    }>("cart/updatePOS", async (_, {getState}) => {
+    }>("cart/updatePOSCart", async (_, {getState}) => {
+    const pos = getState().cart.pos;
+    return fetch(`${pos.url}/${pos.active_cart.id}/cart/`)
+        .then((response) =>  response.json())
+        .then((response) => response.active_cart); // Just the active cart part of the state
+});
+
+// Update POS refreshes both the cart and the list
+export const updatePOSFull = createAsyncThunk<// Return type of the payload creator
+    object,
+    // First argument to the payload creator
+    void,
+    // Types for ThunkAPI
+    {
+        state: RootState;
+    }>("cart/updatePOSFull", async (_, {getState}) => {
     const pos = getState().cart.pos;
     return fetch(`${pos.url}/${pos.active_cart.id}/data/`).then((response) =>
         response.json()
     );
 });
 
-export const updatePOSForCartID = createAsyncThunk<// Return type of the payload creator
+export const updatePOSFullAndChangeToCartID = createAsyncThunk<// Return type of the payload creator
     object,
     // First argument to the payload creator
     number,
     // Types for ThunkAPI
     {
         state: RootState;
-    }>("cart/updatePOSForCartID", async (cartID, {getState}) => {
+    }>("cart/updatePOSFullAndChangeToCartID", async (cartID, {getState}) => {
     const pos = getState().cart.pos;
     return fetch(`${pos.url}/${cartID}/data`).then((response) =>
         response.json()
@@ -91,7 +107,7 @@ export const addToCart = createAsyncThunk<// Return type of the payload creator
             return fetch(
                 `${pos.url}/${pos.active_cart.id}/add/${payload.id}/${payload.quantity}/`
             ).then(() => {
-                return dispatch(updatePOS());
+                return dispatch(updatePOSCart());
             });
         } else {
             return fetch(
@@ -125,7 +141,7 @@ export const removeFromCart = createAsyncThunk<// Return type of the payload cre
             return fetch(
                 `${pos.url}/${pos.active_cart.id}/remove/${payload.id}`
             ).then(() => {
-                return dispatch(updatePOS());
+                return dispatch(updatePOSCart());
             });
         } else {
             return fetch(`/cart/remove/${payload.id}`).then(() => {
@@ -158,7 +174,7 @@ export const updateLine = createAsyncThunk<// Return type of the payload creator
                     headers: {"X-CSRFToken": getCookie("csrftoken")},
                 }
             ).then(() => {
-                return dispatch(updatePOS());
+                return dispatch(updatePOSCart());
             });
         } else {
             return fetch(
@@ -183,7 +199,7 @@ export const createNewPOSCart = createAsyncThunk<// Return type of the payload c
         .then((response) => response.json())
         .then((data) => {
             dispatch(setPOSCartID(data.id));
-            return dispatch(updatePOS());
+            return dispatch(updatePOSFull());
         });
 });
 
@@ -208,7 +224,7 @@ export const addNewPOSItem = createAsyncThunk<// Return type of the payload crea
             console.log("Could not add that item, logging error")
             dispatch(errorAdded(`Could not add '${payload.barcode}'`));
         }// or check for response.status
-        return dispatch(updatePOS());
+        return dispatch(updatePOSCart());
     }
 )
 
@@ -241,7 +257,7 @@ export const addCustomPOSItem = createAsyncThunk<// Return type of the payload c
         );
 
         if (response.ok) {
-            dispatch(updatePOS());
+            dispatch(updatePOSCart());
             return response.json();
         } else {
             let text = await response.text();
@@ -277,7 +293,7 @@ export const setPOSOwner = createAsyncThunk<// Return type of the payload creato
         );
 
         if (response.ok) {
-            dispatch(updatePOS());
+            dispatch(updatePOSCart());
             return response.json();
         } else {
             let text = await response.text();
@@ -314,7 +330,7 @@ export const setPOSDiscountCode = createAsyncThunk<// Return type of the payload
         );
 
         if (response.ok) {
-            dispatch(updatePOS());
+            dispatch(updatePOSCart());
             return response.json();
         } else {
             let text = await response.text();
@@ -369,12 +385,15 @@ export const cartSlice = createSlice({
 
                 })
             })
-            .addCase(updatePOS.fulfilled, (state, action) => {
+            .addCase(updatePOSFull.fulfilled, (state, action) => {
                 state.pos = action.payload as IPOSProps;
             })
-            .addCase(updatePOSForCartID.fulfilled, (state, action) => {
+            .addCase(updatePOSFullAndChangeToCartID.fulfilled, (state, action) => {
                 state.pos = action.payload as IPOSProps;
             })
+            .addCase(updatePOSCart.fulfilled, (state, action) => {
+                    state.pos.active_cart = action.payload as ICart;
+                })
     },
 });
 

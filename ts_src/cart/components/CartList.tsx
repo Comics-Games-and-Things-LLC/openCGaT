@@ -2,7 +2,7 @@ import {ICart} from "../interfaces";
 import * as React from "react";
 import {ICartLists} from "./CartSelector";
 import { useAppDispatch } from "../store";
-import { updatePOSForCartID } from "../reducers/cartSlice";
+import { updatePOSFullAndChangeToCartID } from "../reducers/cartSlice";
 
 
 export interface ICartList {
@@ -33,7 +33,7 @@ const CartEntry: React.FunctionComponent<ICartLink> = (props: ICartLink): JSX.El
     const dispatch = useAppDispatch();
 
     const handleOnClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-        dispatch(updatePOSForCartID(props.cart_id));
+        dispatch(updatePOSFullAndChangeToCartID(props.cart_id));
     }
     return <li key={props.cart_id}>
         <a onClick={handleOnClick} >
