@@ -68,7 +68,7 @@ const POSPayment: React.FunctionComponent<IPOSPaymentProps> = (props): JSX.Eleme
             await workflowFn();
         } finally {
             setWorkflowInProgress(null)
-            dispatch(updatePOSCart());
+            dispatch(updatePOSFull());
         }
     };
 
