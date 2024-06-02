@@ -236,6 +236,8 @@ def import_records():
                         if product.publisher_short_sku is None:
                             product.publisher_short_sku = short_code
                             print(f"Set short code on {product.name} to {short_code}")
+                        product.msrp = msrp
+                        product.map = maprice
                         product.save()
                         # Adjust prices on existing products/items but do not make new products/items
                         create_valhalla_item(product, f, only_adjust_default_price=True)
