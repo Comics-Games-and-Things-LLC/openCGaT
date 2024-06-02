@@ -3,7 +3,7 @@ from partner.models import Partner
 from shop.models import InventoryItem
 
 
-def create_valhalla_item(product, f=None):
+def create_valhalla_item(product, f=None, only_adjust_default_price=False):
     if f is None:
         f = open("reports/valhalla_inventory_price_adjustments.txt", "a")
 
@@ -16,9 +16,16 @@ def create_valhalla_item(product, f=None):
                                                             defaults={
                                                                 'price': price, 'default_price': price
                                                             })
+
         if price != item.price and item.current_inventory > 0:
-            log(f, "Price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
-                                                                                item.product.barcode))
-        item.price = price
+            if not only_adjust_default_price:
+                item.price = price
+                log(f, "Price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
+                                                                                    item.product.barcode))
+            else:
+                log(f, "Default price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
+                                                                                            item.product.barcode))
+        if item.current_inventory == 0: # If there are none in stock adjust the price anyway.
+            item.price = price
         item.default_price = price
         item.save()

@@ -182,25 +182,27 @@ def import_records():
     trade_range_name = ""
     inventories_path = './intake/inventories/'
     for file in os.listdir(inventories_path):
-        if "Trade Range" in file:
+        if "Trade Range" in file or "USA PRICE RISE" in file:
             trade_range_name = file
-
+    if file is None:
+        print("Please have a file with 'Trade Range' or 'USA Price Rise' in the inventories folder")
+        exit()
     file = pandas.ExcelFile(os.path.join(inventories_path, trade_range_name))
     dataframe = pandas.read_excel(file, header=0, sheet_name='USA', converters={'Product': str, 'Barcode': str})
 
     records = dataframe.to_dict(orient='records')
     f = open("reports/products_with_price_adjustments.txt", "a")
-    log(f, "Price adjustments for Games Workshop 2023")
+    log(f, "Price adjustments for Games Workshop 2024")
     for row in records:
         # print(row)
         try:
             product_code = row.get('Product')
-            short_code = row.get('Short Code')
+            short_code = row.get('Short Code', row.get("SS Code"))
             name = row.get('Description')
             barcode = row.get('Barcode')
-            msrp = Money(row.get('US/$ Retail'), currency='USD')
+            msrp = Money(row.get('US/$ Retail', row.get("USD-NEW MSRP")), currency='USD')
             maprice = msrp * .85
-            dist_price = Money(row.get('US/$ Trade'), currency='USD')
+            dist_price = Money(row.get('US/$ Trade', row.get("US-NEW TRADE Price")), currency='USD')
             games, factions, categories = get_product_information_from_product_code(product_code)
             range_code = row.get("Module")
             trade_range = None
@@ -235,6 +237,8 @@ def import_records():
                             product.publisher_short_sku = short_code
                             print(f"Set short code on {product.name} to {short_code}")
                         product.save()
+                        # Adjust prices on existing products/items but do not make new products/items
+                        create_valhalla_item(product, f, only_adjust_default_price=True)
                 if create_products_and_items:
                     old_products = Product.objects.filter(slug=slugify(name.title()))
                     old_product = None
@@ -244,7 +248,7 @@ def import_records():
                         # If the product already exists, make a 2023 version.
                         if old_products.exists():
                             old_product = Product.objects.filter(slug=slugify(name.title())).get()
-                            name = name.title() + " 2023"
+                            name = name.title() + " 2024"
 
                         product, created = Product.objects.get_or_create(
                             barcode=barcode,
