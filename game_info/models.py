@@ -15,6 +15,8 @@ class Game(models.Model):
                                                 default_currency='USD')
 
     featured = models.BooleanField(default=False)
+    navbar_order = models.IntegerField(null=True, blank=True,
+                                       help_text="If populated, will appear in navbar, highest first")
 
     slug = models.SlugField(blank=True)
 

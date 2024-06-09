@@ -143,6 +143,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'partner.context_processors.site',
+                'shop.context_processors.navbar_links',
                 # `allauth` needs this from django
                 'django.template.context_processors.request',
                 'django_react_templatetags.context_processors.react_context_processor',

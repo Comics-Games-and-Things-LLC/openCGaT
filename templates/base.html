@@ -148,6 +148,28 @@
                     </li>
                 {% endif %}
                 {% if site.partner %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Games
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            {% for game in top_games %}
+                                <a class="dropdown-item" href="/shop/?game={{ game.id }}">{{ game }}</a>
+                            {% endfor %}
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Publishers
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            {% for publisher in top_publishers %}
+                                <a class="dropdown-item" href="/shop/?publisher={{ publisher.id }}">{{ publisher }}</a>
+                            {% endfor %}
+                        </div>
+                    </li>
                     <li>
                         <a class="nav-link" href="{% url 'partner_info' partner_slug=site.partner.slug %}">About</a>
                     </li>

@@ -23,6 +23,8 @@ from partner.models import Partner
 
 class Publisher(models.Model):
     name = models.CharField(max_length=200)
+    navbar_order = models.IntegerField(null=True, blank=True,
+                                       help_text="If populated, will appear in navbar, highest first")
 
     def __str__(self):
         return self.name
