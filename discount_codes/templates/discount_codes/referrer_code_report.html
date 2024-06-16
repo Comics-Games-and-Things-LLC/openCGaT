@@ -8,6 +8,7 @@
 {% endblock %}
 {% block content %}
     <h2>{{ referrer }} - Code: {{ code }}</h2>
+    <p>Expires {{ code.expires_on }}</p>
     <h3>Kickback Earnings {{ kickback_earnings }}</h3>
     <p>{{ kickback_lines|length }} entries</p>
     <table class="table">

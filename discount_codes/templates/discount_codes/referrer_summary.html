@@ -23,7 +23,7 @@
             <tr>
                 <td>
                     <a href="{% url 'referrer_code_report' partner_slug=partner.slug referrer_slug=referrer.slug code=code %}">
-                        {{ code }}
+                        {{ code }} (expires {{ code.expires_on }})
                     </a>
                 </td>
                 <td>
