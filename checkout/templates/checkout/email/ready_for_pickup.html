@@ -4,7 +4,7 @@
     <br>
     Store Location and hours:
     <br>
-    {{ order.pickup_partner.address_and_hours_info }}
+    {{ order.pickup_partner.address_and_hours_info|linebreaks }}
 {% endblock %}
 {% block footer %}
   <br>  
