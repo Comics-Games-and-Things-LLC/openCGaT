@@ -164,6 +164,8 @@ class Cart(RepresentationMixin, models.Model):
     cash_paid = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
     total_paid = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
 
+    amount_refunded = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
+
     partner_transactions = models.ManyToManyField(PartnerTransaction, blank=True)
 
     set_in_taxjar = models.BooleanField(default=False)
