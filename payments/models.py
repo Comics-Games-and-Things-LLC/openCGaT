@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core import mail
 from django.db import models, transaction
 from djmoney.models.fields import MoneyField
+from djmoney.money import Money
 from polymorphic.models import PolymorphicModel
 
 from checkout.models import Cart
@@ -90,6 +91,9 @@ class Payment(PolymorphicModel):
         Calls to payment processor, checks collected and cancelled status
         """
         return {}
+
+    def get_amount_refunded(self):
+        return Money(0, "USD")
 
 
 class CashPayment(Payment):
@@ -209,6 +213,12 @@ class StripePayment(Payment):
             "amount_requested": "$" + str(pi.amount / 100),
             "amount_collected": "$" + str(pi.amount_received / 100),
         }
+
+    def get_amount_refunded(self):
+        amount = Money(0, "USD")
+        for refund in stripe.Refund.list(payment_intent=self.intent_id):
+            amount += Money(refund.amount / 100, "USD")
+        return amount
 
 
 class PaypalPayment(Payment):
@@ -388,3 +398,12 @@ class PaypalPayment(Payment):
             "amount_requested": amount_collected,
             "amount_collected": amount_requested,
         }
+
+    def get_amount_refunded(self):
+        amount = Money(0, "USD")
+        if not self.payment_id:
+            return amount
+
+        response = self.get_request("v2/payments/authorizations/{}".format(self.payment_id))
+        refund_id = None
+        return amount
