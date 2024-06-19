@@ -19,7 +19,10 @@ class Command(BaseCommand):
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             writer.writeheader()
-            for cart in Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED]).order_by('date_paid'):
+            for cart in Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED],
+                                              lost_damaged_or_stolen=False,
+                                              broken_down=False,
+                                              ).order_by('date_paid'):
                 print("{}: {}".format(cart.id, cart))
                 amount_refunded = cart.get_refunded_amount()
                 cart_info = {'Cart Number': cart.id, 'Cart Status': cart.status,
