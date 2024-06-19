@@ -14,7 +14,7 @@ class Command(BaseCommand):
         for payment in Payment.objects.all():
             refund_amount = None
             try:
-                refund_amount = payment.get_amount_refunded()
+                refund_amount = payment.get_refunded_amount()
             except stripe.error.InvalidRequestError:
                 pass
                 # print("You attempted to access a payment request from live mode in test mode")

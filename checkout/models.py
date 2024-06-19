@@ -787,7 +787,7 @@ class Cart(RepresentationMixin, models.Model):
     def get_refunded_amount(self) -> Money:
         amount = self.amount_refunded
         for payment in self.payments.all():
-            amount += payment.get_amount_refunded()
+            amount += payment.get_refunded_amount()
         return amount
 
     def get_pre_discount_subtotal(self):

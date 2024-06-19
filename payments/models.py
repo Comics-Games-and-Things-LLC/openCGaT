@@ -92,7 +92,7 @@ class Payment(PolymorphicModel):
         """
         return {}
 
-    def get_amount_refunded(self):
+    def get_refunded_amount(self):
         return Money(0, "USD")
 
 
@@ -214,7 +214,7 @@ class StripePayment(Payment):
             "amount_collected": "$" + str(pi.amount_received / 100),
         }
 
-    def get_amount_refunded(self):
+    def get_refunded_amount(self):
         amount = Money(0, "USD")
         for refund in stripe.Refund.list(payment_intent=self.intent_id):
             amount += Money(refund.amount / 100, "USD")
@@ -399,7 +399,7 @@ class PaypalPayment(Payment):
             "amount_collected": amount_requested,
         }
 
-    def get_amount_refunded(self):
+    def get_refunded_amount(self):
         amount = Money(0, "USD")
         if not self.payment_id:
             return amount
