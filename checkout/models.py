@@ -784,6 +784,12 @@ class Cart(RepresentationMixin, models.Model):
 
         return total.amount * (1 + self.final_tax_percentage)
 
+    def get_refunded_amount(self) -> Money:
+        amount = self.amount_refunded
+        for payment in self.payments.all():
+            amount += payment.get_amount_refunded()
+        return amount
+
     def get_pre_discount_subtotal(self):
         total = Money(0, "USD")
         for line in self.lines.all():
