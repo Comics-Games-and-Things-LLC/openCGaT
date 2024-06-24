@@ -64,7 +64,7 @@ class POLineForm(forms.ModelForm):
 
     class Meta:
         model = POLine
-        fields = ['name', 'barcode', 'line_number',
+        fields = ['name', 'barcode', 'distributor_code', 'line_number',
                   'expected_quantity', 'received_quantity',
                   'msrp_on_line',
                   'cost_per_item',

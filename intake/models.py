@@ -220,6 +220,7 @@ class POLine(models.Model):
     po = models.ForeignKey(PurchaseOrder, on_delete=models.PROTECT, related_name='lines')
     name = models.TextField(null=True, blank=True)
     barcode = models.CharField(max_length=20, blank=True, null=True)
+    distributor_code = models.CharField(max_length=200, blank=True, null=True)
     cost_per_item = MoneyField(max_digits=8, decimal_places=4, default_currency='USD', blank=True, null=True)
     msrp_on_line = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', blank=True, null=True)
     expected_quantity = models.IntegerField(default=0)
