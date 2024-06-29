@@ -1,3 +1,4 @@
+import csv
 import os
 import sys
 from inspect import getmembers
@@ -8,6 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from intake.distributors import alliance, acd, parabellum, wyrd, games_workshop, gw_paints
 from intake.distributors.utility import log
 from intake.models import *
+from shop.models import Publisher
 
 
 class Command(BaseCommand):
@@ -30,11 +32,16 @@ class Command(BaseCommand):
         records = dataframe.to_dict(orient='records')
 
         f = open("reports/Price Check.txt", "w")
-        log(f, "Price adjustments for Games Workshop 2024")
+        csvfile = open("reports/Price Check.csv", "w")
+        writer = csv.DictWriter(csvfile, ['Product', 'Current MSRP', 'Current Inventory', 'New MSRP'])
+        writer.writeheader()
+        log(f, "Price Check for GW")
+        all_current_shortcodes = []
         for row in records:
             # print(row)
             product_code = row.get('Product')
             short_code = row.get('Short Code', row.get("SS Code"))
+            all_current_shortcodes.append(short_code)
             name = row.get('Description')
             barcode = row.get('Barcode')
             msrp = Money(row.get('US/$ Retail', row.get("USD-NEW MSRP")), currency='USD')
@@ -49,3 +56,14 @@ class Command(BaseCommand):
                 if product.msrp != msrp:
                     log(f, f"{product} does not have the correct MSRP and has an unexpected barcode.")
                     log(f, f"{product.barcode} should be msrp: {msrp}, map: {maprice}")
+
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        partner = Partner.objects.get(name__icontains="Valhalla")
+
+        for product in Product.objects.filter(publisher=publisher):
+            if product.publisher_short_sku not in all_current_shortcodes:
+                log(f, f"{product} does not appear in the current trade range")
+                writer.writerow({"Product": product.name,
+                                 "Current MSRP": product.msrp,
+                                 "Current Inventory": product.all_inventory_for_partner(partner)
+                                 })
