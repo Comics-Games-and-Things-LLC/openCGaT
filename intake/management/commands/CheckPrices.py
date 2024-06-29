@@ -60,10 +60,14 @@ class Command(BaseCommand):
         publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
         partner = Partner.objects.get(name__icontains="Valhalla")
 
-        for product in Product.objects.filter(publisher=publisher):
+        for product in Product.objects.filter(publisher=publisher).exclude(page_is_draft=True):
             if product.publisher_short_sku not in all_current_shortcodes:
                 log(f, f"{product} does not appear in the current trade range")
+                inv_count = product.all_inventory_for_partner(partner)
                 writer.writerow({"Product": product.name,
                                  "Current MSRP": product.msrp,
-                                 "Current Inventory": product.all_inventory_for_partner(partner)
+                                 "Current Inventory": inv_count
                                  })
+                if inv_count == 0:
+                    product.page_is_draft = True
+                    product.save()
