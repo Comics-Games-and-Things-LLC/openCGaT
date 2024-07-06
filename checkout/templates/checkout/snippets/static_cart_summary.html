@@ -34,6 +34,11 @@
                             <br>
                             {{ line.item.description }}
                         {% endif %}
+                        {% if line.is_preorder %}
+                            <br>
+                            <small> Expected release date {{ line.item.product.release_date }} </small>
+                        {% endif %}
+
                     </td>
                     <td>{% include 'shop/snippets/item_type_icon.html' with item=line.item %}</td>
 
