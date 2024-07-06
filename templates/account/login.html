@@ -29,17 +29,18 @@
         {% if redirect_field_value %}
             <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
         {% endif %}
-        <a class="btn btn-lg btn-secondary btn-block secondaryAction"
-           href="{% url 'account_reset_password' %}">Forgot Password?</a>
-<input type="submit" value="Sign in"
+    <input type="submit" value="Sign in"
            class="btn btn-lg btn-primary btn-block"/>
+            <a class="btn btn-lg btn-secondary btn-block secondaryAction"
+           href="{% url 'account_reset_password' %}">Forgot Password?</a>
 
 
 
 
-    <h1 class="h2 mb-3 font-weight-normal">or </h1>
     {% get_providers as socialaccount_providers %}
     {% if socialaccount_providers %}
+        <h1 class="h2 mb-3 font-weight-normal">or </h1>
+
         {% include "socialaccount/snippets/provider_list.html" with process="login" %}
 
     {% endif %}
