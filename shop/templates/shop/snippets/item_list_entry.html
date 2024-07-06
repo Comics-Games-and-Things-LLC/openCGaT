@@ -61,22 +61,22 @@
 
             <div class="text-right self-end text-sm">
                 {% if item|is_inventory_item %}
-                    {% with inventory_items=all_items|inventory_items %}
-                        {% with inventory_items|get_total_inventory as inv_count %}
-                            {% if inv_count > 0 %}
-                                <p class="text-gray-400"><span class="text-gray-500 font-bold">{{ inv_count }}</span> in
-                                    stock</p>
-                            {% else %}
-                                {% if inventory_items|is_backorderable %}
-                                    {% if product.is_preorder %}
-                                        <p class="font-bold text-primary-700">Preorderable</p>
-                                    {% else %}
-                                        <p class="font-bold text-yellow-700">Backorder</p>
-                                    {% endif %}
-                                {% endif %}
+                    {% if item.get_inventory > 0 %}
+                        <p class="text-gray-400"><span class="text-gray-500 font-bold">{{ item.get_inventory }}</span>
+                            Available
+                            {% if product.is_preorder %}
+                                for <span class="font-bold text-primary-700">Preorder</span>
                             {% endif %}
-                        {% endwith %}
-                    {% endwith %}
+                        </p>
+                    {% else %}
+                        {% if item.allow_backorders %}
+                            {% if product.is_preorder %}
+                                <p class="font-bold text-primary-700">Preorderable</p>
+                            {% else %}
+                                <p class="font-bold text-yellow-700">Backorder</p>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
                 {% endif %}
                 {% if product.msrp %}
                     <p class="text-gray-400">
