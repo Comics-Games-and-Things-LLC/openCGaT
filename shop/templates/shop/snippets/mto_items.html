@@ -27,7 +27,7 @@
                                     {% endif %}
                                 {% else %}
                                     <h5 class="card-title"><span
-                                            id="{{ item.id }}_count">{{ item.current_inventory }}</span>
+                                            id="{{ item.id }}_count">{{ item.get_inventory }}</span>
                                         at {{ item.partner }}</h5>
                                     {% if partner and partner == item.partner %}
                                         <a href="{% url 'edit_item' partner_slug=partner.slug product_slug=product.slug item_id=item.id %}">

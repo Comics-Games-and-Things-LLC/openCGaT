@@ -139,6 +139,11 @@
                 Price: {{ local_item.price }}
                 <br>
                 Inventory: {{ local_item.current_inventory }}
+
+                {% if local_item.preallocated %}
+                    <br>
+                    Preallocated: {{ local_item.preallocated_inventory }}
+                {% endif %}
                 {% if x_sold %}
                     <br>
                     {{ x_sold }} sold / {{ x_purchased }} purchased

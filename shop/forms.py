@@ -59,8 +59,6 @@ class AddProductForm(forms.ModelForm):
         self.fields['description'].widget.attrs['class'] = 'w-full'
 
 
-
-
 class RelatedProductsForm(forms.ModelForm):
     replaced_by = forms.ModelChoiceField(Product.objects.filter(all_retail=True).order_by('name'),
                                          required=False)
@@ -76,7 +74,7 @@ class RelatedProductsForm(forms.ModelForm):
 class AddInventoryItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
-        fields = ['current_inventory', 'allow_backorders',
+        fields = ['current_inventory', 'preallocated_inventory', 'allow_backorders',
                   'price', 'default_price', 'featured', 'preallocated', 'allow_extra_preorders']
 
     def __init__(self, *args, **kwargs):

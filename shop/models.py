@@ -522,6 +522,7 @@ class Item(RepresentationMixin, PolymorphicModel):
 class InventoryItem(Item):
     use_linked_inventory = models.BooleanField(default=False)
     current_inventory = models.IntegerField(default=0)
+    preallocated_inventory = models.IntegerField(default=0)
     allow_backorders = models.BooleanField(default=True)
     max_per_cart = models.IntegerField(null=True, blank=True, default=None)
     preallocated = models.BooleanField(default=False)
@@ -532,19 +533,26 @@ class InventoryItem(Item):
         reason = kwargs.pop('change_reason', "Manual edit or Other")
         skip_log = kwargs.pop('skip_log', False)  # must pop kwargs before passing to regular constructor
         created_item = super(InventoryItem, self).save(*args, **kwargs)
-        if not skip_log:  # handle log after create to ensure log initial value
-            self.inv_log.create(after_quantity=self.current_inventory, reason=reason)
+        if not skip_log:  # handle log after item creation to ensure log can have a foreign key
+            log_entry = self.inv_log.create(after_quantity=self.current_inventory, reason=reason)
+            if self.preallocated and self.product.is_preorder:
+                log_entry.after_preallocation_quantity = self.preallocated_inventory
+                log_entry.save()
         return created_item
 
     def adjust_inventory(self, quantity, reason=None, line=None, purchase_order=None):
         """
-        Adjusts inventory
-        :param quantity:
-        :param reason:
-        :param line: relevant cart line
-        :return: True if inventory adjusted
+        Adjusts current inventory and preallocated inventory
+        @param quantity: amount to add, or subtract if negative.
+        @param reason: Free text to be stored in the inventory log
+        @param line: relevant cart line if sale
+        @param purchase_order: relevant purchase order if intake
+        @return: True, if inventory adjusted
         """
 
+        # If this is a sale while preorders are live, we adjust preallocation amounts.
+        is_preallocation_adjustment = (self.preallocated and self.product.is_preorder
+                                       and quantity < 1)
 
         with transaction.atomic():
             ii = InventoryItem.objects.select_for_update().get(id=self.id)
@@ -552,36 +560,55 @@ class InventoryItem(Item):
                 if ii.inv_log.filter(line=line).exists():
                     return False  # If we already have a log of updating the inventory, quit
                     # This is how we prevent double submits affecting inventory twice.
+
             ii.current_inventory += quantity
             if ii.current_inventory <= 0:
                 ii.current_inventory = 0
+            # Create a new log entry
+            log_entry = ii.inv_log.create(after_quantity=ii.current_inventory, change_quantity=quantity,
+                                          reason=reason,
+                                          line=line, po=purchase_order,
+                                          is_preallocation_adjustment=is_preallocation_adjustment,
+                                          )
+
+            # Adjust preallocation amount
+            if is_preallocation_adjustment:
+                preallocation_change = quantity
+                ii.preallocated_inventory += quantity
+                if ii.preallocated_inventory <= 0:
+                    ii.preallocated_inventory = 0
+                log_entry.after_preallocation_quantity = ii.preallocated_inventory
+                log_entry.change_preallocation_quantity = preallocation_change
+                log_entry.save()
+
             ii.save(skip_log=True)
-            ii.inv_log.create(after_quantity=ii.current_inventory, change_quantity=quantity, reason=reason,
-                              line=line, po=purchase_order,
-                              )
+
 
         self.refresh_from_db()
         return True
 
     def get_inventory(self):
+        if self.preallocated and self.product.is_preorder:
+            return self.preallocated_inventory
         return self.current_inventory
 
     def button_status(self, cart=None):
         """Returns a tuple of text, enable/disabled, and style
         :param cart:
         """
+        inventory = self.get_inventory()
         if self.purchasable:
             if self.product.is_preorder:
-                if not self.preallocated or (self.preallocated and self.current_inventory > 0):
+                if not self.preallocated or (self.preallocated and inventory > 0):
                     return {'text': "Preorder", 'enabled': True, "style": self.BUTTON_STYLE_GOOD}
-                elif self.preallocated and self.current_inventory <= 0:
+                elif self.preallocated and inventory <= 0:
                     if self.allow_extra_preorders and self.allow_backorders:
                         return {'text': "Backorder", 'enabled': True, "style": self.BUTTON_STYLE_BACKORDER}
                     else:
                         return {'text': "Pre-orders Sold Out", 'enabled': False,
                                 "style": self.BUTTON_STYLE_SOLD_OUT}
             else:
-                if self.current_inventory > 0:
+                if inventory > 0:
                     return {'text': "Add to Cart", 'enabled': True, "style": self.BUTTON_STYLE_GOOD}
                 elif self.allow_backorders:
                     return {'text': "Backorder", 'enabled': True, "style": self.BUTTON_STYLE_BACKORDER}
@@ -597,9 +624,12 @@ class InventoryItem(Item):
 class InventoryLog(models.Model):
     item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='inv_log')
     timestamp = models.DateTimeField(blank=True)
+    is_preallocation_adjustment = models.BooleanField(default=False)  # If this was a sale during preallocation
     reason = models.CharField(max_length=200, blank=True, null=True)
     after_quantity = models.IntegerField(null=True)  # null values only from before the log was implemented.
+    after_preallocation_quantity = models.IntegerField(null=True)
     change_quantity = models.IntegerField(default=0)
+    change_preallocation_quantity = models.IntegerField(null=True)
     line = models.ForeignKey("checkout.CheckoutLine", on_delete=models.CASCADE, null=True, blank=True)
     po = models.ForeignKey("intake.PurchaseOrder", on_delete=models.CASCADE, null=True, blank=True)
 

@@ -909,17 +909,27 @@ class Cart(RepresentationMixin, models.Model):
         return self.get_total_subtotal() + self.get_shipping()
 
     def get_disclaimer_text(self):
-        lines_with_backorders = self.lines.filter(quantity__gt=F('item__inventoryitem__current_inventory'))
-        preorders = self.lines.filter(item__inventoryitem__allow_extra_preorders=True,
-                                      item__product__release_date__gte=datetime.datetime.now())
-        backorder_preorders = lines_with_backorders.filter(item__inventoryitem__allow_extra_preorders=True,
-                                                           item__product__release_date__gte=datetime.datetime.now())
-        backorders = lines_with_backorders.filter(item__product__release_date__lte=datetime.datetime.now())
+        has_backorders = self.lines.filter(quantity__gt=F('item__inventoryitem__current_inventory'),
+                                           item__product__release_date__lt=datetime.datetime.now()
+                                           ).exists()
+
+        preorders = self.lines.filter(item__product__release_date__gte=datetime.datetime.now())
+        backorder_preorders_from_stock = preorders.filter(item__inventoryitem__preallocated=False,
+                                                          quantity__gt=F(
+                                                              'item__inventoryitem__current_inventory')
+                                                          ).exists()
+        backorder_preorders_from_preallocation = preorders.filter(item__inventoryitem__preallocated=True,
+                                                                  quantity__gt=F(
+                                                                      'item__inventoryitem__preallocated_inventory')
+                                                                  ).exists()
+        has_backorder_preorder = backorder_preorders_from_stock or backorder_preorders_from_preallocation
         text = ""
-        if backorder_preorders.exists():
-            text = text + "Initial release pre-orders of one or more items are sold out. Those products will arrive some time after release. "
-        if preorders.exists() or backorders.exists() or backorder_preorders.exists():
-            text = text + "One or more items are not currently in stock. Your entire order will be held until all items on your order are ready-to-ship. "
+        if has_backorder_preorder:
+            text = (text + "Initial release pre-orders of one or more items are sold out. " +
+                    "Those products will arrive some time after release. ")
+        if preorders.exists() or has_backorders or has_backorder_preorder:
+            text = (text + "One or more items are not currently in stock. " +
+                    "Your entire order will be held until all items on your order are ready-to-ship. ")
 
         print(text)
         return text.strip()
@@ -1261,6 +1271,8 @@ class CheckoutLine(models.Model):
                 return self.cart.status
             else:
                 if self.completely_in_stock:
+                    if self.item.product.is_preorder:
+                        return "Preorder"
                     return "In stock"
                 else:
                     backorder = self.quantity_to_backorder
@@ -1268,6 +1280,9 @@ class CheckoutLine(models.Model):
                     if in_stock == 0:
                         return "{} will be {}ed".format(backorder, backorder_or_preorder)
                     else:
+                        if self.item.product.is_preorder:
+                            return "{} preallocated \n" \
+                                   "{} will be {}ed".format(in_stock, backorder, backorder_or_preorder)
                         return "{} in stock \n" \
                                "{} will be {}ed".format(in_stock, backorder, backorder_or_preorder)
 

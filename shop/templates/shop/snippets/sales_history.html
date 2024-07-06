@@ -90,8 +90,15 @@
                 <th scope="col">Timestamp</th>
                 <th scope="col">Reason</th>
                 <th scope="col">In</th>
-                <th scope="col">Change</th>
-                <th scope="col">Remaining</th>
+                <th scope="col">Change
+                    <br>
+                    (Prealloc)
+                </th>
+                <th scope="col">
+                    Remaining
+                    <br>
+                    (Prealloc)
+                </th>
             </tr>
             {% for line in inventory_log %}
                 <tr>
@@ -119,12 +126,18 @@
                         {% if line.change_quantity %}
                             {{ line.change_quantity }}
                         {% endif %}
+                        {% if line.change_preallocation_quantity %}
+                            ( {{ line.change_preallocation_quantity }} )
+                        {% endif %}
                     </td>
                     <td>
                         {% if line.after_quantity != None %}
                             {{ line.after_quantity }}
                         {% else %}
                             Old
+                        {% endif %}
+                        {% if line.after_preallocation_quantity != None %}
+                            ( {{ line.after_preallocation_quantity }} )
                         {% endif %}
 
                     </td>
