@@ -544,7 +544,8 @@ class InventoryItem(Item):
         :param line: relevant cart line
         :return: True if inventory adjusted
         """
-        backorder_count = 0
+
+
         with transaction.atomic():
             ii = InventoryItem.objects.select_for_update().get(id=self.id)
             if line:
@@ -553,15 +554,12 @@ class InventoryItem(Item):
                     # This is how we prevent double submits affecting inventory twice.
             ii.current_inventory += quantity
             if ii.current_inventory <= 0:
-                backorder_count = -ii.current_inventory
                 ii.current_inventory = 0
             ii.save(skip_log=True)
             ii.inv_log.create(after_quantity=ii.current_inventory, change_quantity=quantity, reason=reason,
-                              line=line, po=purchase_order)
-        if backorder_count > 0:
-            backorder, _ = BackorderRecord.objects.get_or_create(item=self)
-            backorder.quantity = backorder_count
-            backorder.save()
+                              line=line, po=purchase_order,
+                              )
+
         self.refresh_from_db()
         return True
 
@@ -720,19 +718,6 @@ class ProductImage(models.Model):
             image.delete()
             success = False
         return image, success
-
-
-class BackorderRecord(models.Model):
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=0)
-
-    def decrement(self, quantity=1):
-        self.quantity -= quantity
-
-    def get_carts(self):
-        from checkout.models import Cart, CheckoutLine
-        cart_ids = CheckoutLine.objects.filter(item=self.item).values_list('cart_id')
-        return Cart.submitted.filter(id__in=cart_ids)
 
 
 class ContainsProducts(models.Model):

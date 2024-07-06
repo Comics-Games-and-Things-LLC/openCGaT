@@ -22,7 +22,7 @@ from intake.models import DistItem
 from partner.models import get_partner, get_partner_or_401
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm
-from .models import Product, Item, InventoryItem, MadeToOrder, BackorderRecord
+from .models import Product, Item, InventoryItem, MadeToOrder
 from .serializers import ItemSerializer
 
 
@@ -724,23 +724,3 @@ def create_custom_charge(request, partner_slug):
         'form': form,
     }
     return TemplateResponse(request, "create_from_form.html", context=context)
-
-
-def backorders(request, partner_slug):
-    partner = get_partner_or_401(request, partner_slug)
-    backorder_items = (BackorderRecord.objects.filter(item__partner=partner)
-                       .prefetch_related('item', 'item__product').order_by('item__product__publisher')
-                       )
-    context = {
-        'partner': partner,
-        'backorders': backorder_items,
-    }
-    return TemplateResponse(request, "partner/backorders.html", context)
-
-
-def remove_backorder(request, partner_slug, backorder_id):
-    partner = get_partner_or_401(request, partner_slug)
-    backorder = BackorderRecord.objects.get(
-        id=backorder_id, item__partner=partner)
-    backorder.delete()
-    return HttpResponseRedirect(reverse('backorders', kwargs={'partner_slug': partner_slug}))

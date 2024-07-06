@@ -40,8 +40,6 @@ urlpatterns = [
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/item/<item_id>/delete/<int:confirm>/',
          views.delete_item,
          name='delete_item'),
-    path('manage/<slug:partner_slug>/backorders/', views.backorders, name='backorders'),
-    path('manage/<slug:partner_slug>/backorders/<backorder_id>/clear/', views.remove_backorder, name='clear_backorder'),
 
     path('manage/<slug:partner_slug>/custom_charge/create/', views.create_custom_charge,
          name='create_custom_charge'),
