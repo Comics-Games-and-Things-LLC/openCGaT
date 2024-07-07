@@ -294,6 +294,9 @@ class Product(PolymorphicModel):
     def all_images(self):
         return Image.objects.filter(products=self)
 
+    def all_inventory_for_partner(self, partner):
+        return InventoryItem.objects.filter(product=self, partner=partner).aggregate(sum=Sum("current_inventory"))['sum']
+
     def lowest_price_for_type(self, item_model):
         lowest = None
         try:

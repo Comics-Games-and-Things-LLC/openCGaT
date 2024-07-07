@@ -13,7 +13,7 @@ from django.core import mail
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.mail import EmailMessage
 from django.db import models, transaction
-from django.db.models import F
+from django.db.models import F, Sum
 from django.template.loader import get_template
 from django.utils import timezone
 from django.utils.timezone import now
@@ -691,7 +691,7 @@ class Cart(RepresentationMixin, models.Model):
     def num_items(self):
         """Return number of items"""
         if self.id is not None:
-            return sum(line.quantity for line in self.lines.all())
+            return self.lines.aggregate(sum=Sum("quantity"))['sum']
         else:
             return 0
 
