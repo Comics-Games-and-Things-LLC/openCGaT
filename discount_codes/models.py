@@ -91,6 +91,11 @@ class DiscountCode(models.Model):
                     line.discount_code_message = f"The code '{self}' is not applicable to items with no publisher"
                     break  # exit the loop early to mark this line as not eligible.
             else:
+                if line.item.product.publisher.no_discount_codes:
+                    line.discount_code_message = (f"Items from {line.item.product.publisher} are not eligible for any "
+                                                  f"discounts")
+                    break  # exit the loop early to mark this line as not eligible.
+
                 if (self.exclude_publishers and self.publishers.filter(id=line.item.product.publisher.id)) or (
                         self.restrict_to_publishers and not self.publishers.filter(id=line.item.product.publisher.id)):
                     line.discount_code_message = "The code '{}' is not applicable to items from {}".format(self,

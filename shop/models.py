@@ -25,6 +25,8 @@ class Publisher(models.Model):
     name = models.CharField(max_length=200)
     navbar_order = models.IntegerField(null=True, blank=True,
                                        help_text="If populated, will appear in navbar, highest first")
+    no_discount_codes = models.BooleanField(default=False,
+                                            help_text="If set, discount codes cannot apply at all")
 
     def __str__(self):
         return self.name
@@ -295,7 +297,8 @@ class Product(PolymorphicModel):
         return Image.objects.filter(products=self)
 
     def all_inventory_for_partner(self, partner):
-        return InventoryItem.objects.filter(product=self, partner=partner).aggregate(sum=Sum("current_inventory"))['sum']
+        return InventoryItem.objects.filter(product=self, partner=partner).aggregate(sum=Sum("current_inventory"))[
+            'sum']
 
     def lowest_price_for_type(self, item_model):
         lowest = None
@@ -585,7 +588,6 @@ class InventoryItem(Item):
                 log_entry.save()
 
             ii.save(skip_log=True)
-
 
         self.refresh_from_db()
         return True
