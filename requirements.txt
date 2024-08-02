@@ -1,6 +1,6 @@
 rfc3339
 gunicorn
-Django==4.2.11
+Django==4.2.14
 django-allauth==0.57.0
 django-b2
 django-debug-toolbar
