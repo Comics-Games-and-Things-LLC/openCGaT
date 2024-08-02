@@ -267,7 +267,19 @@ class Product(PolymorphicModel):
         return None
 
     @property
+    def is_before_release(self):
+        """
+        More generic than is_preorder, including time before the product officially goes up for preorder.
+        @return:
+        """
+        return self.release_date and datetime.today().date() < self.release_date
+
+    @property
     def is_preorder(self):
+        """
+        Returns if the item is available for order and that order is a preorder.
+        @return:
+        """
         if self.preorder_or_secondary_release_date and self.release_date:
             if self.preorder_or_secondary_release_date <= self.release_date:
                 if self.preorder_or_secondary_release_date <= datetime.today().date():
@@ -541,7 +553,7 @@ class InventoryItem(Item):
         created_item = super(InventoryItem, self).save(*args, **kwargs)
         if not skip_log:  # handle log after item creation to ensure log can have a foreign key
             log_entry = self.inv_log.create(after_quantity=self.current_inventory, reason=reason)
-            if self.preallocated and self.product.is_preorder:
+            if self.preallocated and self.product.is_before_release:
                 log_entry.after_preallocation_quantity = self.preallocated_inventory
                 log_entry.save()
         return created_item
@@ -557,7 +569,7 @@ class InventoryItem(Item):
         """
 
         # If this is a sale while preorders are live, we adjust preallocation amounts.
-        is_preallocation_adjustment = (self.preallocated and self.product.is_preorder
+        is_preallocation_adjustment = (self.preallocated and self.product.is_before_release
                                        and quantity < 1)
 
         with transaction.atomic():
