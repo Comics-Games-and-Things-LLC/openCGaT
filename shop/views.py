@@ -221,6 +221,8 @@ def product_list(request, partner_slug=None):
             page_number = 1
 
     paginator = Paginator(new_product_list, page_size)
+    if page_number > paginator.num_pages:
+        page_number = 1
     page_obj = paginator.get_page(page_number)
 
     context = {
