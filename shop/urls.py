@@ -44,5 +44,8 @@ urlpatterns = [
     path('manage/<slug:partner_slug>/custom_charge/create/', views.create_custom_charge,
          name='create_custom_charge'),
 
+    path('manage/<slug:partner_slug>/bulk/', views.bulk_edit, name='bulk_edit'),
+
+
     path('item/<item_id>/', views.get_item_details, name='get_item_details'),
 ]

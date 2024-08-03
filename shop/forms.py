@@ -188,3 +188,21 @@ class CreateCustomChargeForm(forms.ModelForm):
             user = User.objects.get(email=cleaned_data['email'])
         except Exception:
             raise ValidationError("Customer for email address does not exist")
+
+
+class BulkEditItemsForm(FiltersForm):
+
+    NO_ACTION = "No Action"
+    UPDATE_PRICES = "Update Prices"
+    UPDATE_BACKORDERS = "Update Backorderability"
+
+    ACTION_OPTIONS = (
+        (NO_ACTION, NO_ACTION),
+        (UPDATE_PRICES, UPDATE_PRICES),
+        (UPDATE_BACKORDERS, UPDATE_BACKORDERS),
+    )
+
+    action_to_take = forms.ChoiceField(choices=ACTION_OPTIONS)
+    price_multiplier = forms.DecimalField(required=False)
+    base_on_msrp = forms.BooleanField(required=False)
+    allow_backorders_update = forms.BooleanField(required=False)

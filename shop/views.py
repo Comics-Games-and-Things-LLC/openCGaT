@@ -21,9 +21,10 @@ from images.models import Image
 from intake.models import DistItem
 from partner.models import get_partner, get_partner_or_401
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
-    CreateCustomChargeForm, RelatedProductsForm
+    CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm
 from .models import Product, Item, InventoryItem, MadeToOrder
 from .serializers import ItemSerializer
+from .views_api import item_list_filter
 
 
 def product_list(request, partner_slug=None):
@@ -726,3 +727,64 @@ def create_custom_charge(request, partner_slug):
         'form': form,
     }
     return TemplateResponse(request, "create_from_form.html", context=context)
+
+
+@login_required
+def bulk_edit(request, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+
+    initial_data = {'page_size': 20}
+    form = BulkEditItemsForm(initial=initial_data, manage=True)
+    if len(request.GET) != 0:
+        form = BulkEditItemsForm(request.GET, initial=initial_data, manage=True)
+
+    items = Item.objects.none()
+
+    if form.is_valid():
+        print("Filter form is valid")
+        # Fields I removed: "template" "product_type"
+        categories_to_include = []
+        for category in form.cleaned_data.get('categories'):
+            categories_to_include += category.get_descendants(
+                include_self=True)
+        items = item_list_filter(
+            in_stock_only=form.cleaned_data.get('in_stock_only'),
+            out_of_stock_only=form.cleaned_data.get('out_of_stock_only'),
+            sold_out_only=form.cleaned_data.get('sold_out_only'),
+            featured_products_only=form.cleaned_data.get('featured_products_only'),
+            price_low=form.cleaned_data.get('price_minimum'),
+            price_high=form.cleaned_data.get('price_maximum'),
+            publisher=form.cleaned_data.get('publisher'),
+            game=form.cleaned_data.get('game'),
+            faction=form.cleaned_data.get('game'),
+            categories_to_include=categories_to_include,
+        )
+    else:
+        print("Filter form is not valid")
+        print(len(form.errors), form.errors)
+
+    page_size = 20
+    page_number = 1
+
+    if form.is_valid():
+
+        page_size = form.cleaned_data['page_size']
+        if page_size is None or page_size <= 1:
+            page_size = 20
+        page_number = form.cleaned_data['page_number']
+        if page_number is None or page_number <= 1:
+            page_number = 1
+
+    paginator = Paginator(items, page_size)
+    if page_number > paginator.num_pages:
+        page_number = 1
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'partner': partner,
+        'filters_form': form,
+        'page': page_obj,
+        'page_number': page_number,
+        'valid_filter': form.is_valid()
+    }
+    return TemplateResponse(request, "partner/bulk_change.html", context=context)

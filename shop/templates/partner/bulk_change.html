@@ -1,0 +1,24 @@
+{% extends 'filtered_list_view.html' %}
+{% load wagtailcore_tags %}
+{% load templatehelpers %}
+{% load static %}
+
+{% block title %}Bulk Product Edit{% endblock %}
+{% block content_header %}
+    Use this form to find a list of items, then set an action and apply it.
+{% endblock %}
+{% block card %}
+    {% with entry as item %}
+        {{ item }}
+    {% endwith %}
+{% endblock card %}
+
+{% block alternate %}
+    <p class="p-6">
+        {% if form.is_valid %}
+            No items are available that match your search criteria.
+        {% else %}
+            Please filter the form to a subset of items.
+        {% endif %}
+    </p>
+{% endblock %}
