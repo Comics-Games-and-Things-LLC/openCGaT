@@ -748,7 +748,7 @@ class Cart(RepresentationMixin, models.Model):
 
     def get_total_subtotal(self):
         total = Money(0, "USD")
-        for line in self.lines.all():
+        for line in self.lines.prefetch_related('item', 'item__product').all():
             total += line.get_subtotal()
         return total
 
@@ -793,10 +793,7 @@ class Cart(RepresentationMixin, models.Model):
         return amount
 
     def get_pre_discount_subtotal(self):
-        total = Money(0, "USD")
-        for line in self.lines.all():
-            total += line.item.price * line.quantity
-        return total
+        return Money(self.lines.aggregate(sum=Sum(F('item__price') * F('quantity')))["sum"], "USD")
 
     def get_digital_total(self):
         total = Money(0, "USD")

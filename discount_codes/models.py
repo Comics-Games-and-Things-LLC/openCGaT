@@ -79,6 +79,7 @@ class DiscountCode(models.Model):
         :param line: cart line with item.
         :return: (applicable, new_price)
         """
+        prev_message = line.discount_code_message
         found_partner = False
         for discount in self.partner_discounts.filter(partner=line.item.partner):  # Try each discount from the partner
             found_partner = True
@@ -101,8 +102,11 @@ class DiscountCode(models.Model):
                     line.discount_code_message = "The code '{}' is not applicable to items from {}".format(self,
                                                                                                            line.item.product.publisher)
                     break  # exit the loop early to mark this line as not eligible.
+            # Eligible for the discount:
             line.discount_code_message = None
-            line.save()
+            if line.discount_code_message != prev_message:
+                print("Clearing discount code message")
+                line.save()
             old_price = line.item.price
             if line.price_per_unit_override:
                 old_price = line.price_per_unit_override
@@ -111,7 +115,10 @@ class DiscountCode(models.Model):
         if not found_partner:
             line.discount_code_message = "The code '{}' does not apply for items from the seller '{}'".format(self,
                                                                                                               line.item.partner)
-        line.save()
+        if line.discount_code_message != prev_message:
+            print(f"Setting discount code message to '{line.discount_code_message}' from '{prev_message}")
+            line.save()
+
         return False, line.item.price
 
     def save(self, *args, **kwargs):
