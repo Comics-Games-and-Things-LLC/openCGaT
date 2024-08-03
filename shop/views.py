@@ -741,13 +741,13 @@ def bulk_edit(request, partner_slug):
     items = Item.objects.none()
 
     if form.is_valid():
-        print("Filter form is valid")
         # Fields I removed: "template" "product_type"
         categories_to_include = []
         for category in form.cleaned_data.get('categories'):
             categories_to_include += category.get_descendants(
                 include_self=True)
         items = item_list_filter(
+            managing_partner=partner,
             in_stock_only=form.cleaned_data.get('in_stock_only'),
             out_of_stock_only=form.cleaned_data.get('out_of_stock_only'),
             sold_out_only=form.cleaned_data.get('sold_out_only'),
@@ -756,12 +756,23 @@ def bulk_edit(request, partner_slug):
             price_high=form.cleaned_data.get('price_maximum'),
             publisher=form.cleaned_data.get('publisher'),
             game=form.cleaned_data.get('game'),
-            faction=form.cleaned_data.get('game'),
+            faction=form.cleaned_data.get('faction'),
             categories_to_include=categories_to_include,
         )
-    else:
-        print("Filter form is not valid")
-        print(len(form.errors), form.errors)
+        # Update items if action tells us to.
+        action = form.cleaned_data.get('action_to_take')
+        if action == BulkEditItemsForm.UPDATE_PRICES:
+            multiplier = form.cleaned_data.get('multiplier', 1)  # Default to 1 if no value
+            for item in items:
+                if form.cleaned_data.get('base_on_msrp') and item.product.msrp:
+                    item.price = item.product.msrp * multiplier
+                else:
+                    item.price = item.default_price * multiplier
+                item.save()
+        if action == BulkEditItemsForm.UPDATE_BACKORDERS:
+            for item in items.instance_of(InventoryItem):  # type: InventoryItem
+                item.allow_backorders = form.cleaned_data.get("allow_backorders_update")
+                item.save()
 
     page_size = 20
     page_number = 1
@@ -779,11 +790,15 @@ def bulk_edit(request, partner_slug):
     if page_number > paginator.num_pages:
         page_number = 1
     page_obj = paginator.get_page(page_number)
+    serialized_list = []
+    for item in page_obj.object_list:
+        serialized_list.append(ItemSerializer(item).data)
 
     context = {
         'partner': partner,
         'filters_form': form,
-        'page': page_obj,
+        'page': page_obj,  # used only for "has_next_page"
+        'serialized_list': serialized_list,
         'page_number': page_number,
         'valid_filter': form.is_valid()
     }

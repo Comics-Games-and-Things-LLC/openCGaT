@@ -43,4 +43,4 @@ def item_list_filter(managing_partner=None,
         displayed_items = displayed_items.filter(product__factions=faction)
     displayed_items = displayed_items.distinct()
 
-    return displayed_items
+    return displayed_items.prefetch_related('partner', 'product')

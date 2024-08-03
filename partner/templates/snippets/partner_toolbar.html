@@ -40,8 +40,8 @@
             <a class="nav-link" href="{% url 'partner_customer_list' partner_slug=partner|slugify %}">Customers</a>
         </nav>
         <nav class="nav-item">
-            <a class="nav-link" href="{% url 'partner_discount_all' partner_slug=partner|slugify %}">
-                Bulk Price Change
+            <a class="nav-link" href="{% url 'bulk_edit' partner_slug=partner|slugify %}">
+                Bulk Edit
             </a>
         </nav>
         <nav class="nav-item">

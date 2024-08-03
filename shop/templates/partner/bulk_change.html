@@ -7,11 +7,37 @@
 {% block content_header %}
     Use this form to find a list of items, then set an action and apply it.
 {% endblock %}
-{% block card %}
-    {% with entry as item %}
-        {{ item }}
-    {% endwith %}
-{% endblock card %}
+{% block list %}
+    <table class="table">
+        <tr>
+            <th>Product</th>
+            <th>Inventory</th>
+            <th>Price</th>
+            <th>Allow Backorders?</th>
+        </tr>
+        {% for item in serialized_list %}
+            <tr>
+                <td>
+                    <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=item.product.slug %}">
+                        {{ item.product.name }}
+                    </a>{% if not item.product.visible %}
+                    <i class="fas fa-eye-slash"></i>
+                {% endif %}
+                </td>
+                <td>
+                    {{ item.inventory }}
+                </td>
+                <td>
+                    ${{ item.price }}
+                </td>
+                <td>
+                    <input type="checkbox" disabled {% if item.backorders_enabled %} checked {% endif %}/>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}
 
 {% block alternate %}
     <p class="p-6">
