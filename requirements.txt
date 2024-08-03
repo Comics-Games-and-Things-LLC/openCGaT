@@ -53,7 +53,7 @@ requests
 xlrd
 beautifulsoup4
 django-treebeard
-django-oscar@git+https://github.com/django-oscar/django-oscar@master
+django-oscar
 pytz
 
 python-dateutil
