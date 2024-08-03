@@ -134,6 +134,10 @@ class FiltersForm(forms.Form):
     game = forms.ModelChoiceField(Game.objects.all().order_by('name'), required=False)
     faction = forms.ModelChoiceField(Faction.objects.all().order_by('name').prefetch_related('game'), required=False)
 
+    out_of_stock_only = forms.BooleanField(required=False)
+    sold_out_only = forms.BooleanField(required=False)
+    templates = forms.BooleanField(required=False)
+
     def __init__(self, *args, **kwargs):
         manage = kwargs.pop('manage')
         super(FiltersForm, self).__init__(*args, **kwargs)
@@ -150,13 +154,10 @@ class FiltersForm(forms.Form):
             self.fields['faction'].queryset = Faction.objects.filter(game=game).order_by(
                 'name').prefetch_related('game')
 
-        if manage:
-            self.fields['out_of_stock_only'] = forms.BooleanField(required=False)
-            self.fields['out_of_stock_only'].initial = False
-            self.fields['sold_out_only'] = forms.BooleanField(required=False)
-            self.fields['sold_out_only'].initial = False
-            self.fields['templates'] = forms.BooleanField(required=False)
-            self.fields['templates'].initial = False
+        if not manage:
+            self.fields.pop('out_of_stock_only')
+            self.fields.pop('sold_out_only')
+            self.fields.pop('templates')
 
 
 class AddMTOItemForm(forms.ModelForm):
