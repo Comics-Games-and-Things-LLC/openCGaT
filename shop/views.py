@@ -780,6 +780,11 @@ def bulk_edit(request, partner_slug):
             for item in items.instance_of(InventoryItem):  # type: InventoryItem
                 item.allow_backorders = form.cleaned_data.get("allow_backorders_update")
                 item.save()
+        if action == BulkEditItemsForm.ENABLE_ALERT:
+            for item in items.instance_of(InventoryItem): # type: InventoryItem
+                item.enable_restock_alert = form.cleaned_data.get("enable_restock_alert")
+                item.low_inventory_alert_threshold = form.cleaned_data.get("low_inventory_alert_threshold")
+                item.save()
 
     page_size = 20
     page_number = 1
