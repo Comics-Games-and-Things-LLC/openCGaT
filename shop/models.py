@@ -547,6 +547,9 @@ class InventoryItem(Item):
     allow_extra_preorders = models.BooleanField(default=False,
                                                 help_text="If the item is preallocated and backorders are allowed, button will be backorder instead of marking as sold out of pre-orders")
 
+    enable_restock_alert = models.BooleanField(default=False)
+    low_inventory_alert_threshold = models.IntegerField(default=0)
+
     def save(self, *args, **kwargs):
         reason = kwargs.pop('change_reason', "Manual edit or Other")
         skip_log = kwargs.pop('skip_log', False)  # must pop kwargs before passing to regular constructor

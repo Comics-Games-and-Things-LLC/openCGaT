@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, F
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -57,12 +57,14 @@ def product_list(request, partner_slug=None):
     out_of_stock_only = False
     sold_out_only = False
     featured_products_only = None
+    restock_alert_only = False
     only_templates = False
     publisher = None
     game = None
     faction = None
 
     if form.is_valid():
+        restock_alert_only = form.cleaned_data.get('restock_alert_only')
         if form.cleaned_data.get('in_stock_only'):
             in_stock_only = True
         if form.cleaned_data.get('out_of_stock_only'):
@@ -116,7 +118,11 @@ def product_list(request, partner_slug=None):
                               | all_items.instance_of(apps.get_model('digitalitems.DigitalItem'))
         if product_type == Item.INVENTORY:  # Inventory
             inv_items = all_items.instance_of(InventoryItem)
-            if in_stock_only:
+            if restock_alert_only:
+                inv_items = inv_items.filter(inventoryitem__enable_restock_alert=True,
+                                             inventoryitem__current_inventory__lte=F(
+                                                 'inventoryitem__low_inventory_alert_threshold'))
+            elif in_stock_only:
                 inv_items = inv_items.filter(
                     inventoryitem__current_inventory__gte=1)
             elif out_of_stock_only:
@@ -156,8 +162,8 @@ def product_list(request, partner_slug=None):
     if partner:
         # This partner filter is for if the partner is viewing from the management url
         partner = get_partner_or_401(request, partner_slug)
-        if not (
-                in_stock_only or out_of_stock_only or sold_out_only):  # Do not add extra products when filtering stock
+        if not (  # Do not add extra products when filtering stock
+                in_stock_only or out_of_stock_only or sold_out_only or restock_alert_only):
             if len(selected_product_types) == max_product_types or len(selected_product_types) == 0:
                 # If viewing all products, show products with no items (and thus no item type)
                 incomplete_products = Product.objects.filter(
@@ -184,7 +190,6 @@ def product_list(request, partner_slug=None):
             | Q(publisher_short_sku=search_query)
             | Q(publisher_sku=search_query)
             | Q(description__search=SearchQuery(search_query, search_type='websearch'))
-
         )
 
     if len(categories_to_include) != 0:
@@ -748,9 +753,11 @@ def bulk_edit(request, partner_slug):
                 include_self=True)
         items = item_list_filter(
             managing_partner=partner,
+            search_query=form.cleaned_data.get('search'),
             in_stock_only=form.cleaned_data.get('in_stock_only'),
             out_of_stock_only=form.cleaned_data.get('out_of_stock_only'),
             sold_out_only=form.cleaned_data.get('sold_out_only'),
+            restock_alert_only=form.cleaned_data.get('restock_alert_only'),
             featured_products_only=form.cleaned_data.get('featured_products_only'),
             price_low=form.cleaned_data.get('price_minimum'),
             price_high=form.cleaned_data.get('price_maximum'),

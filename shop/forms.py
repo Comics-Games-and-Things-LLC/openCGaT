@@ -75,7 +75,9 @@ class AddInventoryItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
         fields = ['current_inventory', 'preallocated_inventory', 'allow_backorders',
-                  'price', 'default_price', 'featured', 'preallocated', 'allow_extra_preorders']
+                  'price', 'default_price', 'featured', 'preallocated', 'allow_extra_preorders',
+                  'enable_restock_alert', 'low_inventory_alert_threshold',
+                  ]
 
     def __init__(self, *args, **kwargs):
         partner = kwargs.pop('partner')
@@ -136,6 +138,7 @@ class FiltersForm(forms.Form):
 
     out_of_stock_only = forms.BooleanField(required=False)
     sold_out_only = forms.BooleanField(required=False)
+    restock_alert_only = forms.BooleanField(required=False)
     templates = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
@@ -157,6 +160,7 @@ class FiltersForm(forms.Form):
         if not manage:
             self.fields.pop('out_of_stock_only')
             self.fields.pop('sold_out_only')
+            self.fields.pop('restock_alert_only')
             self.fields.pop('templates')
 
 
@@ -191,7 +195,6 @@ class CreateCustomChargeForm(forms.ModelForm):
 
 
 class BulkEditItemsForm(FiltersForm):
-
     NO_ACTION = "No Action"
     UPDATE_PRICES = "Update Prices"
     UPDATE_BACKORDERS = "Update Backorderability"
