@@ -769,7 +769,7 @@ def bulk_edit(request, partner_slug):
         # Update items if action tells us to.
         action = form.cleaned_data.get('action_to_take')
         if action == BulkEditItemsForm.UPDATE_PRICES:
-            multiplier = form.cleaned_data.get('multiplier', 1)  # Default to 1 if no value
+            multiplier = form.cleaned_data.get('price_multiplier', 1)  # Default to 1 if no value
             for item in items:
                 if form.cleaned_data.get('base_on_msrp') and item.product.msrp:
                     item.price = item.product.msrp * multiplier
