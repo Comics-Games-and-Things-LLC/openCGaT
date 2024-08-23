@@ -4,10 +4,10 @@ jobs:
   test_project:
     runs-on: ubuntu-latest # operating system your code will run on
     env:
-      PSQL_HOST: ${{ env.PSQL_HOST }}
-      PSQL_PORT: ${{ env.PSQL_PORT }}
-      PSQL_USERNAME: ${{ env.PSQL_USERNAME }}
-      PSQL_PASSWORD: ${{ env.PSQL_PASSWORD }}
+      PSQL_HOST: ${{ secrets.PSQL_HOST }}
+      PSQL_PORT: ${{ secrets.PSQL_PORT }}
+      PSQL_USERNAME: ${{ secrets.PSQL_USERNAME }}
+      PSQL_PASSWORD: ${{ secrets.PSQL_PASSWORD }}
     steps:
       - run: echo ${{ env.DJANGO_ENV }}
       - uses: actions/checkout@v4
