@@ -3,6 +3,8 @@ on: [pull_request, push] # activates the workflow when there is a push or pull r
 jobs:
   test_project:
     runs-on: ubuntu-latest # operating system your code will run on
+    env:
+      DJANGO_ENV: ${{ env.DJANGO_ENV }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
