@@ -4,12 +4,13 @@ jobs:
   test_project:
     runs-on: ubuntu-latest # operating system your code will run on
     env:
+      DJANGO_ENV: ${{ vars.DJANGO_ENV }}
       PSQL_HOST: ${{ secrets.PSQL_HOST }}
       PSQL_PORT: ${{ secrets.PSQL_PORT }}
       PSQL_USERNAME: ${{ secrets.PSQL_USERNAME }}
       PSQL_PASSWORD: ${{ secrets.PSQL_PASSWORD }}
     steps:
-      - run: echo ${{ env.DJANGO_ENV }}
+      - run: echo ${{ vars.DJANGO_ENV }}
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
       - run: pip install -r requirements.txt # install all our dependencies for the project
