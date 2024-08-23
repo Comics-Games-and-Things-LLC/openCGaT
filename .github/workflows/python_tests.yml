@@ -6,5 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+      - run: echo ${{ DJANGO_ENV }}
+      - run: echo ${{ env.DJANGO_ENV }}
       - run: pip install -r requirements.txt # install all our dependencies for the project
       - run: ./manage.py test --no-input
