@@ -1,0 +1,10 @@
+name: test_Django
+on: [pull_request, push] # activates the workflow when there is a push or pull request in the repo
+jobs:
+  test_project:
+    runs-on: ubuntu-latest # operating system your code will run on
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: pip install -r requirements.txt # install all our dependencies for the project
+      - run: ./manage.py test --no-input
