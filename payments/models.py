@@ -27,7 +27,7 @@ class Payment(PolymorphicModel):
     applied_to_cart = models.BooleanField(default=False)
 
     def __str__(self):
-        return "Payment ({}) for {} from cart {}".format(self.id, self.requested_payment, self.cart.id)
+        return "Payment ({}) for {} from cart {}".format(self.id, self.requested_payment, self.cart_id)
 
     @property
     def amount_cents(self):
@@ -107,7 +107,7 @@ class StripePayment(Payment):
     intent_id = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
-        name = "Stripe Payment Intent {} for cart {}, {} cents".format(self.intent_id, self.cart.id, self.amount_cents)
+        name = "Stripe Payment Intent {} for cart {}, {} cents".format(self.intent_id, self.cart_id, self.amount_cents)
         if self.collected:
             name += ", captured"
         return name
@@ -117,7 +117,7 @@ class StripePayment(Payment):
             intent = stripe.PaymentIntent.retrieve(self.intent_id)
             if intent.amount_received > 0:
                 if not (intent.amount_received + 1 >= self.amount_cents >= intent.amount_received - 1):
-                    mail.mail_admins("Cart {} has mismatched collected amount!".format(self.cart.id),
+                    mail.mail_admins("Cart {} has mismatched collected amount!".format(self.cart_id),
                                      fail_silently=True,
                                      message="You may need to send a refund! Check stripe and this cart ID. \n"
                                              "The system thinks this payment intent is supposed to have connected {} "
@@ -234,7 +234,7 @@ class PaypalPayment(Payment):
 
     @property
     def invoice_id(self):
-        return "{}-{}".format(self.cart.id, self.id)
+        return "{}-{}".format(self.cart_id, self.id)
 
     @staticmethod
     def send_post(request_endpoint, data=None):

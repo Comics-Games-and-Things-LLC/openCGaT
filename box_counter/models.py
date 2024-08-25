@@ -29,4 +29,4 @@ class BoxUse(models.Model):
     cart = models.ForeignKey('checkout.Cart', on_delete=models.PROTECT, related_name='used_boxes')
 
     def __str__(self):
-        return f"{self.box.description} on order {self.cart.id}"
+        return f"{self.box.description} on order {self.cart_id}"
