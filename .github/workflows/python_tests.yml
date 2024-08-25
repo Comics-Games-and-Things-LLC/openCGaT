@@ -1,17 +1,34 @@
-name: test_Django
+name: run_django_tests
 on: [pull_request, push] # activates the workflow when there is a push or pull request in the repo
 jobs:
-  test_project:
+  run_django_tests:
     runs-on: ubuntu-latest # operating system your code will run on
     environment: CI Tests
     env:
-      DJANGO_ENV: ${{ vars.DJANGO_ENV }}
-      PSQL_HOST: ${{ secrets.PSQL_HOST }}
-      PSQL_PORT: ${{ secrets.PSQL_PORT }}
-      PSQL_USERNAME: ${{ secrets.PSQL_USERNAME }}
-      PSQL_PASSWORD: ${{ secrets.PSQL_PASSWORD }}
+      DJANGO_ENV: development
+      PSQL_HOST: postgres
+      PSQL_PORT: 5432
+      PSQL_USERNAME: postgres
+      PSQL_PASSWORD: postgres
+      # Service containers to run with `container-job`
+      services:
+        # Label used to access the service container
+        postgres:
+          # Docker Hub image
+          image: postgres
+          # Provide the password for postgres
+          env:
+            POSTGRES_PASSWORD: postgres
+          # Set health checks to wait until postgres has started
+          options: >-
+            --health-cmd pg_isready
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+          ports:
+            # Maps tcp port 5432 on service container to the host
+            - 5432:5432
     steps:
-      - run: echo "${{ vars.DJANGO_ENV }}"
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
       - run: pip install -r requirements.txt # install all our dependencies for the project
