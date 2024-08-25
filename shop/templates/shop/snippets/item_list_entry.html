@@ -78,6 +78,11 @@
                         {% endif %}
                     {% endif %}
                 {% endif %}
+                {% if partner and item.enable_restock_alert %}
+                    <p class="text-gray-400">
+                        {{ item.low_inventory_alert_threshold }} Threshold                 
+                    </p>
+                {% endif %}
                 {% if product.msrp %}
                     <p class="text-gray-400">
                         MSRP {{ product.msrp }}

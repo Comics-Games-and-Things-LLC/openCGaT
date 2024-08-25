@@ -26,6 +26,9 @@
                 </td>
                 <td>
                     {{ item.inventory }}
+                    {% if item.enable_restock_alert %}
+                    / {{ item.low_inventory_alert_threshold }}
+                    {% endif %}
                 </td>
                 <td>
                     ${{ item.price }}

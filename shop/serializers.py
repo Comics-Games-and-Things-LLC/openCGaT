@@ -27,11 +27,15 @@ class ItemSerializer(serializers.ModelSerializer):
     is_pay_what_you_want = serializers.SerializerMethodField()
     button_status = serializers.SerializerMethodField()
 
+    enable_restock_alert = serializers.SerializerMethodField()
+    low_inventory_alert_threshold = serializers.SerializerMethodField()
+
     class Meta:
         model = Item
         fields = (
             'id', 'type', 'product', 'price', 'default_price', 'partner', 'inventory',
             'backorders_enabled', 'is_preorder', 'button_status', 'is_pay_what_you_want',
+            'enable_restock_alert', 'low_inventory_alert_threshold',
         )
 
     @staticmethod
@@ -68,3 +72,15 @@ class ItemSerializer(serializers.ModelSerializer):
     def get_button_status(self, item):
         cart = self.context.get("cart")
         return item.button_status(cart=cart)
+
+    @staticmethod
+    def get_enable_restock_alert(item):
+        if isinstance(item, InventoryItem):
+            return item.enable_restock_alert
+        return False
+
+    @staticmethod
+    def get_low_inventory_alert_threshold(item):
+        if isinstance(item, InventoryItem):
+            return item.low_inventory_alert_threshold
+        return None
