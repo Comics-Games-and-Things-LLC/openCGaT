@@ -332,14 +332,14 @@ class Cart(RepresentationMixin, models.Model):
         """
         if self.discount_code:
             self.discount_code.validate_code_for_cart(self)
-        if self.lines.count() == 0:
+        if not self.lines.exists():
             return
         self.status = self.FROZEN
         for line in self.lines.all():
             if not line.item.cart_owner_allowed_to_purchase(self):
                 line.delete()  # Remove all items the user isn't allowed to purchase
         # TODO: consider displaying a message to the user that the item(s) were removed
-        if self.lines.count() == 0:
+        if not self.lines.exists():
             self.thaw()
         self.save()
 

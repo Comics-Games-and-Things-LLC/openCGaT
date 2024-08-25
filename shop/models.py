@@ -209,7 +209,7 @@ class Product(PolymorphicModel):
 
     @property
     def published(self):
-        return not (self.item_set.count() == 0 or self.page_is_draft)
+        return self.item_set.exists() and not self.page_is_draft
 
     @property
     def should_be_listed(self):

@@ -453,7 +453,7 @@ def partner_order_details(request, partner_slug, cart_id):
                 past_cart = form.save()
                 barcode_counts = Counter(form.cleaned_data.get('used_box_barcodes', "").split(";"))
                 for barcode, count in barcode_counts.items():
-                    if BoxInventory.objects.filter(barcode=barcode).count() == 0:
+                    if not BoxInventory.objects.filter(barcode=barcode).exists():
                         continue
                     box = BoxInventory.objects.get(barcode=barcode)
                     if not barcode:
