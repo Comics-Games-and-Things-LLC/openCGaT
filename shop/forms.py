@@ -148,7 +148,12 @@ class FiltersForm(forms.Form):
         partner = self.data.get('partner')
 
         publisher = self.data.get('publisher')
+        if publisher and not publisher.isnumeric(): # Validate in case we have invalid input
+            publisher = None
+
         game = self.data.get('game')
+        if game and not game.isnumeric(): # Validate in case we have invalid input
+            game = None
         if publisher:
             self.fields['game'].queryset = Game.objects.filter(publisher=publisher).order_by('name')
             self.fields['faction'].queryset = Faction.objects.filter(game__publisher=publisher).order_by(
