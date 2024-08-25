@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.sites.models import Site
 from django.test import TestCase
 from djmoney.money import Money
@@ -46,9 +48,17 @@ class CheckoutTestCase(TestCase):
 
     def test_pay(self):
         cart = Cart.objects.get(email="Test@comicsgamesandthings.com")
-        cart.pay_amount(Money(10.33, "USD"))
-
-        self.assertEqual(cart.status, Cart.PAID)
-        self.assertEqual(cart.final_total, Money("10.33", 'USD'))
-        self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
-        self.assertEqual(cart.final_tax, Money(".33", 'USD'))
+        has_quaderno = os.getenv("QUADERNO_URL")
+        if has_quaderno:
+            # Assuming that the quaderno account is registered in wisconsin and the tax rate is still 5.5%
+            cart.pay_amount(Money(10.33, "USD"))
+            self.assertEqual(cart.status, Cart.PAID)
+            self.assertEqual(cart.final_total, Money("10.33", 'USD'))
+            self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
+            self.assertEqual(cart.final_tax, Money(".33", 'USD'))
+        else:
+            cart.pay_amount(Money(10.00, "USD"))
+            self.assertEqual(cart.status, Cart.PAID)
+            self.assertEqual(cart.final_total, Money("10.33", 'USD'))
+            self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
+            self.assertEqual(cart.final_tax, Money(".00", 'USD'))
