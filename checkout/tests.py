@@ -50,6 +50,7 @@ class CheckoutTestCase(TestCase):
         cart = Cart.objects.get(email="Test@comicsgamesandthings.com")
         has_quaderno = os.getenv("QUADERNO_URL")
         if has_quaderno:
+            print("Testing tax with quaderno configured")
             # Assuming that the quaderno account is registered in wisconsin and the tax rate is still 5.5%
             cart.pay_amount(Money(10.33, "USD"))
             self.assertEqual(cart.status, Cart.PAID)
@@ -57,8 +58,9 @@ class CheckoutTestCase(TestCase):
             self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
             self.assertEqual(cart.final_tax, Money(".33", 'USD'))
         else:
+            print("Will not test tax")
             cart.pay_amount(Money(10.00, "USD"))
             self.assertEqual(cart.status, Cart.PAID)
-            self.assertEqual(cart.final_total, Money("10.33", 'USD'))
+            self.assertEqual(cart.final_total, Money("10.00", 'USD'))
             self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
             self.assertEqual(cart.final_tax, Money(".00", 'USD'))
