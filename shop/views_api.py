@@ -2,6 +2,7 @@ from django.contrib.postgres.search import SearchQuery
 from django.db.models import F,Q
 from moneyed import Money
 
+from intake.models import Distributor
 from shop.models import Item
 
 
@@ -21,6 +22,7 @@ def item_list_filter(managing_partner=None,
                      publisher=None,
                      game=None,
                      faction=None,
+                     distributor=None
                      ):
     if price_low is None:
         price_low = Money(0, 'USD')
@@ -58,6 +60,8 @@ def item_list_filter(managing_partner=None,
         displayed_items = displayed_items.filter(product__games=game)
     if faction:
         displayed_items = displayed_items.filter(product__factions=faction)
+    if distributor:
+        displayed_items = displayed_items.filter(product__publisher__available_through_distributors=distributor)
     displayed_items = displayed_items.distinct()
 
     if search_query:

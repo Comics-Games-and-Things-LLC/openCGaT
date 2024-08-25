@@ -28,6 +28,8 @@ class Publisher(models.Model):
     no_discount_codes = models.BooleanField(default=False,
                                             help_text="If set, discount codes cannot apply at all")
 
+    available_through_distributors = models.ManyToManyField("intake.Distributor", null=True, blank=True)
+
     def __str__(self):
         return self.name
 

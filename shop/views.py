@@ -62,6 +62,7 @@ def product_list(request, partner_slug=None):
     publisher = None
     game = None
     faction = None
+    distributor = None
 
     if form.is_valid():
         restock_alert_only = form.cleaned_data.get('restock_alert_only')
@@ -87,6 +88,7 @@ def product_list(request, partner_slug=None):
             game = form.cleaned_data.get('game')
         if form.cleaned_data.get('faction'):
             faction = form.cleaned_data.get('faction')
+        distributor = form.cleaned_data.get('distributor')
         if form.cleaned_data.get('search'):
             search_query = form.cleaned_data.get('search')
         if partner_slug:
@@ -201,6 +203,9 @@ def product_list(request, partner_slug=None):
         displayed_products = displayed_products.filter(games=game)
     if faction:
         displayed_products = displayed_products.filter(factions=faction)
+    if distributor:
+        displayed_products = displayed_products.filter(publisher__available_through_distributors=distributor)
+
     displayed_products = displayed_products.distinct()
 
     order_by = request.GET.get('order_by', default="-release_date")
@@ -764,6 +769,7 @@ def bulk_edit(request, partner_slug):
             publisher=form.cleaned_data.get('publisher'),
             game=form.cleaned_data.get('game'),
             faction=form.cleaned_data.get('faction'),
+            distributor = form.cleaned_data.get('distributor'),
             categories_to_include=categories_to_include,
         )
         # Update items if action tells us to.

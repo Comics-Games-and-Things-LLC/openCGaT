@@ -7,6 +7,7 @@ from djmoney.forms import MoneyField
 from treewidget.fields import TreeModelMultipleChoiceField
 
 from game_info.models import Game, Faction
+from intake.models import Distributor
 from partner.models import Partner
 from shop.models import Product, Item, Category, MadeToOrder, InventoryItem, CustomChargeItem, Publisher
 
@@ -136,6 +137,8 @@ class FiltersForm(forms.Form):
     game = forms.ModelChoiceField(Game.objects.all().order_by('name'), required=False)
     faction = forms.ModelChoiceField(Faction.objects.all().order_by('name').prefetch_related('game'), required=False)
 
+    distributor = forms.ModelChoiceField(Distributor.objects.all().order_by('dist_name'), required=False)
+
     out_of_stock_only = forms.BooleanField(required=False)
     sold_out_only = forms.BooleanField(required=False)
     restock_alert_only = forms.BooleanField(required=False)
@@ -145,8 +148,6 @@ class FiltersForm(forms.Form):
         manage = kwargs.pop('manage')
         super(FiltersForm, self).__init__(*args, **kwargs)
 
-        partner = self.data.get('partner')
-
         publisher = self.data.get('publisher')
         if publisher and not publisher.isnumeric(): # Validate in case we have invalid input
             publisher = None
@@ -154,6 +155,15 @@ class FiltersForm(forms.Form):
         game = self.data.get('game')
         if game and not game.isnumeric(): # Validate in case we have invalid input
             game = None
+
+        distributor = self.data.get('distributor')
+        if distributor and not distributor.isnumeric():
+            distributor = None
+
+        if manage and distributor:
+            self.fields['publisher'].queryset = Publisher.objects.filter(available_through_distributors=distributor
+                                                                ).order_by('name')
+
         if publisher:
             self.fields['game'].queryset = Game.objects.filter(publisher=publisher).order_by('name')
             self.fields['faction'].queryset = Faction.objects.filter(game__publisher=publisher).order_by(
@@ -163,6 +173,7 @@ class FiltersForm(forms.Form):
                 'name').prefetch_related('game')
 
         if not manage:
+            self.fields.pop('distributor')
             self.fields.pop('out_of_stock_only')
             self.fields.pop('sold_out_only')
             self.fields.pop('restock_alert_only')
