@@ -6,7 +6,7 @@ jobs:
     environment: CI Tests
     env:
       DJANGO_ENV: development
-      PSQL_HOST: postgres
+      PSQL_HOST: localhost
       PSQL_PORT: 5432
       PSQL_USERNAME: postgres
       PSQL_PASSWORD: postgres
