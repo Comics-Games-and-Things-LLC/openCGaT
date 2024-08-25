@@ -2,6 +2,7 @@ import decimal
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db.models import Max
 from django.forms import HiddenInput
 from djmoney.forms import MoneyField
 from djmoney.money import Money
@@ -76,18 +77,25 @@ class POLineForm(forms.ModelForm):
         po = kwargs.pop('po', None)
         self.expected_discount = None
         super(POLineForm, self).__init__(*args, **kwargs)
+
         self.fields['cost_per_item'].required = False
         self.fields['subtotal'].help_text = "Set cost per line or subtotal and expected quantity"
         if self.instance and hasattr(self.instance, 'po'):
             po = self.instance.po
+
+        current_highest_line = po.lines.aggregate(Max('line_number'))["line_number__max"]
+        print(f"Current highest line {current_highest_line}")
+        self.fields['line_number'].help_text = f"The purchase order currently goes up to line {current_highest_line}"
+
         if not (po and po.distributor.dist_has_pricing_col):
             self.fields['pricing'].widget = forms.HiddenInput()
+
         if not (self.instance and self.instance.product):
             return
-
         msrp = self.instance.product.msrp
         self.fields['msrp_on_line'].help_text = str(msrp)
         self.expected_discount = po.get_distributor_discount(self.instance)
+
         if not (self.expected_discount and msrp):
             return
         expected_cost = msrp - (msrp * self.expected_discount.discount_percentage / 100)
