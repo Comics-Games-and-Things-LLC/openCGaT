@@ -4,9 +4,10 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import Sum, F, Q, Value
-from djmoney.models.fields import MoneyField
+from djmoney.models.fields import MoneyField, CurrencyField
 from djmoney.money import Money
 
+from openCGaT.components.djmoney import CURRENCY_CHOICES_PURCHASING
 from partner.models import Partner
 from shop.models import Category, Product
 
@@ -20,6 +21,7 @@ class Distributor(models.Model):
 
     dist_has_pricing_col = models.BooleanField(default=False,
                                                help_text="Determines if that column shows on purchase orders")
+    currency = CurrencyField(choices=CURRENCY_CHOICES_PURCHASING)
 
     def __str__(self):
         return self.dist_name
@@ -141,9 +143,17 @@ class PurchaseOrder(models.Model):
     po_number = models.CharField(max_length=40, primary_key=True)
     archived = models.BooleanField(default=False)
     amount_charged = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True)
-    subtotal = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True)
+    subtotal = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True,
+                          currency_choices=CURRENCY_CHOICES_PURCHASING
+                          )
     separate_invoice_number = models.CharField(max_length=200, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.subtotal:
+            self.subtotal = Money(self.subtotal.amount, self.distributor.currency)
+        super(PurchaseOrder, self).save(*args, **kwargs)
+
 
     def __str__(self):
         return f"{self.distributor} {self.po_number}"
@@ -223,7 +233,9 @@ class POLine(models.Model):
     name = models.TextField(null=True, blank=True)
     barcode = models.CharField(max_length=20, blank=True, null=True)
     distributor_code = models.CharField(max_length=200, blank=True, null=True)
-    cost_per_item = MoneyField(max_digits=8, decimal_places=4, default_currency='USD', blank=True, null=True)
+    cost_per_item = MoneyField(max_digits=8, decimal_places=4, default_currency='USD', blank=True, null=True,
+                               currency_choices=CURRENCY_CHOICES_PURCHASING
+                               )
     msrp_on_line = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', blank=True, null=True)
     expected_quantity = models.IntegerField(default=0)
     received_quantity = models.IntegerField(default=0)
@@ -240,7 +252,7 @@ class POLine(models.Model):
     @property
     def actual_cost(self):
         if self.cost_per_item is not None:
-            return self.cost_per_item * self.po.fee_ratio()
+            return Money(self.cost_per_item.amount * self.po.fee_ratio(), "USD")
         else:
             return None
 
@@ -288,6 +300,11 @@ class POLine(models.Model):
             self.name = product.name
         if self.line_number is None:
             self.line_number = self.po.lines.count
+
+        # Update currency to be based on the purchase order
+        if self.cost_per_item:
+            self.cost_per_item = Money(self.cost_per_item.amount, self.po.distributor.currency)
+
         return super(POLine, self).save(*args, **kwargs)
 
 
