@@ -112,7 +112,7 @@ class POLineForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data['subtotal'] and not cleaned_data['cost_per_item']:
+        if cleaned_data.get('subtotal') and not cleaned_data.get('cost_per_item'):
             cpi = cleaned_data['subtotal'] / cleaned_data['expected_quantity']
             cpi = Money(cpi.amount.quantize(FOUR_PLACES), 'USD', decimal_places=4)
             cleaned_data['cost_per_item'] = cpi
