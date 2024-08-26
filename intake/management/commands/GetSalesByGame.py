@@ -28,15 +28,15 @@ def get_sales_by_thing(thing=GAME, **options):
     if year is None:
         display_year = "all time"
 
-    f = open(f"reports/earnings by {thing}.txt", "a")
+    f = open(f"reports/earnings by {thing}.txt", "a", encoding="UTF-8")
 
-    f2 = open(f"reports/earnings by {thing} entries.csv", "w")
+    f2 = open(f"reports/earnings by {thing} entries.csv", "w", encoding="UTF-8")
     entries_writer = csv.DictWriter(f2, [f"{thing}", "Product", "Quantity", "Cart",
                                          "Collected", "Shipping", "Spent",
                                          "Total Costs", "Net", "Margin"])
     entries_writer.writeheader()
 
-    f3 = open(f"reports/earnings by {thing}.csv", "w")
+    f3 = open(f"reports/earnings by {thing}.csv", "w", encoding="UTF-8")
     summary_writer = csv.DictWriter(f3, [f"{thing}", "Spent on Sold", "Shipping on Sold", "Costs on Sold",
                                          "Collected", "Collected for events", "Collected Locally", "Spent this year"])
     summary_writer.writeheader()
@@ -187,8 +187,8 @@ class Command(BaseCommand):
     # available to check for the second game. One way of solving this would be to reset the "sold" count between games.
 
     def add_arguments(self, parser):
-        parser.add_argument("year", type=int)
-        parser.add_argument("all", type=bool)
+        parser.add_argument("--year", type=int)
+        parser.add_argument("--all", type=bool)
 
     def handle(self, *args, **options):
         get_sales_by_thing(GAME, **options)
