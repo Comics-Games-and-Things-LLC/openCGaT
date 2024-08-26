@@ -93,8 +93,11 @@ class POLineForm(forms.ModelForm):
         if not (po and po.lines):
             return
         current_highest_line = po.lines.aggregate(Max('line_number'))["line_number__max"]
-        print(f"Current highest line {current_highest_line}")
-        self.fields['line_number'].help_text = f"The purchase order currently goes up to line {current_highest_line}"
+        number_of_numbered_lines = po.lines.filter(line_number__gt=0).count()
+        if current_highest_line == number_of_numbered_lines:
+            self.fields['line_number'].help_text = f"{current_highest_line + 1}, Based on: "
+        self.fields['line_number'].help_text += f"Highest line: {current_highest_line}, " \
+                                                f"Lines with numbers: {number_of_numbered_lines}"
 
     def hide_pricing_element(self, po):
         if not (po and po.distributor.dist_has_pricing_col):
