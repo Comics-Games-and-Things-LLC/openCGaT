@@ -142,6 +142,8 @@ class PurchaseOrder(models.Model):
     archived = models.BooleanField(default=False)
     amount_charged = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True)
     subtotal = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True)
+    separate_invoice_number = models.CharField(max_length=200, null=True, blank=True)
+    notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.distributor} {self.po_number}"
