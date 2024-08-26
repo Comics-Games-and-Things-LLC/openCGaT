@@ -83,13 +83,22 @@ class POLineForm(forms.ModelForm):
         if self.instance and hasattr(self.instance, 'po'):
             po = self.instance.po
 
+        self.set_line_number_help_text(po)
+        self.hide_pricing_element(po)
+        self.set_msrp_and_cost_help_text(po)
+
+    def set_line_number_help_text(self, po):
+        if not (po and po.lines):
+            return
         current_highest_line = po.lines.aggregate(Max('line_number'))["line_number__max"]
         print(f"Current highest line {current_highest_line}")
         self.fields['line_number'].help_text = f"The purchase order currently goes up to line {current_highest_line}"
 
+    def hide_pricing_element(self, po):
         if not (po and po.distributor.dist_has_pricing_col):
             self.fields['pricing'].widget = forms.HiddenInput()
 
+    def set_msrp_and_cost_help_text(self, po):
         if not (self.instance and self.instance.product):
             return
         msrp = self.instance.product.msrp
