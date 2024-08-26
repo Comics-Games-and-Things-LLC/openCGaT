@@ -340,7 +340,9 @@ def edit_po(request, partner_slug, po_id=None):
                 # Move any lines to the new purchase order
                 POLine.objects.filter(po__po_number=po_id).update(po=po)
             # redirect to a new URL:
-            return HttpResponseRedirect(reverse("purchase_orders", kwargs={'partner_slug': partner.slug}))
+            return HttpResponseRedirect(reverse("po_details",
+                                                kwargs={'partner_slug': partner.slug,
+                                                        'po_id': po.po_number}))
     context = {
         'form': form,
         'partner': partner,
