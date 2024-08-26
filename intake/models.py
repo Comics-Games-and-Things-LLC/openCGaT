@@ -239,7 +239,7 @@ class POLine(models.Model):
 
     @property
     def actual_cost(self):
-        if self.cost_per_item:
+        if self.cost_per_item is not None:
             return self.cost_per_item * self.po.fee_ratio()
         else:
             return None
