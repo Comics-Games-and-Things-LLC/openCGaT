@@ -97,6 +97,8 @@ def invert_order_string(order_str):
 class FiltersForm(forms.Form):
     search = forms.CharField(required=False)
     in_stock_only = forms.BooleanField(required=False)
+    allocated_only = forms.BooleanField(required=False)
+    available_for_order_only = forms.BooleanField(required=False)
 
     SORT_RELEASE_DATE = "-release_date"
     SORT_PRICE = "price"

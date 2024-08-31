@@ -1,3 +1,5 @@
+import datetime
+
 from allauth.account.models import EmailAddress
 from allauth.account.utils import send_email_confirmation
 from django.apps import apps
@@ -54,6 +56,8 @@ def product_list(request, partner_slug=None):
     categories_to_include = []
     filter_partner = None
     in_stock_only = False
+    available_for_order_only = False
+    allocated_only = False
     out_of_stock_only = False
     sold_out_only = False
     featured_products_only = None
@@ -68,6 +72,10 @@ def product_list(request, partner_slug=None):
         restock_alert_only = form.cleaned_data.get('restock_alert_only')
         if form.cleaned_data.get('in_stock_only'):
             in_stock_only = True
+        if form.cleaned_data.get('available_for_order_only'):
+            available_for_order_only = True
+        if form.cleaned_data.get('allocated_only'):
+            allocated_only = True
         if form.cleaned_data.get('out_of_stock_only'):
             out_of_stock_only = True
         if form.cleaned_data.get('sold_out_only'):
@@ -124,6 +132,27 @@ def product_list(request, partner_slug=None):
                 inv_items = inv_items.filter(inventoryitem__enable_restock_alert=True,
                                              inventoryitem__current_inventory__lte=F(
                                                  'inventoryitem__low_inventory_alert_threshold'))
+            elif available_for_order_only:
+                inv_items = inv_items.filter(
+                    Q(inventoryitem__current_inventory__gte=1)
+                    |
+                    Q(product__release_date__gt=datetime.datetime.now(), inventoryitem__preallocated=True,
+                      inventoryitem__preallocated_inventory__gte=1)
+                    |
+                    Q(product__release_date__gt=datetime.datetime.now(), inventoryitem__allow_backorders=1,
+                      inventoryitem__allow_extra_preorders=1)
+                    |
+                    Q(product__release_date__lt=datetime.datetime.now(), inventoryitem__allow_backorders=1)
+
+                )
+            elif allocated_only:
+                inv_items = inv_items.filter(
+                    Q(inventoryitem__current_inventory__gte=1)
+                    |
+                    Q(product__release_date__gt=datetime.datetime.now(), inventoryitem__preallocated=True,
+                      inventoryitem__preallocated_inventory__gte=1)
+                )
+
             elif in_stock_only:
                 inv_items = inv_items.filter(
                     inventoryitem__current_inventory__gte=1)
