@@ -8,8 +8,22 @@ from partner.views import get_address_or_old_address
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        # parser.add_argument("--year", type=int)
+        # parser.add_argument("--month", type=int)
+        parser.add_argument("--all", action='store_true')
+
     def handle(self, *args, **options):
-        with open('reports/sales_tax_report_{}.csv'.format(datetime.date.today().isoformat()), 'w',
+
+        start_range = None
+        end_range = None
+        all_time = options.pop("all")
+        filename = 'reports/sales_tax_report_{}.csv'.format(datetime.date.today().isoformat())
+
+        if not all_time:
+            start_range, end_range = get_previous_month_range()
+            filename = 'reports/sales_tax_report_from_{}_to_{}.csv'.format(start_range.isoformat(), end_range.isoformat())
+        with open(filename, 'w',
                   newline='') as csvfile:
             fieldnames = ['Cart Number', 'Contact Info', 'Date Paid', 'Sales Tax Charged', 'Subtotal', 'Shipping',
                           'Pre-Tax Total',
@@ -19,10 +33,15 @@ class Command(BaseCommand):
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             writer.writeheader()
-            for cart in Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED],
-                                              lost_damaged_or_stolen=False,
-                                              broken_down=False,
-                                              ).order_by('date_paid'):
+            carts = Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED],
+                                          lost_damaged_or_stolen=False,
+                                          broken_down=False,
+                                          ).order_by('date_paid')
+            if start_range:
+                carts = carts.filter(date_paid__gte=start_range)
+            if end_range:
+                carts = carts.filter(date_paid__lt=end_range)
+            for cart in carts:
                 print("{}: {}".format(cart.id, cart))
                 amount_refunded = cart.get_refunded_amount()
                 cart_info = {'Cart Number': cart.id, 'Cart Status': cart.status,
@@ -41,3 +60,11 @@ class Command(BaseCommand):
                 cart_info["Zip Code"] = postcode
 
                 writer.writerow(cart_info)
+        print(f"Saved report to {filename}")
+
+
+def get_previous_month_range():
+    today = datetime.date.today()
+    first_of_this_month = today.replace(day=1)
+    last_month = first_of_this_month - datetime.timedelta(days=1)
+    return last_month.replace(day=1), first_of_this_month
