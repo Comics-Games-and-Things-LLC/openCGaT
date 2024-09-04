@@ -2,6 +2,7 @@ import csv
 import datetime
 
 from django.core.management.base import BaseCommand
+from tqdm import tqdm
 
 from checkout.models import Cart
 from partner.views import get_address_or_old_address
@@ -41,8 +42,11 @@ class Command(BaseCommand):
                 carts = carts.filter(date_paid__gte=start_range)
             if end_range:
                 carts = carts.filter(date_paid__lt=end_range)
+
+            pbar = tqdm(total=carts.count(), unit="cart")
+
             for cart in carts:
-                print("{}: {}".format(cart.id, cart))
+                pbar.write("{}: {}".format(cart.id, cart))
                 amount_refunded = cart.get_refunded_amount()
                 cart_info = {'Cart Number': cart.id, 'Cart Status': cart.status,
                              "Contact Info": cart.owner if cart.owner else cart.email,
@@ -60,6 +64,8 @@ class Command(BaseCommand):
                 cart_info["Zip Code"] = postcode
 
                 writer.writerow(cart_info)
+                pbar.update()
+            pbar.close()
         print(f"Saved report to {filename}")
 
 
