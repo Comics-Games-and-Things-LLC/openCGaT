@@ -50,8 +50,9 @@ class Command(BaseCommand):
                 data["Game"] = product.games.first()  # Use first game if we have more than one.
 
             if info["po_lines"].exists():
-                cost = info["po_lines"].exclude(cost_per_item__lte=0).first()
-                data["Latest Cost"] = cost
+                latest_purchase = info["po_lines"].exclude(cost_per_item__lte=0).first()
+                if latest_purchase:
+                    data["Latest Cost"] = latest_purchase.cost_per_item
 
             results_writer.writerow(data)
 
