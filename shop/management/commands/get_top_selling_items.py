@@ -26,7 +26,7 @@ class Command(BaseCommand):
         results_writer = csv.DictWriter(result_file,
                                         ["Publisher", "Game", "Product",
                                          "Sold (Total)", "Sold After Release",
-                                         "Latest Cost"])
+                                         "Latest Cost", "Last Sold Price"])
         results_writer.writeheader()
 
         for product in tqdm(Product.objects.filter(page_is_draft=False, release_date__isnull=False)):
@@ -53,6 +53,12 @@ class Command(BaseCommand):
                 latest_purchase = info["po_lines"].exclude(cost_per_item__lte=0).first()
                 if latest_purchase:
                     data["Latest Cost"] = latest_purchase.actual_cost
+
+            if info['sales']:
+                latest_sale = info["sales"].first()
+                if latest_sale:
+                    data["Last Sold Price"] = latest_sale.price_per_unit_at_submit
+
 
             results_writer.writerow(data)
 
