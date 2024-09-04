@@ -2,12 +2,12 @@ import csv
 
 from django.core.management.base import BaseCommand
 from django.db.models import Sum
+from tqdm import tqdm
 
 from checkout.models import Cart
 from partner.models import Partner
-from shop.models import InventoryItem, Product
+from shop.models import Product
 
-from tqdm import tqdm
 
 class Command(BaseCommand):
     # Known bug: If a product is under multiple games, it will mark it as sold by the first game, and then not be
@@ -23,7 +23,10 @@ class Command(BaseCommand):
         partner = Partner.objects.get(name__icontains="Valhalla")
 
         result_file = open(f"reports/sales_by_item.csv", "w", encoding="utf-8")
-        results_writer = csv.DictWriter(result_file, ["Publisher", "Product", "Sold (Total)", "Sold After Release"])
+        results_writer = csv.DictWriter(result_file,
+                                        ["Publisher", "Game", "Product",
+                                         "Sold (Total)", "Sold After Release",
+                                         "Latest Cost"])
         results_writer.writeheader()
 
         for product in tqdm(Product.objects.filter(page_is_draft=False, release_date__isnull=False)):
@@ -35,17 +38,22 @@ class Command(BaseCommand):
                 cancelled=True).aggregate(sum=Sum("quantity"))['sum']
 
             # Things to add to this report:
-            # Net profit for that item (to balance small items vs large)
             # turnover
 
-
-            results_writer.writerow({
+            data = {
                 "Publisher": product.publisher,
                 "Product": product.name,
                 "Sold (Total)": info["x_sold"],
                 "Sold After Release": after_release_sales,
+            }
+            if product.games:
+                data["Game"] = product.games.first()  # Use first game if we have more than one.
 
-            })
+            if info["po_lines"].exists():
+                cost = info["po_lines"].exclude(cost_per_item__lte=0).first()
+                data["Latest Cost"] = cost
+
+            results_writer.writerow(data)
 
         result_file.close()
         print("Done")
