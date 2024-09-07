@@ -1,7 +1,7 @@
 FROM python:3.10-bookworm
 
 
-ADD requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 
 RUN set -ex \
     && python -m venv /env \
