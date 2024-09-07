@@ -164,6 +164,15 @@ class FiltersForm(forms.Form):
                                        choices=Cart.SUBMITTED_STATUS_CHOICES,
                                        required=False)
 
+    ALL = "All"
+    ONLINE_ONLY = "ONLINE_ONLY"
+    IN_STORE_ONLY = "IN_STORE_ONLY"
+
+    location = forms.ChoiceField(choices=((ALL, "Online and In Store"),
+                                          (ONLINE_ONLY, "Online Only"),
+                                          (IN_STORE_ONLY, "At POS Only")),
+                                 required=False)
+
     state = forms.ModelChoiceField(State.objects.all(), required=False)
     country = forms.ModelChoiceField(Country.objects.all(), required=False)
 
@@ -186,6 +195,7 @@ class FiltersForm(forms.Form):
             order_id = self.cleaned_data.get("order_id")
             if order_id:
                 orders = Cart.submitted.filter(id=order_id)
+
             state = self.cleaned_data.get("state")
             print(state)
             if state is not None:
@@ -201,6 +211,12 @@ class FiltersForm(forms.Form):
                          | orders.filter(delivery_address__locality__state__country=country) \
                          | orders.filter(payment_partner__address__locality__state__country=country) \
                          | orders.filter(pickup_partner__address__locality__state__country=country)
+
+            location = self.cleaned_data.get("location")
+            if location == self.IN_STORE_ONLY:
+                orders = orders.filter(at_pos=True)
+            elif location == self.ONLINE_ONLY:
+                orders = orders.filter(at_pos=False)
 
         else:
             orders = orders.filter(status__in=[Cart.SUBMITTED, Cart.PAID])
