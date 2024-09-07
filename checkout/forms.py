@@ -152,6 +152,8 @@ class PartnerCommentsForm(forms.ModelForm):
 
 
 class FiltersForm(forms.Form):
+    search = forms.CharField(required=False)
+
     order_id = forms.IntegerField(required=False)
     user = forms.CharField(required=False)
 
@@ -181,18 +183,23 @@ class FiltersForm(forms.Form):
             orders = Cart.submitted.all()
         if self.is_valid():
 
-            search_string = self.cleaned_data.get("user")
+            search_text = self.cleaned_data.get("search")
+            user_search = self.cleaned_data.get("user")
+            if not user_search :
+                user_search = search_text
             customers = User.objects.all()
 
-            if search_string:
-                username_customers = customers.filter(username__icontains=search_string)
-                email_addresses = EmailAddress.objects.filter(email__icontains=search_string)
+            if user_search:
+                username_customers = customers.filter(username__icontains=user_search)
+                email_addresses = EmailAddress.objects.filter(email__icontains=user_search)
                 customers = username_customers | customers.filter(id__in=email_addresses.values_list('user_id'))
-                orders = orders.filter(owner__in=customers) | orders.filter(email__search=search_string)
+                orders = orders.filter(owner__in=customers) | orders.filter(email__search=user_search)
             status_filters = self.cleaned_data.get("status")
             if status_filters:
                 orders = orders.filter(status__in=status_filters)
             order_id = self.cleaned_data.get("order_id")
+            if not order_id and search_text.isnumeric():
+                order_id = search_text
             if order_id:
                 orders = Cart.submitted.filter(id=order_id)
 
