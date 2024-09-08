@@ -4,18 +4,21 @@
     {% for category in categories %}
         {% drilldown_tree_for_node category as drilldown %}
         {% for node,structure in drilldown|tree_info %}
-            {% if structure.new_level %}
-                <ul>
-                <li>{% else %}</li>
-                <li>{% endif %}
-        {% if node == category %}
-            <strong>
-        {% endif %}
-        <a href="/shop/?categories={{ node.id }}">{{ node.name }}</a>
-        {% if node == category %}
-            </strong>
-        {% endif %}
-        {% for level in structure.closed_levels %}</li></ul>{% endfor %}
+            {% if node.parent != category %}
+                {% if structure.new_level %}
+                    <ul>
+                    <li>{% else %}</li>
+                    <li>
+                {% endif %}
+            {% if node == category %}
+                <strong>
+            {% endif %}
+            <a href="/shop/?categories={{ node.id }}">{{ node.name }}</a>
+            {% if node == category %}
+                </strong>
+            {% endif %}
+            {% for level in structure.closed_levels %}</li></ul>{% endfor %}
+            {% endif %}
         {% endfor %}
     {% endfor %}
 </ul>
