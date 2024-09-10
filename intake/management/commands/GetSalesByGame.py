@@ -9,7 +9,7 @@ from game_info.models import Game
 from intake.distributors.utility import log
 from intake.models import POLine
 from inventory_report.management.commands.GetCogs import get_purchased_as, mark_previous_items_as_sold, partner
-from shop.models import Product, Publisher, Category
+from shop.models import Product, Publisher, Category, Item
 
 GAME = "Game"
 PUBLISHER = "Publisher"
@@ -83,45 +83,43 @@ def get_sales_by_thing(thing=GAME, **options):
 
         for line in filtered_cart_lines:
             try:
-                test = line.item
-            except Exception as e:
-                print(f"Error during processing {thing_instance}:")
-                print(e)
-                print(f"Could not get line.item for {line}")
-                exit(1)
-            if line and line.item and line.item.product and line.item.product.barcode:
-                spent_on_line = get_purchased_as(line.item.product.barcode, line.quantity, f, line,
-                                                 verbose=verbose)
-                collected_on_line = line.get_subtotal()
-                shipping_on_line = line.get_proportional_postage_paid()
-                costs_on_line = Money(spent_on_line.amount + shipping_on_line.amount, 'USD')
-                rowdata = {
-                    f"{thing}": thing_instance,
-                    "Product": line.item.product,
-                    "Quantity": line.quantity,
-                    "Spent": spent_on_line.amount,
-                    "Collected": collected_on_line.amount,
-                    "Shipping": shipping_on_line.amount,
-                    "Total Costs": costs_on_line.amount,
-                    "Net": collected_on_line.amount - costs_on_line.amount,
+                if line.item and line.item.product and line.item.product.barcode:
+                    spent_on_line = get_purchased_as(line.item.product.barcode, line.quantity, f, line,
+                                                     verbose=verbose)
+                    collected_on_line = line.get_subtotal()
+                    shipping_on_line = line.get_proportional_postage_paid()
+                    costs_on_line = Money(spent_on_line.amount + shipping_on_line.amount, 'USD')
+                    rowdata = {
+                        f"{thing}": thing_instance,
+                        "Product": line.item.product,
+                        "Quantity": line.quantity,
+                        "Spent": spent_on_line.amount,
+                        "Collected": collected_on_line.amount,
+                        "Shipping": shipping_on_line.amount,
+                        "Total Costs": costs_on_line.amount,
+                        "Net": collected_on_line.amount - costs_on_line.amount,
 
-                }
-                if collected_on_line.amount > 0 and costs_on_line.amount > 0:
-                    rowdata.update({"Margin": 1 - (costs_on_line.amount / collected_on_line.amount),
-                                    })
-                entries_writer.writerow(rowdata)
-                spent_on_sold_for_game += spent_on_line
-                costs_on_sold_for_game += costs_on_line
-                shipping_on_game += shipping_on_line
-                if line.item.product.categories.filter(name="Events").exists():
-                    collected_on_game_events += collected_on_line
+                    }
+                    if collected_on_line.amount > 0 and costs_on_line.amount > 0:
+                        rowdata.update({"Margin": 1 - (costs_on_line.amount / collected_on_line.amount),
+                                        })
+                    entries_writer.writerow(rowdata)
+                    spent_on_sold_for_game += spent_on_line
+                    costs_on_sold_for_game += costs_on_line
+                    shipping_on_game += shipping_on_line
+                    if line.item.product.categories.filter(name="Events").exists():
+                        collected_on_game_events += collected_on_line
+                    else:
+                        collected_on_game += collected_on_line
+                        if line.cart.final_ship.amount == 0:
+                            collected_locally += collected_on_line
                 else:
-                    collected_on_game += collected_on_line
-                    if line.cart.final_ship.amount == 0:
-                        collected_locally += collected_on_line
+                    log(f, "{} no longer has an item".format(line))
 
-            else:
-                log(f, "{} no longer has an item".format(line))
+            except Item.DoesNotExist as e:
+                log(f, f"Error during processing {thing_instance}:")
+                log(f, str(e))
+                log(f, f"Could not get line.item for {line}")
 
         # Now get the amount we spent on inventory for said game.
         spent_on_game = Money("0", 'USD')
