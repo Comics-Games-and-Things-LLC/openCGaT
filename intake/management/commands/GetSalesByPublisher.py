@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--year", type=int)
-        parser.add_argument("--all", type=bool)
+        parser.add_argument("--all", action='store_true')
 
     def handle(self, *args, **options):
         get_sales_by_thing(PUBLISHER, **options)

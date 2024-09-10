@@ -21,22 +21,22 @@ def get_sales_by_thing(thing=GAME, **options):
     year = options.pop('year')  # Last year by default
     if year is None:
         year = datetime.date.today().year - 1
-    all = options.pop("all")
-    if all:
+    all_time = options.pop("all")
+    if all_time:
         year = None
     display_year = year
     if year is None:
         display_year = "all time"
 
-    f = open(f"reports/earnings by {thing}.txt", "a", encoding="UTF-8")
+    f = open(f"reports/earnings by {thing} for {display_year}.txt", "a", encoding="UTF-8")
 
-    f2 = open(f"reports/earnings by {thing} entries.csv", "w", encoding="UTF-8")
+    f2 = open(f"reports/earnings by {thing} for {display_year} entries.csv", "w", encoding="UTF-8")
     entries_writer = csv.DictWriter(f2, [f"{thing}", "Product", "Quantity", "Cart",
                                          "Collected", "Shipping", "Spent",
                                          "Total Costs", "Net", "Margin"])
     entries_writer.writeheader()
 
-    f3 = open(f"reports/earnings by {thing}.csv", "w", encoding="UTF-8")
+    f3 = open(f"reports/earnings by {thing} for {display_year}.csv", "w", encoding="UTF-8")
     summary_writer = csv.DictWriter(f3, [f"{thing}", "Spent on Sold", "Shipping on Sold", "Costs on Sold",
                                          "Collected", "Collected for events", "Collected Locally", "Spent this year"])
     summary_writer.writeheader()
@@ -188,7 +188,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--year", type=int)
-        parser.add_argument("--all", type=bool)
+        parser.add_argument("--all", action='store_true')
 
     def handle(self, *args, **options):
         get_sales_by_thing(GAME, **options)
