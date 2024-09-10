@@ -9,10 +9,11 @@ from game_info.models import Game
 from intake.distributors.utility import log
 from intake.models import POLine
 from inventory_report.management.commands.GetCogs import get_purchased_as, mark_previous_items_as_sold, partner
-from shop.models import Product, Publisher
+from shop.models import Product, Publisher, Category
 
 GAME = "Game"
 PUBLISHER = "Publisher"
+CATEGORY = "Category"
 
 
 def get_sales_by_thing(thing=GAME, **options):
@@ -53,10 +54,16 @@ def get_sales_by_thing(thing=GAME, **options):
 
     if thing == PUBLISHER:
         object_to_iterate_on = Publisher.objects.all().order_by('name')
+    elif thing == CATEGORY:
+        object_to_iterate_on = Category.objects.filter(level__lte=0).order_by('name')
     else:
         object_to_iterate_on = Game.objects.all().order_by('name')
 
     for thing_instance in object_to_iterate_on:
+        name = thing_instance.name
+        if thing == CATEGORY:
+            thing_instance = thing_instance.get_descendants(include_self=True)
+
         spent_on_sold_for_game = Money("0", 'USD')
         shipping_on_game = Money("0", 'USD')
         costs_on_sold_for_game = Money("0", 'USD')
@@ -65,15 +72,24 @@ def get_sales_by_thing(thing=GAME, **options):
         collected_locally = Money("0", 'USD')
 
         if verbose:
-            log(f, "Errors for {}:".format(thing_instance.name))
+            log(f, "Errors for {}:".format(name))
 
         if thing == PUBLISHER:
             filtered_cart_lines = cart_lines.filter(item__product__publisher=thing_instance)
+        elif thing == CATEGORY:
+            filtered_cart_lines = cart_lines.filter(item__product__categories__in=thing_instance)
         else:
             filtered_cart_lines = cart_lines.filter(item__product__games=thing_instance)
 
         for line in filtered_cart_lines:
-            if line.item and line.item.product and line.item.product.barcode:
+            try:
+                test = line.item
+            except Exception as e:
+                print(f"Error during processing {thing_instance}:")
+                print(e)
+                print(f"Could not get line.item for {line}")
+                exit(1)
+            if line and line.item and line.item.product and line.item.product.barcode:
                 spent_on_line = get_purchased_as(line.item.product.barcode, line.quantity, f, line,
                                                  verbose=verbose)
                 collected_on_line = line.get_subtotal()
@@ -112,6 +128,8 @@ def get_sales_by_thing(thing=GAME, **options):
 
         if thing == PUBLISHER:
             product_barcodes = Product.objects.filter(publisher=thing_instance).values_list('barcode', flat=True)
+        elif thing == CATEGORY:
+            product_barcodes = Product.objects.filter(categories__in=thing_instance).values_list('barcode', flat=True)
         else:
             product_barcodes = Product.objects.filter(games=thing_instance).values_list('barcode', flat=True)
 
@@ -129,7 +147,7 @@ def get_sales_by_thing(thing=GAME, **options):
                 == collected_on_game_events.amount == spent_on_sold_for_game.amount == 0):
             continue  # Don't bother printing the empty games
 
-        log(f, "{}:".format(thing_instance.name))
+        log(f, "{}:".format(name))
 
         log(f, "\t{} was collected from customers".format(collected_on_game))
         log(f, "\t{} was spent on that inventory, for a net of {}"
@@ -165,7 +183,7 @@ def get_sales_by_thing(thing=GAME, **options):
                 " or {:.0f}%".format(collected_locally.amount * 100 / collected_on_game.amount))
 
         summary_writer.writerow(
-            {f"{thing}": thing_instance.name,
+            {f"{thing}": name,
              "Spent on Sold": spent_on_sold_for_game.amount,
              "Shipping on Sold": shipping_on_game.amount,
              "Costs on Sold": costs_on_sold_for_game.amount,
