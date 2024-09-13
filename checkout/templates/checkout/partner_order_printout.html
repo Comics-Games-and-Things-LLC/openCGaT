@@ -28,9 +28,9 @@
               crossorigin="anonymous">
 
         <!-- Purged TailwindCSS styles -->
-        {% if site.partner %}
-            <!-- {{ site.partner }} CSS Applied -->
-            <link href="{% static 'css/'|add:site.partner.static_prefix|add:'.css' %}" rel="stylesheet">
+        {% if partner and partner.static_prefix %}
+            <!-- {{ partner }} CSS Applied -->
+            <link href="{% static 'css/'|add:partner.static_prefix|add:'.css' %}" rel="stylesheet">
         {% else %}
             <link href="{% static 'css/default.css' %}" rel="stylesheet">
         {% endif %}
@@ -58,7 +58,13 @@
     <table class="table">
         <thead>
         <tr>
-            <th scope="col">Comics, Games, and Things</th>
+            <th scope="col">
+                {% if partner %}
+                    {{ partner }}
+                {% else %}
+                    Comics, Games, and Things
+                {% endif %}
+            </th>
             <th scope="col">Username</th>
             <th scope="col">Email</th>
             <th scope="col">Order ID</th>
@@ -67,9 +73,14 @@
         </thead>
         <tr>
             <td>
-                <img class="inline h-12"
-                     src="{% static 'images/default.png' %}" alt="logo"
-                />
+                <a class="navbar-brand p-0" href="/">
+                    {% if partner and partner.static_prefix %}
+                        <img class="inline h-12" src="{% static 'images/'|add:partner.static_prefix|add:'_dark.png' %}"
+                             alt="logo"/>
+                    {% else %}
+                        <img class="inline h-12" src="{% static 'images/default.png' %}" alt="logo"/>
+                    {% endif %}
+                </a>
             </td>
 
             <td>
