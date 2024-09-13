@@ -49,10 +49,7 @@
                         {{ cart.shipping_address.line3 }} {% if cart.shipping_address.line3 %}<br> {% endif %}
                         {{ cart.shipping_address.line4 }}, {{ cart.shipping_address.state }}
                         {{ cart.shipping_address.postcode }}
-
-
                     {% endif %}
-
                 </td>
                 <td>
                     {% if cart.tracking_number %}
@@ -76,15 +73,16 @@
             </tr>
         {% endif %}
     </table>
+{% else %}
+    <table class="table">
+        <thead>
+        <tr>
+            <th>
+                Billing Address
+            </th>
+        </tr>
+        <tr>
+            <td>{{ cart.get_tax_address }}</td>
+        </tr>
+    </table>
 {% endif %}
-<table class="table">
-    <thead>
-    <tr>
-        <th>
-            Billing Address
-        </th>
-    </tr>
-    <tr>
-        <td>{{ cart.get_tax_address }}</td>
-    </tr>
-</table>
