@@ -18,14 +18,15 @@ def create_valhalla_item(product, f=None, only_adjust_default_price=False):
                                                             })
 
         if price != item.price and item.current_inventory > 0:
-            if not only_adjust_default_price:
-                item.price = price
-                log(f, "Price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
-                                                                                    item.product.barcode))
-            else:
+            if only_adjust_default_price:
                 log(f, "Default price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
                                                                                             item.product.barcode))
-        if item.current_inventory == 0: # If there are none in stock adjust the price anyway.
+            else:
+                log(f, "Price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
+                                                                                    item.product.barcode))
+                item.price = price
+
+        if item.current_inventory == 0:  # If there are none in stock adjust the price anyway.
             item.price = price
         item.default_price = price
         item.save(skip_log=True)
