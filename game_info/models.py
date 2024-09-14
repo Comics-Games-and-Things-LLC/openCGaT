@@ -72,7 +72,7 @@ class Faction(models.Model):
         super(Faction, self).save(*args, **kwargs)
 
     def __str__(self):
-        return "{} {}".format(self.game, self.name)
+        return f"{self.name} - {self.game}"
 
     def get_sorted_attributes(self):
         attributes = {}
