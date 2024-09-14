@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from django.utils import timezone
+from decimal import Decimal
 
 from b2sdk.exception import FileNotPresent
 from django.apps import apps
@@ -10,6 +10,7 @@ from django.db import models, transaction
 from django.db.models import Sum
 from django.template.defaultfilters import slugify
 from django.template.loader import get_template
+from django.utils import timezone
 from django_react_templatetags.mixins import RepresentationMixin
 from djmoney.models.fields import MoneyField
 from djmoney.money import Money
@@ -359,14 +360,13 @@ class Product(PolymorphicModel):
                     return self.map
                 else:
                     if hasattr(self.msrp, 'amount'):
-                        price = Money(round(selected_rule.percent_of_msrp / 100 * float(self.msrp.amount), 2), 'USD')
+                        price = Money(Decimal(Decimal(selected_rule.percent_of_msrp) / Decimal(100) * self.msrp.amount).quantize(
+                            Decimal('.01')),
+                                      'USD', decimal_places=2)
                         if self.map:
                             return max([self.map, price])
                         return price
         return None
-
-    def apply_rule(self, rules):
-        return Money(round(rules.latest('priority').percent_of_msrp / 100 * float(self.msrp.amount), 2), 'USD')
 
     def get_sold_info(self, partner):
         from checkout.models import CheckoutLine, Cart
