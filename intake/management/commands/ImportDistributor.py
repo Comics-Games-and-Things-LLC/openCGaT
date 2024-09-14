@@ -3,7 +3,7 @@ from inspect import getmembers
 
 from django.core.management.base import BaseCommand, CommandError
 
-from intake.distributors import alliance, acd, parabellum, wyrd, games_workshop, gw_paints
+from intake.distributors import alliance, acd, parabellum, wyrd, games_workshop, gw_paints, vallejo
 from intake.models import *
 
 
@@ -21,7 +21,9 @@ class Command(BaseCommand):
         if search == "Citadel":
             gw_paints.import_records()
             exit()
-
+        if search == "Vallejo":
+            vallejo.import_records()
+            exit()
         dists = Distributor.objects.filter(dist_name__search=search)
         dist = None
         if dists.count() == 1:
