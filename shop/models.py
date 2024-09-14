@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_UP
 
 from b2sdk.exception import FileNotPresent
 from django.apps import apps
@@ -361,7 +361,7 @@ class Product(PolymorphicModel):
                 else:
                     if hasattr(self.msrp, 'amount'):
                         price = Money(Decimal(Decimal(selected_rule.percent_of_msrp) / Decimal(100) * self.msrp.amount).quantize(
-                            Decimal('.01')),
+                            Decimal('.01'), rounding=ROUND_UP),
                                       'USD', decimal_places=2)
                         if self.map:
                             return max([self.map, price])

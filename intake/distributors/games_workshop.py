@@ -1,5 +1,6 @@
 import os
 import traceback
+from decimal import ROUND_UP
 
 import pandas
 from django.utils.text import slugify
@@ -202,7 +203,7 @@ def import_records():
             name = row.get('Description')
             barcode = row.get('Barcode')
             msrp = Money(row.get('US/$ Retail', row.get("USD-NEW MSRP")), currency='USD', decimal_places=2)
-            maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01')),
+            maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01'), rounding=ROUND_UP),
                             currency='USD', decimal_places=2)
             dist_price = Money(row.get('US/$ Trade', row.get("US-NEW TRADE Price")), currency='USD')
             games, factions, categories = get_product_information_from_product_code(product_code)
