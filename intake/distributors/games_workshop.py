@@ -285,7 +285,7 @@ def get_product_information_from_product_code(product_code):
         games.append(Game.objects.get_or_create(name=WARHAMMER_40K)[0])
     elif game_code == "02":
         games.append(Game.objects.get_or_create(name=AGE_OF_SIGMAR)[0])
-    elif game_code == "03":
+    elif game_code == "26":
         games.append(Game.objects.get_or_create(name="Legions Imperialis")[0])
     elif game_code == "05":
         games.append(Game.objects.get_or_create(name="Necromunda")[0])
@@ -398,7 +398,21 @@ def get_product_information_from_product_code(product_code):
                 faction, _ = game.factions.get_or_create(name=T_AU_EMPIRE)
         elif game.name == HORUS_HERESY:
             if faction_code == "01":
-                faction, _ = game.factions.get_or_create(name="Loyalist Space Marines")
+                faction, _ = game.factions.get_or_create(name="Adeptus Astartes")
+            elif faction_code == "02":
+                faction, _ = game.factions.get_or_create(name="Traitor Astartes")
+            elif faction_code == "05":
+                faction, _ = game.factions.get_or_create(name="Solar Auxilia")
+            elif faction_code == "08":
+                faction, _ = game.factions.get_or_create(name="Imperial Knights")
+            elif faction_code == "16":
+                faction, _ = game.factions.get_or_create(name="Mechanicum")
+        elif game.name == "Legions Imperialis":
+            if faction_code == "01":
+                faction, _ = game.factions.get_or_create(name="Adeptus Astartes")
+            elif faction_code == "05":
+                faction, _ = game.factions.get_or_create(name="Solar Auxilia")
+
         if faction is not None:
             factions.append(faction)
 
