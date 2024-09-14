@@ -28,4 +28,4 @@ def create_valhalla_item(product, f=None, only_adjust_default_price=False):
         if item.current_inventory == 0: # If there are none in stock adjust the price anyway.
             item.price = price
         item.default_price = price
-        item.save()
+        item.save(skip_log=True)
