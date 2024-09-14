@@ -184,15 +184,16 @@ def import_records():
     for file in os.listdir(inventories_path):
         if "Trade Range" in file or "USA PRICE RISE" in file:
             trade_range_name = file
-    if file is None:
+    if trade_range_name is None:
         print("Please have a file with 'Trade Range' or 'USA Price Rise' in the inventories folder")
         exit()
     file = pandas.ExcelFile(os.path.join(inventories_path, trade_range_name))
     dataframe = pandas.read_excel(file, header=0, sheet_name='USA', converters={'Product': str, 'Barcode': str})
 
     records = dataframe.to_dict(orient='records')
+    created_products_list = open(f"reports/created_products_{datetime.now()}.txt", "a")
     f = open("reports/products_with_price_adjustments.txt", "a")
-    log(f, "Price adjustments for Games Workshop 2024")
+    log(f, "Creating products and adjusting prices for games workshop")
     for row in records:
         # print(row)
         try:
@@ -228,49 +229,62 @@ def import_records():
                 item.quantity_per_pack = row.get("Pack Qty")
                 item.save()
 
-                create_products_and_items = False  # Stop creating products for now
-                if not create_products_and_items:
-                    potential_products = Product.objects.filter(barcode=barcode)
-                    if potential_products.exists():
-                        product = potential_products.first()
-                        if product.publisher_short_sku is None:
-                            product.publisher_short_sku = short_code
-                            print(f"Set short code on {product.name} to {short_code}")
-                        product.msrp = msrp
-                        product.map = maprice
-                        product.save()
-                        # Adjust prices on existing products/items but do not make new products/items
-                        create_valhalla_item(product, f, only_adjust_default_price=True)
-                if create_products_and_items:
-                    old_products = Product.objects.filter(slug=slugify(name.title()))
-                    old_product = None
-                    if Product.objects.filter(name=name.title()):
-                        product = Product.objects.get(name=name.title())
-                    else:
-                        # If the product already exists, make a 2023 version.
-                        if old_products.exists():
-                            old_product = Product.objects.filter(slug=slugify(name.title())).get()
-                            name = name.title() + " 2024"
+                created = False
+                if Product.objects.filter(barcode=barcode).exists():
+                    product = Product.objects.get(barcode=barcode)
+                else:
+                    # Create the new product
+                    created = True
 
-                        product, created = Product.objects.get_or_create(
-                            barcode=barcode,
-                            defaults={'release_date': datetime.today(),
-                                      'name': name.title()}
-                        )
-                        if created:
-                            product.games.set(games)
-                            product.factions.set(factions)
-                            product.categories.set(categories)
-                            if old_product:
-                                old_product.replaced_by = product
-                                old_product.save()
-                    product.all_retail = True
-                    product.publisher = publisher
-                    product.msrp = msrp
-                    product.map = maprice
-                    product.save()
+                    # Append year to name if there's any existing.
+                    if Product.objects.filter(slug=slugify(name)).exists():
+                        name += f" ({datetime.today().year})"
 
-                    create_valhalla_item(product, f)
+                    created_products_list.write(barcode + "\n")
+                    log(f, f"Creating product for {name}")
+                    product = Product.objects.create(
+                        barcode=barcode,
+                        release_date=datetime.today(),
+                        name=name.title(),
+                    )
+
+                    product.games.set(games)
+                    product.factions.set(factions)
+
+                    if product.publisher_short_sku is None:
+                        product.publisher_short_sku = short_code
+                        print(f"Set short code on {product.name} to {short_code}")
+
+                    # Get products this product could be replacing, that aren't already replaced.
+                    old_short_code_products = Product.objects.filter(publisher_short_sku=short_code) \
+                        .exclude(barcode=barcode, replaced_by__isnull=False)
+
+                    if old_short_code_products.count() == 1:
+                        old_product = old_short_code_products.get()
+                        if old_product:
+                            old_product.replaced_by = product
+                            old_product.save()
+
+                if product.publisher_short_sku is None:
+                    product.publisher_short_sku = short_code
+                    if not created:
+                        print(f"Set short code on {product.name} to {short_code}")
+
+                # GW products in the trade range should always be all retail, reset it if we forgot.
+                product.all_retail = True
+                product.publisher = publisher
+                product.msrp = msrp
+                product.map = maprice
+
+                # Set these if they are blank but don't override any existing ones.
+                if not product.games.exists():
+                    product.games.set(games)
+                if not product.factions.exists():
+                    product.factions.set(factions)
+
+                product.save()
+
+                create_valhalla_item(product, f, only_adjust_default_price=True)
 
         except Exception as e:
             traceback.print_exc()
