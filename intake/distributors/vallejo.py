@@ -46,7 +46,7 @@ def import_records():
                 if Product.objects.filter(barcode=barcode).exists():
                     print("\tProduct already exists, skipping creation...\n")
                     continue  # Skip this product if it already exists.
-                product, created = Product.objects.create(
+                product = Product.objects.create(
                     all_retail=True,
                     release_date=datetime.today(),
                     barcode=barcode,
