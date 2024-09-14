@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from django.utils import timezone
 
 from b2sdk.exception import FileNotPresent
 from django.apps import apps
@@ -657,7 +658,7 @@ class InventoryLog(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.timestamp:
-            self.timestamp = datetime.utcnow()
+            self.timestamp = timezone.now()
         return super(InventoryLog, self).save(*args, **kwargs)
 
     def __str__(self):
