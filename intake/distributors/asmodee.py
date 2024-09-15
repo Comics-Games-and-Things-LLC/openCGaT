@@ -34,7 +34,7 @@ def import_records():
 
     records = dataframe.astype('string').fillna("").to_dict(orient='records')
     for row in records:
-        print(row)
+        # print(row)
         try:
             publisher, _ = Publisher.objects.get_or_create(name=row.get('Studio'))
 
@@ -47,11 +47,10 @@ def import_records():
             except ValueError:
                 pass
 
-            msrpstring = str(row.get('MSRP')).replace("$", "").strip()
-            mapstring = str(row.get('MAP')).replace("$", "").replace("-", "").strip()
+            msrpstring = str(row.get('MSRP', row.get(" MSRP "))).replace("$", "").strip()
+            mapstring = str(row.get('MAP', row.get(" MAP "))).replace("$", "").replace("-", "").strip()
 
             msrp = Money(msrpstring, 'USD')
-
             maprice = None
             try:
                 maprice = Money(mapstring, 'USD')
@@ -86,9 +85,10 @@ def import_records():
                     if rawdate:
                         product.release_date = date
                     product.save()
-
-                    create_valhalla_item(product)
+                    # For now lets not adjust all the prices on Asmodee items, since the pricing rules are all up in the air.
+                    # create_valhalla_item(product)
 
         except Exception as e:
             traceback.print_exc()
             print("Not full line, can't get values; or invalid data")
+            exit()
