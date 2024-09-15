@@ -1,3 +1,8 @@
+import io
+import os
+import urllib
+from urllib.parse import urlparse
+
 from django.db import models
 from imagekit.models import ImageSpecField
 from pilkit.processors import ResizeToFit
@@ -41,3 +46,23 @@ class Image(models.Model):
     def image_url(self):
         if self.image and hasattr(self.image_src, 'url'):
             return self.image.url
+
+    @staticmethod
+    def create_from_external_url(url, alt_text=None):
+        parsed_url = urlparse(url)
+        filename = os.path.splitext(os.path.basename(parsed_url.path))[0]
+        print(filename)
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+        urllib.request.install_opener(opener)
+        image = None
+        with urllib.request.urlopen(url) as image_file:
+            image = Image.objects.create()
+            image.image_src.save(filename, io.BytesIO(image_file.read()))
+            if alt_text:
+                image.alt_text = alt_text
+            else:
+                image.alt_text = filename.replace("_", " ").replace("-", " ")
+            image.save()
+
+        return image

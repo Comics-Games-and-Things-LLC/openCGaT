@@ -43,6 +43,10 @@ def import_records(dist_inv_file):
             dist_inv_file.set_availability(item, warehouse=warehouse, y_or_n=row.get('MIDDLETON'), key="YES")
 
 
+def download_images(upc):
+    pass  # For now do nothing
+
+
 def query_for_info(upc):
     try:
         result = requests.get(
