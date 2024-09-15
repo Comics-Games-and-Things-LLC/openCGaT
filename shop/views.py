@@ -659,6 +659,7 @@ def add_inventory_item(request, partner_slug, product_slug):
         'product': product,
         'pricing_rule': product.get_price_rule(partner),
         'price_from_rule': product.get_price_from_rule(partner),
+        'dist_items': DistItem.find_dist_items(barcode=product.barcode, dist_number=product.publisher_sku),
     }
     return TemplateResponse(request, "shop/edit_inventory_item.html", context=context)
 
@@ -698,6 +699,7 @@ def edit_item(request, partner_slug, product_slug, item_id):
             'product': product,
             'pricing_rule': product.get_price_rule(partner),
             'price_from_rule': product.get_price_from_rule(partner),
+            'dist_items': DistItem.find_dist_items(barcode=product.barcode, dist_number=product.publisher_sku),
         }
         return TemplateResponse(request, "shop/edit_inventory_item.html", context=context)
     else:

@@ -134,6 +134,15 @@ class DistItem(models.Model):
     def __str__(self):
         return "{} {} {}".format(self.distributor, self.dist_number, self.dist_name)
 
+    @staticmethod
+    def find_dist_items(barcode=None, dist_number=None):
+        items = DistItem.objects.none()
+        if barcode is not None:
+            items = items | DistItem.objects.filter(dist_barcode=barcode)
+        if dist_number is not None:
+            items = items | DistItem.objects.filter(dist_number=dist_number)
+        return items.distinct()
+
 
 class PurchaseOrder(models.Model):
     partner = models.ForeignKey(Partner, on_delete=models.CASCADE)
@@ -153,7 +162,6 @@ class PurchaseOrder(models.Model):
         if self.subtotal:
             self.subtotal = Money(self.subtotal.amount, self.distributor.currency)
         super(PurchaseOrder, self).save(*args, **kwargs)
-
 
     def __str__(self):
         return f"{self.distributor} {self.po_number}"
@@ -358,7 +366,8 @@ class PricingRule(models.Model):
     priority = models.IntegerField(default=0)
     publisher = models.ForeignKey('shop.Publisher', blank=True, null=True, on_delete=models.CASCADE)
     percent_of_msrp = models.IntegerField(default=100)
-    use_MAP = models.BooleanField(default=False, help_text="Uses the MAP, if available, instead of a percent of the MSRP")
+    use_MAP = models.BooleanField(default=False,
+                                  help_text="Uses the MAP, if available, instead of a percent of the MSRP")
 
     def __str__(self):
         product_string = "Products"

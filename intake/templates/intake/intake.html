@@ -104,19 +104,7 @@
 
     <div class="row">
         <div class=" {% if square_enabled %}col-md-4 {% else %} col-md-6 {% endif %} ">
-            {% if dist_items %}
-                <h3>Distributor:</h3>
-                {% for dist_item in dist_items %}
-                    <div class="card">
-                        <h4>{{ dist_item.dist_name }}</h4>
-                        {{ dist_item.distributor }}<br>
-                        MSRP: {{ dist_item.msrp }}<br>
-                        MAP: {{ dist_item.map }}
-                    </div>
-                {% endfor %}
-            {% else %}
-                Item not in Supplier Inventory
-            {% endif %}
+            {% include 'intake/snippets/dist_items_info.html' %}
         </div>
 
         <div class="col-md-6">

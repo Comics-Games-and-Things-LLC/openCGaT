@@ -21,15 +21,5 @@
 {% endblock %}
 
 {% block info_after %}
-    {% if dist_records %}
-        <h3>Distributor:</h3>
-        {% for dist_item in dist_records %}
-            <div class="card">
-                <h4>{{ dist_item.dist_name }}</h4>
-                {{ dist_item.distributor }}<br>
-                MSRP: {{ dist_item.msrp }}<br>
-                MAP: {{ dist_item.map }}
-            </div>
-        {% endfor %}
-    {% endif %}
+    {% include 'intake/snippets/dist_items_info.html' %}
 {% endblock %}
