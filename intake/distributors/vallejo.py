@@ -1,7 +1,9 @@
 import time
 import traceback
+import urllib
 
 import pandas
+from bs4 import BeautifulSoup
 from checkdigit import gs1
 
 from intake.distributors import acd
@@ -61,3 +63,13 @@ def import_records():
         except Exception as e:
             traceback.print_exc()
             print("Not full line, can't get values; or invalid data")
+
+
+def get_info_from_website(paint_code):
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+    urllib.request.install_opener(opener)
+    # This works but requests doesn't for some reason.
+    vallejo_file = urllib.request.urlopen(f"https://acrylicosvallejo.com/en/?s={paint_code}")
+    soup = BeautifulSoup(vallejo_file.read())
+    print(soup.prettify())
