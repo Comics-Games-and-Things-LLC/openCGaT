@@ -145,6 +145,8 @@ class FiltersForm(forms.Form):
     sold_out_only = forms.BooleanField(required=False)
     restock_alert_only = forms.BooleanField(required=False)
     templates = forms.BooleanField(required=False)
+    drafts_only = forms.BooleanField(required=False)
+    missing_image = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         manage = kwargs.pop('manage')
@@ -180,6 +182,10 @@ class FiltersForm(forms.Form):
             self.fields.pop('sold_out_only')
             self.fields.pop('restock_alert_only')
             self.fields.pop('templates')
+            self.fields.pop('drafts_only')
+            self.fields.pop('missing_image')
+
+
 
 
 class AddMTOItemForm(forms.ModelForm):

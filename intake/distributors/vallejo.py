@@ -65,6 +65,9 @@ def import_records():
             print("Not full line, can't get values; or invalid data")
 
 
+def download_images():
+    pass
+
 def get_info_from_website(paint_code):
     opener = urllib.request.build_opener()
     opener.addheaders = [('User-agent', 'Mozilla/5.0')]

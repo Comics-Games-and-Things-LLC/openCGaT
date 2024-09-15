@@ -2,7 +2,6 @@ from django.contrib.postgres.search import SearchQuery
 from django.db.models import F,Q
 from moneyed import Money
 
-from intake.models import Distributor
 from shop.models import Item
 
 
@@ -22,14 +21,15 @@ def item_list_filter(managing_partner=None,
                      publisher=None,
                      game=None,
                      faction=None,
-                     distributor=None
+                     distributor=None,
+                     drafts_only=False,
+                     missing_image=False,
                      ):
     if price_low is None:
         price_low = Money(0, 'USD')
     if price_high is None:
         price_high = Money(float('inf'), 'USD')
 
-    # displayed_items = Item.objects.none()
     displayed_items = Item.objects.apply_generic_filters(partner_slug=filter_partner_slug,
                                                          price_low=price_low, price_high=price_high,
                                                          featured=featured_products_only)
@@ -62,6 +62,14 @@ def item_list_filter(managing_partner=None,
         displayed_items = displayed_items.filter(product__factions=faction)
     if distributor:
         displayed_items = displayed_items.filter(product__publisher__available_through_distributors=distributor)
+    if drafts_only:
+        # Templates are drafts so we have to exclude them as well.
+        displayed_items = displayed_items.filter(product__page_is_draft=True, product__page_is_template=False)
+
+    if missing_image:
+        displayed_items = displayed_items.filter(product__primary_image__isnull=True)
+
+
     displayed_items = displayed_items.distinct()
 
     if search_query:
@@ -74,3 +82,8 @@ def item_list_filter(managing_partner=None,
         )
 
     return displayed_items.prefetch_related('partner', 'product')
+
+
+def get_item_list(request, partner_slug=None):
+    # To eventually replace product_list
+    return

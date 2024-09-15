@@ -67,7 +67,8 @@ def product_list(request, partner_slug=None):
     game = None
     faction = None
     distributor = None
-
+    drafts_only = False
+    missing_image = False
     if form.is_valid():
         restock_alert_only = form.cleaned_data.get('restock_alert_only')
         if form.cleaned_data.get('in_stock_only'):
@@ -108,6 +109,8 @@ def product_list(request, partner_slug=None):
             for category in form.cleaned_data.get('categories'):
                 categories_to_include += category.get_descendants(
                     include_self=True)
+        drafts_only = form.cleaned_data.get('drafts_only')
+        missing_image = form.cleaned_data.get('missing_image')
 
     else:
         if partner_slug:
@@ -204,7 +207,9 @@ def product_list(request, partner_slug=None):
                 # Show the all retail list so the user can add new products from it.
                 all_retail_list = Product.objects.filter(all_retail=True)
                 displayed_products = displayed_products | all_retail_list
-
+        if drafts_only:
+            # Templates are drafts so we have to exclude them as well.
+            displayed_products = displayed_products.filter(page_is_draft=True, page_is_template=False)
         # Partners can view all products regardless of view release dates.
     else:
         displayed_products = displayed_products.filter_listed(manage)
@@ -234,6 +239,9 @@ def product_list(request, partner_slug=None):
         displayed_products = displayed_products.filter(factions=faction)
     if distributor:
         displayed_products = displayed_products.filter(publisher__available_through_distributors=distributor)
+
+    if missing_image:
+        displayed_products = displayed_products.filter(primary_image__isnull=True)
 
     displayed_products = displayed_products.distinct()
 
@@ -801,6 +809,8 @@ def bulk_edit(request, partner_slug):
             game=form.cleaned_data.get('game'),
             faction=form.cleaned_data.get('faction'),
             distributor = form.cleaned_data.get('distributor'),
+            drafts_only= form.cleaned_data.get('drafts_only'),
+            missing_image = form.cleaned_data.get('missing_image'),
             categories_to_include=categories_to_include,
         )
         # Update items if action tells us to.

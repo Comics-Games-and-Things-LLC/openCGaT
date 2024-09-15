@@ -18,6 +18,11 @@
         {% for item in serialized_list %}
             <tr>
                 <td>
+                    {% if item.product.primary_image %}
+                        <a href="{{ item.product.primary_image.image_url }}">
+                            <i class="fas fa-image"></i>
+                        </a>
+                    {% endif %}
                     <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=item.product.slug %}">
                         {{ item.product.name }}
                     </a>{% if not item.product.visible %}
@@ -27,7 +32,7 @@
                 <td>
                     {{ item.inventory }}
                     {% if item.enable_restock_alert %}
-                    / {{ item.low_inventory_alert_threshold }}
+                        / {{ item.low_inventory_alert_threshold }}
                     {% endif %}
                 </td>
                 <td>
