@@ -358,7 +358,7 @@ class PricingRule(models.Model):
     priority = models.IntegerField(default=0)
     publisher = models.ForeignKey('shop.Publisher', blank=True, null=True, on_delete=models.CASCADE)
     percent_of_msrp = models.IntegerField(default=100)
-    use_MAP = models.BooleanField(default=False, help_text="Uses the MAP, if available, instead of the MSRP")
+    use_MAP = models.BooleanField(default=False, help_text="Uses the MAP, if available, instead of a percent of the MSRP")
 
     def __str__(self):
         product_string = "Products"
