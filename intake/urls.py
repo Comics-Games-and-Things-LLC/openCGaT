@@ -8,6 +8,7 @@ urlpatterns = [
     path('intake/add/<barcode>', views.intake_item_view, name='intake_add'),
     path('intake/create/<barcode>', views.create_endpoint, name='intake_create'),
     path('intake/get_image/<item_id>/', views.get_image, name='get_image'),
+    path('intake/get_order_image/<checkoutline_id>/', views.get_order_image, name='get_order_image'),
 
     path('distributors/', views.distributors, name='distributors'),
 

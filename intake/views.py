@@ -1,8 +1,5 @@
 import datetime
 
-import barcode
-from PIL import Image, ImageDraw, ImageFont
-from barcode import Code128
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
@@ -10,10 +7,12 @@ from django.shortcuts import render, get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
+from checkout.models import CheckoutLine
 from partner.models import Partner, get_partner_or_401
 from shop.forms import AddInventoryItemForm
 from shop.models import Product, InventoryItem
 from .forms import RefreshForm, AddForm, UploadInventoryForm, POForm, POLineForm, PricingRuleForm, PrintForm
+from .image_generation import generate_product_sticker, generate_image_for_order
 from .models import Distributor, DistItem, PurchaseOrder, POLine, DistributorWarehouse, DistributorInventoryFile, \
     PricingRule
 
@@ -205,50 +204,23 @@ def distributors(request, partner_slug):
     return render(request, "intake/distributors.html", context)
 
 
-FNTPATH = "intake/static/DroidSans.ttf"
-fnt = ImageFont.truetype(FNTPATH, 100)
-fnt_med = ImageFont.truetype(FNTPATH, 75)
-fnt_small = ImageFont.truetype(FNTPATH, 50)
-
-
-def generate_image(item):
-    to_print = Image.new('L', (1000, 450), 'white')
-    draw = ImageDraw.Draw(to_print)
-    draw.text((0, 100), "Our Price:", font=fnt_med)  # currency field
-    draw.text((500, 100), str("$" + str(item.default_price.amount)), font=fnt)  # currency field
-
-    if item.product.name:
-
-        draw.text((0, 225), item.product.name[:40], font=fnt_small)
-        if len(item.product.name) > 40:
-            draw.text((0, 275), item.product.name[40:], font=fnt_small)
-
-    if item.product.msrp and item.product.msrp.amount != item.default_price.amount:
-        draw.text((0, 0), "MSRP: $" + str(item.product.msrp.amount), font=fnt_med)
-        price_start = draw.textlength("MSRP: $", font=fnt_med)
-
-        l, t, r, b = draw.textbbox((price_start, 0), text=str(item.product.msrp.amount), font=fnt_med)
-        # PIL 10.0.1 updated and replaced textsize with textbox, so we have to manually calculate the size
-        draw.line(((l, b / 2 + 20), (r, t + 20)), width=5)
-
-    if item.product.needs_barcode_printed:
-        barcode_options = {'module_width': .4, 'module_height': 5}
-        barcode_prerender = Code128(item.product.barcode, writer=barcode.writer.ImageWriter())
-        barcode_image = barcode_prerender.render(writer_options=barcode_options)
-        print(barcode_image.width, barcode_image.height)
-        our_label = to_print
-        to_print = Image.new('L', (1000, 450), 'white')
-        to_print.paste(our_label)
-        to_print.paste(barcode_image, (500 - round(barcode_image.width / 2), 325))
-    else:
-        draw.text((0, 350), item.partner.name, font=fnt_small)
-    return to_print
-
-
 @login_required
 def get_image(request, partner_slug, item_id):
     item = get_object_or_404(InventoryItem, id=item_id)
-    image = generate_image(item)
+    image = generate_product_sticker(item)
+    response = HttpResponse(content_type="image/png")
+    image.save(response, "PNG")
+    return response
+
+
+@login_required
+def get_order_image(request, partner_slug, checkoutline_id):
+    partner = get_partner_or_401(request, partner_slug)
+    line = CheckoutLine.objects.get(id=checkoutline_id)
+    if partner != line.partner_at_time_of_submit:
+        print(line.partner_at_time_of_submit)
+        return HttpResponse(status=401)
+    image = generate_image_for_order(line)
     response = HttpResponse(content_type="image/png")
     image.save(response, "PNG")
     return response
