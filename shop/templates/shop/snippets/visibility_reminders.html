@@ -1,4 +1,4 @@
-{% if partner %}
+{% if partner and product and product.slug %}
     <script>
         function loadReason{{ product.id }}() {
             fetch("{% url 'why_visible' partner.slug product.slug %}")
