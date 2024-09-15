@@ -7,7 +7,7 @@ from django.shortcuts import render, get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
-from checkout.models import CheckoutLine
+from checkout.models import CheckoutLine, Cart
 from partner.models import Partner, get_partner_or_401
 from shop.forms import AddInventoryItemForm
 from shop.models import Product, InventoryItem
@@ -53,16 +53,13 @@ def intake_item_view(request, barcode, partner_slug):
             print("FORM INVALID")
             print(form.errors)
 
-    print(barcode, quantity)
     try:
         distributor = dist_list.get(dist_name=distributor)
     except Exception as e:
         print(e)
-    # print(add_mode)
-    # print(auto_print)
-    print(distributor)
+
+    cart_line_marked_ready = None
     dist_items = None
-    item = None
     local_product = None
     local_item = None
     count = None
@@ -95,11 +92,12 @@ def intake_item_view(request, barcode, partner_slug):
                         reason = "Intake: {}".format(po)
                     except Exception as e:
                         print(e)
-                # adjust inventory
-                local_item.adjust_inventory(quantity, reason=reason, purchase_order=po)
-                count = local_item.get_inventory()
-            else:
-                count = local_item.get_inventory()
+                if quantity == 1:
+                    cart_line_marked_ready = try_mark_cart_line_ready(local_item)
+                if not cart_line_marked_ready:
+                     # If not using this for an order, add item to inventory
+                    local_item.adjust_inventory(quantity, reason=reason, purchase_order=po)
+            count = local_item.get_inventory()
             if auto_print:
                 print_x_on_load = quantity
         else:
@@ -124,13 +122,38 @@ def intake_item_view(request, barcode, partner_slug):
         'auto_load': auto_load,
         'auto_print_enabled': auto_print,
         'partner': partner,
-        'print_form': PrintForm(),
+        'print_form': PrintForm(), # We're not really using this form, mostly just for CSRF tokens.
         'print_x_on_load': print_x_on_load,
+        'cart_line_marked_ready': cart_line_marked_ready,
     }
     if local_product:
         context.update(local_product.get_sold_info(partner=partner))
 
     return render(request, "intake/intake.html", context)
+
+
+def try_mark_cart_line_ready(item: InventoryItem):
+    """
+    Gets a cart line to mark ready. May also split a line for multiple items.
+    @param item:
+    @return: The line marked as ready, or none if no line could be found.
+    """
+    # Get the first instance of a line where the item is not cancelled or fulfilled already.
+    print("Attempting to find a line to mark as ready")
+    not_ready_lines = CheckoutLine.objects.filter(item=item,
+                                                  cart__status__in=[Cart.SUBMITTED, Cart.PAID],
+                                                  cancelled=False, ready=False, fulfilled=False
+                                                  ).order_by("cart__date_submitted")
+    print(not_ready_lines)
+    line = not_ready_lines.first()
+    print("Marking this line as ready:", line)
+    if line.quantity > 1:
+        print("Splitting the line due to it's quantity")
+        line = line.split(1)
+    line.mark_ready()
+    line.save()
+    print("Marked ready! \n")
+    return line
 
 
 @login_required

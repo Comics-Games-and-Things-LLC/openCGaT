@@ -135,6 +135,9 @@
                 {% if x_sold %}
                     <br>
                     {{ x_sold }} sold / {{ x_purchased }} purchased
+                    {% if cart_line_marked_ready %}
+                        <h1> Marked {{ cart_line_marked_ready.cart.id }} As Ready </h1>
+                    {% endif %}
                     {% if x_sold >= x_purchased %}
                         <h1> Check to see if this is for someone's order</h1>
                     {% endif %}
@@ -186,13 +189,20 @@
         <div class="row grid {% if x_sold %} grid-cols-6 {% endif %} gap-4 px-4">
             <div class="w-full">
 
-                <form action="{% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %} " method="post"
+                <form action=""
+                      method="post"
                       id="print_form">
                     {% csrf_token %}
                     {{ print_form }}
                     <button type="submit" class="btn btn-primary" id="print">Print Label</button>
                 </form>
                 <script>
+                    let target_url = "";
+                    {% if cart_line_marked_ready %}
+                        target_url = "{% url 'get_order_image' partner_slug=partner.slug checkoutline_id=cart_line_marked_ready.id %}";
+                    {% else %}
+                        target_url = "{% url 'get_image' partner_slug=partner.slug item_id=local_item.id %}";
+                    {% endif %}
 
                     function ImagetoPrint(source) {
                         return "<html><head><scri" + "pt>function step1(){\n" +
@@ -216,8 +226,7 @@
                         e.preventDefault();
                         console.log("attempting print")
 
-                        let request = new Request(
-                            " {% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %} ",
+                        let request = new Request(target_url,
                             {headers: {'X-CSRFToken': csrftoken}}
                         );
                         fetch(request, {
@@ -230,7 +239,12 @@
                     })
                     ;
                 </script>
-                <img src="{% url 'get_image' partner_slug=partner|slugify item_id=local_item.id %}" class="w-full">
+                {% if cart_line_marked_ready %}
+                    <img src="{% url 'get_order_image' partner_slug=partner.slug checkoutline_id=cart_line_marked_ready.id %}"
+                         class="w-full">
+                {% else %}
+                    <img src="{% url 'get_image' partner_slug=partner.slug item_id=local_item.id %}" class="w-full">
+                {% endif %}
             </div>
             <div class="col-span-5">
                 {% include 'shop/snippets/sales_history.html' %}
