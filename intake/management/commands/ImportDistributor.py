@@ -1,9 +1,6 @@
-import sys
-from inspect import getmembers
+from django.core.management.base import BaseCommand
 
-from django.core.management.base import BaseCommand, CommandError
-
-from intake.distributors import alliance, acd, parabellum, wyrd, games_workshop, gw_paints, vallejo
+from intake.distributors import parabellum, wyrd, games_workshop, gw_paints, vallejo, asmodee
 from intake.models import *
 
 
@@ -40,5 +37,7 @@ class Command(BaseCommand):
             games_workshop.import_records()
         elif name == parabellum.dist_name:
             parabellum.import_records()
+        elif name == asmodee.dist_name:
+            asmodee.import_records()
         else:
             print("Import not set up for that distributor")

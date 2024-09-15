@@ -9,17 +9,25 @@ from intake.distributors.common import create_valhalla_item
 from intake.models import *
 from shop.models import Product, Publisher
 
+dist_name = 'Asmodee'
 
 def import_records():
-    distributor = Distributor.objects.get_or_create(dist_name='Asmodee')[0]
+    distributor = Distributor.objects.get_or_create(dist_name=dist_name)[0]
 
-    f = open("reports/products_with_price_adjustments.txt", "a")
 
     timestamp = datetime.today().date().strftime("%Y%m%d")
     filename = "./intake/inventories/Asmodee-{}.csv".format(timestamp)
     if not exists(filename):
         print("Downloading today's Asmodee inventory")
-        urllib.request.urlretrieve("https://www.asmodeena.com/active-catalog-csv", filename)
+        try:
+            opener = urllib.request.build_opener()
+            opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+            urllib.request.install_opener(opener)
+            urllib.request.urlretrieve("https://www.asmodeena.com/active-catalog-csv", filename)
+        except urllib.error.HTTPError as e:
+            print(e)
+            print(e.fp.read())
+            exit()
     else:
         print("Using previously downloaded Asmodee inventory")
     dataframe = pandas.read_csv(filename, header=0, encoding='latin1')
