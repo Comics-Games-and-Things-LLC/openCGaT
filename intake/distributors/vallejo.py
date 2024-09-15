@@ -82,6 +82,8 @@ def download_images():
             continue
         print(paint_code)
         image_url = get_image_from_website(paint_code)
+        if not image_url:
+            continue
         print(image_url)
         image = Image.create_from_external_url(image_url)
         print("\t", image)
@@ -112,7 +114,6 @@ def get_image_from_website(paint_code):
         return
     image_element = search_result.find_next('img')
     src_set = image_element['srcset'].split(",")
-    print(src_set)
     # Images are in the format " url NNNw"
     # Highest quality image will be the last one.
     image_url = src_set[-1].split(" ")[-2].strip()
