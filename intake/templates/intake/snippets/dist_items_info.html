@@ -5,7 +5,8 @@
             <h4>{{ dist_item.dist_name }}</h4>
             {{ dist_item.distributor }}<br>
             MSRP: {{ dist_item.msrp }}<br>
-            MAP: {{ dist_item.map }}
+            MAP: {{ dist_item.map }}<br>
+            Imported on: {{ dist_item.import_timestamp }}
         </div>
     {% endfor %}
 {% else %}

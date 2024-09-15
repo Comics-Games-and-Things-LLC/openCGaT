@@ -117,6 +117,7 @@ class TradeRange(models.Model):
 
 
 class DistItem(models.Model):
+    import_timestamp = models.DateTimeField(auto_now=True)
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
     dist_number = models.CharField(max_length=200, blank=True, null=True)
     manufacturer = models.ForeignKey(Manufacturer, on_delete=models.SET_NULL, blank=True, null=True)
