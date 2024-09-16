@@ -146,6 +146,8 @@ def try_mark_cart_line_ready(item: InventoryItem):
                                                   ).order_by("cart__date_submitted")
     print(not_ready_lines)
     line = not_ready_lines.first()
+    if line is None:
+        return None
     print("Marking this line as ready:", line)
     if line.quantity > 1:
         print("Splitting the line due to it's quantity")
