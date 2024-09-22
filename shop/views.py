@@ -450,23 +450,31 @@ def edit_related_products(request, partner_slug, product_slug):
 
 
 @login_required
-def copy_product(request, partner_slug, product_slug):
+def copy_product(request, partner_slug, product_slug, copy_is_replacement=False):
     partner = get_partner_or_401(request, partner_slug)
     product = get_object_or_404(Product, slug=product_slug)
-    original_id = product.id
+    original_id = product.id  # Cache this for lookup later.
     product_copy = product
-    product_copy.id = None
-    product_copy.name = "{} Copy".format(product.name)
+    if copy_is_replacement:
+        product_copy.name = f"{product.name} [{datetime.date.today().year}]"
+    else:
+        product_copy.name = f"{product.name} Copy"
+
+    if Product.objects.filter(name=product_copy.name).exists():
+        product_copy.name += f" ({product_copy.id})"  # Append ID if this would result in an integrity error.
     product_copy.barcode = None
     product_copy.page_is_draft = True
     product_copy.page_is_template = False
-    product_copy.publisher_sku = None
-    product_copy.publisher_short_sku = None
-    product_copy.replaced_by = None # Do not copy "replaced by"
-    product_copy.save()  # Saving gets us a new ID
-    product = Product.objects.get(id=original_id)  # Reload original product as product now references product_copy
+    if not copy_is_replacement:
+        product_copy.publisher_sku = None
+        product_copy.publisher_short_sku = None
+    product_copy.replaced_by = None  # Do not copy "replaced by"
 
-    product_copy.name = "{} ({})".format(product_copy.name, product_copy.id)
+    product_copy.id = None
+    product_copy.save()  # Saving gets us a new ID
+
+    product = Product.objects.get(id=original_id)  # Reload original product as product now references product_copy
+    # Need to set these attributes manually:
     product_copy.games.add(*product.games.all())
     product_copy.categories.add(*product.categories.all())
     product_copy.editions.set(product.editions.all())
@@ -474,8 +482,18 @@ def copy_product(request, partner_slug, product_slug):
     product_copy.factions.set(product.factions.all())
     product_copy.attributes.set(product.attributes.all())
     product_copy.save()
+
+    if copy_is_replacement:
+        product.replaced_by = product_copy
+        product.save()
+
     return HttpResponseRedirect(
         reverse("edit_product", kwargs={'partner_slug': partner.slug, 'product_slug': product_copy.slug}))
+
+
+@login_required
+def replace_product(request, partner_slug, product_slug):
+    return copy_product(request, partner_slug, product_slug, partner_slug)
 
 
 def delete_product(request, partner_slug, product_slug, confirm):
@@ -809,9 +827,9 @@ def bulk_edit(request, partner_slug):
             publisher=form.cleaned_data.get('publisher'),
             game=form.cleaned_data.get('game'),
             faction=form.cleaned_data.get('faction'),
-            distributor = form.cleaned_data.get('distributor'),
-            drafts_only= form.cleaned_data.get('drafts_only'),
-            missing_image = form.cleaned_data.get('missing_image'),
+            distributor=form.cleaned_data.get('distributor'),
+            drafts_only=form.cleaned_data.get('drafts_only'),
+            missing_image=form.cleaned_data.get('missing_image'),
             categories_to_include=categories_to_include,
         )
         # Update items if action tells us to.
@@ -829,7 +847,7 @@ def bulk_edit(request, partner_slug):
                 item.allow_backorders = form.cleaned_data.get("allow_backorders_update")
                 item.save()
         if action == BulkEditItemsForm.ENABLE_ALERT:
-            for item in items.instance_of(InventoryItem): # type: InventoryItem
+            for item in items.instance_of(InventoryItem):  # type: InventoryItem
                 item.enable_restock_alert = form.cleaned_data.get("enable_restock_alert")
                 item.low_inventory_alert_threshold = form.cleaned_data.get("low_inventory_alert_threshold")
                 item.save()

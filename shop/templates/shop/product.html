@@ -69,6 +69,10 @@
                                 <a href=" {% url  'copy_product' product_slug=product.slug partner_slug=partner.slug %}">
                                     Copy
                                 </a>
+                                <br>
+                                <a href=" {% url  'replace_product' product_slug=product.slug partner_slug=partner.slug %}">
+                                    Replace
+                                </a>
                             </td>
                         </tr>
                     </table>

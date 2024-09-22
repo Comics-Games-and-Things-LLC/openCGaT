@@ -14,6 +14,7 @@ urlpatterns = [
          name='edit_related_products'),
 
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/copy/', views.copy_product, name='copy_product'),
+    path('manage/<slug:partner_slug>/product/<slug:product_slug>/replace/', views.replace_product, name='replace_product'),
 
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/main_image/', views.upload_primary_image,
          name='upload_primary_image'),
