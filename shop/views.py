@@ -462,6 +462,7 @@ def copy_product(request, partner_slug, product_slug):
     product_copy.page_is_template = False
     product_copy.publisher_sku = None
     product_copy.publisher_short_sku = None
+    product_copy.replaced_by = None # Do not copy "replaced by"
     product_copy.save()  # Saving gets us a new ID
     product = Product.objects.get(id=original_id)  # Reload original product as product now references product_copy
 
