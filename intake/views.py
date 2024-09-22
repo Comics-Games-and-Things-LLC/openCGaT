@@ -142,6 +142,7 @@ def try_mark_cart_line_ready(item: InventoryItem):
     print("Attempting to find a line to mark as ready")
     not_ready_lines = CheckoutLine.objects.filter(item=item,
                                                   cart__status__in=[Cart.SUBMITTED, Cart.PAID],
+                                                  cart__ready_for_pickup=False,
                                                   cancelled=False, ready=False, fulfilled=False
                                                   ).order_by("cart__date_submitted")
     print(not_ready_lines)
