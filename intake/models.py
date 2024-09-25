@@ -292,11 +292,11 @@ class POLine(models.Model):
 
     @property
     def line_subtotal(self):
-        return self.cost_per_item * self.expected_quantity
+        return self.cost_per_item * self.received_quantity
 
     @property
     def actual_cost_subtotal(self):
-        return self.actual_cost * self.expected_quantity
+        return self.actual_cost * self.received_quantity
 
     @property
     def actual_cost(self):
