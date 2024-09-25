@@ -13,7 +13,11 @@
         {{ po.distributor }} {{ po.po_number }}
 
     </h2>
+    {% if po.separate_invoice_number %}
+        <h3> Invoiced as {{ po.separate_invoice_number }} </h3>
+    {% endif %}
     <h4>{{ po.date }}</h4>
+
     <p> Total:
         {% if po.subtotal %}
             {{ po.subtotal }}
@@ -21,9 +25,11 @@
             {{ po.get_line_total }}
         {% endif %}
         , Sum(Costs) = {{ po.calculated_total_cost }}
+        <br/>
+        Amount Paid: {{ po.amount_charged }}
     </p>
     <p>
-        Amount Paid: {{ po.amount_charged }}
+        {{ po.notes }}
     </p>
     <p>
         <a href="{% url 'edit_po' partner_slug=partner|slugify po_id=po.po_number %}">
@@ -63,7 +69,7 @@
             </span>
         {% endif %}
     </p>
-        <p>
+    <p>
         Scan to add a new line, refresh to view added lines. Last Scanned: <span id="last_scan_id"></span>
         <script>
             onScan.attachTo(document, {
@@ -81,7 +87,7 @@
                     console.log('Scanned: ' + iQty + 'x ' + sCode);
                     let url = "/partner/{{ partner.slug }}/intake/purchase_orders/{{ po.po_number }}/"
                     fetch(url + "scan/" + sCode + "/")
-                    document.getElementById("last_scan_id").innerHTML=sCode
+                    document.getElementById("last_scan_id").innerHTML = sCode
                     window.refresh()
                 },
                 {% comment %}
