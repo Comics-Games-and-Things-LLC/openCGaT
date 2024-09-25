@@ -58,6 +58,7 @@ class POForm(forms.ModelForm):
     class Meta:
         model = PurchaseOrder
         fields = ['distributor', 'date', 'date_received', 'po_number', 'subtotal', 'amount_charged',
+                  'amount_credited_subtotal', 'amount_credited_charge',
                   'separate_invoice_number', 'notes',
                   ]
 
@@ -73,6 +74,7 @@ class POLineForm(forms.ModelForm):
                   'cost_per_item',
                   'pricing',
                   'subtotal',
+                  'refunded_quantity',
                   ]
 
     def __init__(self, *args, **kwargs):

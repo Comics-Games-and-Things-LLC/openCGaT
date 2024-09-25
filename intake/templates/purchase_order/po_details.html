@@ -17,16 +17,23 @@
         <h3> Invoiced as {{ po.separate_invoice_number }} </h3>
     {% endif %}
     <h4>{{ po.date }}</h4>
-
-    <p> Total:
+    <p>
         {% if po.subtotal %}
-            {{ po.subtotal }}
+            Subtotal: {{ po.subtotal }}
         {% else %}
-            {{ po.get_line_total }}
+            Line Total: {{ po.get_line_total }} (Subtotal needs set!)
         {% endif %}
         , Sum(Costs) = {{ po.calculated_total_cost }}
         <br/>
+        {% if po.subtotal != po.subtotal_with_credits %}
+            Original Subtotal: {{ po.subtotal_with_credits }}
+            <br/>
+        {% endif %}
         Amount Paid: {{ po.amount_charged }}
+        {% if po.amount_charged != po.amount_charged_with_credits %}
+            Original Amount Paid: {{ po.amount_charged_with_credits }}
+            <br/>
+        {% endif %}
     </p>
     <p>
         {{ po.notes }}
@@ -103,7 +110,7 @@
             <th></th>
             <th></th>
             <th></th>
-            <th scope="col" colspan="2" style="text-align:center;">
+            <th scope="col" colspan="{% if po.has_a_refunded_item %}3{% else %}2{% endif %}" style="text-align:center;">
                 Quantity
             <th>
             <th></th>
@@ -119,6 +126,9 @@
 
             <th scope="col">Expected</th>
             <th scope="col">Received</th>
+            {% if po.has_a_refunded_item %}
+                <th scope="col">Refunded</th>
+            {% endif %}
 
             <th scope="col">Cost Per Item (with fees)</th>
             <th scope="col">Total Cost (with fees)</th>
@@ -138,6 +148,9 @@
             <td></td>
             <td></td>
             <td></td>
+            {% if po.has_a_refunded_item %}
+                <td></td>
+            {% endif %}
         </tr>
         {% for line in lines %}
             {% with line.get_proportional_fees as fees %}
@@ -167,6 +180,10 @@
                     </td>
                     <td>{{ line.expected_quantity }}</td>
                     <td>{{ line.received_quantity }}</td>
+                    {% if po.has_a_refunded_item %}
+                        <td>{{ line.refunded_quantity }}</td>
+                    {% endif %}
+
                     <td>{{ line.cost_per_item }} ({{ line.actual_cost }})</td>
                     <td>
                         {{ line.cost_per_item|mul:line.expected_quantity }}

@@ -153,15 +153,33 @@ class PurchaseOrder(models.Model):
     po_number = models.CharField(max_length=40, primary_key=True)
     archived = models.BooleanField(default=False)
     amount_charged = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True)
+    amount_credited_charge = MoneyField(max_digits=8, decimal_places=2, default_currency='USD',
+                                        default=Money(0, 'USD'),
+                                        help_text="Added to amount charged to get actual amount charged"
+                                        )
     subtotal = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True,
-                          currency_choices=CURRENCY_CHOICES_PURCHASING
+                          currency_choices=CURRENCY_CHOICES_PURCHASING,
+                          help_text="Subtotal after any invoiced credits"
                           )
+    amount_credited_subtotal = MoneyField(max_digits=8, decimal_places=2, default_currency='USD',
+                                          default=Money(0, 'USD'),
+                                          currency_choices=CURRENCY_CHOICES_PURCHASING,
+                                          help_text="Added to subtotal to get displayed total"
+                                          )
+
     separate_invoice_number = models.CharField(max_length=200, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        if self.subtotal:
+        if self.subtotal:  # Subtotal stays in sync with distributor
             self.subtotal = Money(self.subtotal.amount, self.distributor.currency)
+
+        # These fields stay in sync with the field they are added to.
+        if self.amount_credited_subtotal and self.subtotal:
+            self.amount_credited_subtotal = Money(self.amount_credited_subtotal.amount, self.subtotal.currency)
+        if self.amount_credited_charge and self.amount_charged:
+            self.amount_credited_charge = Money(self.amount_credited_charge.amount, self.amount_charged.currency)
+
         super(PurchaseOrder, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -189,8 +207,24 @@ class PurchaseOrder(models.Model):
         return self.lines.aggregate(sum=Sum(F('cost_per_item') * F('received_quantity')))['sum']
 
     @property
+    def subtotal_with_credits(self):
+        if self.amount_credited_charge is None:
+            return self.subtotal
+        return self.subtotal + self.amount_credited_subtotal
+
+    @property
+    def amount_charged_with_credits(self):
+        if self.amount_credited_charge is None:
+            return self.amount_charged
+        return self.amount_charged + self.amount_credited_charge
+
+    @property
     def empty(self):
         return not self.lines.exists()
+
+    @property
+    def has_a_refunded_item(self):
+        return self.lines.filter(refunded_quantity__gte=1).exists()
 
     @property
     def missing_costs(self):
@@ -248,6 +282,7 @@ class POLine(models.Model):
     msrp_on_line = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', blank=True, null=True)
     expected_quantity = models.IntegerField(default=0)
     received_quantity = models.IntegerField(default=0)
+    refunded_quantity = models.IntegerField(default=0, blank=True, help_text="Any items that were credited")
     remaining_quantity = models.IntegerField(default=0)
     pricing = models.CharField(max_length=20, null=True, blank=True)  # For distributors like ACD (SDI, etc)
     line_number = models.IntegerField(default=0, null=True, blank=True)  # Used for ordering on view.
