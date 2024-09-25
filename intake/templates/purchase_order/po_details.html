@@ -185,8 +185,8 @@
                     </td>
                     <td>{{ line.expected_quantity }}</td>
                     <td>{{ line.received_quantity }}</td>
-                    {% if po.has_a_refunded_item and line.refunded_quantity %}
-                        <td>{{ line.refunded_quantity }}</td>
+                    {% if po.has_a_refunded_item %}
+                        <td>{% if line.refunded_quantity %}{{ line.refunded_quantity }}{% endif %}</td>
                     {% endif %}
 
                     <td>{{ line.cost_per_item }} ({{ line.actual_cost }})</td>
