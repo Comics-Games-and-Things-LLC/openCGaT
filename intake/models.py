@@ -290,8 +290,13 @@ class POLine(models.Model):
     def __str__(self):
         return f"{self.po.distributor} {self.po.po_number} {self.line_number}: {self.name} {self.barcode}"
 
+    @property
     def line_subtotal(self):
         return self.cost_per_item * self.expected_quantity
+
+    @property
+    def actual_cost_subtotal(self):
+        return self.actual_cost * self.expected_quantity
 
     @property
     def actual_cost(self):

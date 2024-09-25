@@ -191,8 +191,8 @@
 
                     <td>{{ line.cost_per_item }} ({{ line.actual_cost }})</td>
                     <td>
-                        {{ line.cost_per_item|mul:line.expected_quantity }}
-                        ({{ line.actual_cost|mul:line.expected_quantity }})
+                        {{ line.line_subtotal }}
+                        ({{ line.actual_cost_subtotal }})
                     </td>
                     <td>
                         <a href="{% url 'delete_po_line' partner_slug=partner|slugify po_id=po.po_number po_line_id=line.id confirm=0 %}">
