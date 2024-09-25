@@ -24,20 +24,25 @@
             Line Total: {{ po.get_line_total }} (Subtotal needs set!)
         {% endif %}
         , Sum(Costs) = {{ po.calculated_total_cost }}
-        <br/>
         {% if po.subtotal != po.subtotal_with_credits %}
-            Original Subtotal: {{ po.subtotal_with_credits }}
             <br/>
+            Original Subtotal: {{ po.subtotal_with_credits }}
+
         {% endif %}
+        <br>
         Amount Paid: {{ po.amount_charged }}
         {% if po.amount_charged != po.amount_charged_with_credits %}
-            Original Amount Paid: {{ po.amount_charged_with_credits }}
             <br/>
+            Original Amount Paid: {{ po.amount_charged_with_credits }}
         {% endif %}
     </p>
-    <p>
-        {{ po.notes }}
-    </p>
+    {% if po.notes %}
+        <h4>Notes:</h4>
+        <p>
+            {{ po.notes }}
+        </p>
+        <br>
+    {% endif %}
     <p>
         <a href="{% url 'edit_po' partner_slug=partner|slugify po_id=po.po_number %}">
             Edit
