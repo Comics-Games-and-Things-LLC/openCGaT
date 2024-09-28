@@ -292,10 +292,14 @@ class POLine(models.Model):
 
     @property
     def line_subtotal(self):
+        if self.received_quantity is None:
+            return None
         return self.cost_per_item * self.received_quantity
 
     @property
     def actual_cost_subtotal(self):
+        if self.received_quantity is None:
+            return None
         return self.actual_cost * self.received_quantity
 
     @property
