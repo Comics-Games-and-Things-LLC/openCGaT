@@ -189,13 +189,17 @@ class PurchaseOrder(models.Model):
         if not self.amount_charged:
             return Decimal(1.0)
         if self.subtotal:
-            return self.amount_charged.amount / self.subtotal.amount
+            subtotal = self.subtotal.amount
         else:
-            return self.amount_charged.amount / self.get_line_total().amount
+            subtotal = self.get_line_total().amount
+        if subtotal == 0:
+            return Decimal(1.0)
+        return self.amount_charged.amount / subtotal
 
     def get_line_total(self):
         return sum(
-            ((line.cost_per_item if line.cost_per_item is not None else Money(0, "USD")) * line.expected_quantity)
+            ((line.cost_per_item if line.cost_per_item is not None else Money(0,
+                                                                              self.distributor.currency)) * line.expected_quantity)
             for line in self.lines.all()
         )
 
