@@ -1,3 +1,5 @@
+{% load templatehelpers %}
+{% load templatehelpers %}
 {% load static %}
 
 <!DOCTYPE html>
@@ -22,6 +24,8 @@
                 integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
                 crossorigin="anonymous"></script>
 
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
         <!-- Bootstrap core CSS -->
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
               integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
@@ -39,54 +43,62 @@
         <link href="/static/css/fontawesome.css" rel="stylesheet">
         <link href="/static/css/brands.css" rel="stylesheet">
         <link href="/static/css/solid.css" rel="stylesheet">
-    
+
     </head>
 <body>
 <div class="col">
-    <table class="table">
-        <thead>
-        <tr>
-            <th scope="col">
-                {% if partner %}
-                    {{ partner }}
-                {% else %}
-                    Comics, Games, and Things
-                {% endif %}
-            </th>
-            <th scope="col">Username</th>
-            <th scope="col">Email</th>
-            <th scope="col">Order ID</th>
-
-        </tr>
-        </thead>
-        <tr>
-            <td>
-                <a class="navbar-brand p-0" href="/">
-                    {% if partner and partner.static_prefix %}
-                        <img class="inline h-12" src="{% static 'images/'|add:partner.static_prefix|add:'_dark.png' %}"
-                             alt="logo"/>
+    <div class="flex">
+        <table class="table flex-grow">
+            <tr>
+                <th scope="col">
+                    {% if partner %}
+                        {{ partner }}
                     {% else %}
-                        <img class="inline h-12" src="{% static 'images/default.png' %}" alt="logo"/>
+                        Comics, Games, and Things
                     {% endif %}
-                </a>
-            </td>
+                </th>
+                <th scope="col">Username</th>
+                <th scope="col">Email</th>
+                <th scope="col">Order ID</th>
+            </tr>
+            <tr>
+                <td>
+                    <a class="navbar-brand p-0" href="/">
+                        {% if partner and partner.static_prefix %}
+                            <img class="inline h-12"
+                                 src="{% static 'images/'|add:partner.static_prefix|add:'_dark.png' %}"
+                                 alt="logo"/>
+                        {% else %}
+                            <img class="inline h-12" src="{% static 'images/default.png' %}" alt="logo"/>
+                        {% endif %}
+                    </a>
+                </td>
 
-            <td>
-                {{ past_cart.owner.username }}
-            </td>
-            <td>
-                {% if past_cart.owner %}
-                    {{ past_cart.owner.email }}
-                {% else %}
-                    {{ past_cart.email }}
-                {% endif %}
-            </td>
-            <td>
-                {{ past_cart.id }}
-            </td>
-        </tr>
-    </table>
-
+                <td>
+                    {{ past_cart.owner.username }}
+                </td>
+                <td>
+                    {% if past_cart.owner %}
+                        {{ past_cart.owner.email }}
+                    {% else %}
+                        {{ past_cart.email }}
+                    {% endif %}
+                </td>
+                <td>
+                    {{ past_cart.id }}
+                </td>
+            </tr>
+        </table>
+        <div id="manageQrCode" class="flex-none"></div>
+        <script type="text/javascript">
+            new QRCode(document.getElementById("manageQrCode"),
+                {
+                    text: "{% site_url order %}{% url 'partner_order_details' partner_slug=partner.slug cart_id=cart.id %}",
+                    width: 128,
+                    height: 128,
+                });
+        </script>
+    </div>
 
     <table class="table">
         <thead>
