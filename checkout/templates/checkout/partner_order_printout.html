@@ -35,23 +35,11 @@
             <link href="{% static 'css/default.css' %}" rel="stylesheet">
         {% endif %}
 
-        {% comment %}
-    <script src="https://browser.sentry-cdn.com/5.18.1/bundle.min.js"
-            integrity="sha384-4zdOhGLDdcXl+MRlpApt/Nvfe6A3AqGGBil9+lwFSkXNTv0rVx0eCyM1EaJCXS7r"
-            crossorigin="anonymous">
-
-    </script>
-    <script>
-        Sentry.init({dsn: 'https://54ca525bbe1c40dd8968949deb8cc206@o411443.ingest.sentry.io/5286633'});
-        {% if user.is_authenticated %}
-            Sentry.configureScope(function (scope) {
-                scope.setUser({"username": "{{user.username}}"});
-            })
-        {% endif %}
-    </script>
-    {% endcomment %}
-
-        <script src="https://kit.fontawesome.com/85ced30579.js" crossorigin="anonymous"></script>
+        <!-- our project just needs Font Awesome Solid + Brands -->
+        <link href="/static/css/fontawesome.css" rel="stylesheet">
+        <link href="/static/css/brands.css" rel="stylesheet">
+        <link href="/static/css/solid.css" rel="stylesheet">
+    
     </head>
 <body>
 <div class="col">
