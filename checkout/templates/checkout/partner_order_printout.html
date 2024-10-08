@@ -44,6 +44,16 @@
         <link href="/static/css/brands.css" rel="stylesheet">
         <link href="/static/css/solid.css" rel="stylesheet">
 
+        <!-- Force Links to black for the print-out, since we can't remove them as we're re-using templates -->
+        <style>
+            a:link,
+            a:visited,
+            a:hover,
+            a:active {
+                text-decoration: none;
+                color: #000 !important;
+            }
+        </style>
     </head>
 <body>
 <div class="col">
