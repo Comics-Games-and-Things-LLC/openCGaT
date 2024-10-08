@@ -8,7 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Prefetch, Count, OuterRef, Subquery, F, Sum
+from django.db.models import Prefetch, OuterRef, Subquery, F, Sum
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -20,7 +20,7 @@ from djmoney.money import Money
 import discount_codes.views
 from box_counter.models import BoxInventory
 from digitalitems.models import DigitalItem
-from partner.models import get_partner_or_401
+from partner.models import get_partner_or_401, Partner
 from shop.models import CustomChargeItem, Product, Item, InventoryItem
 from shop.serializers import ItemSerializer
 from .forms import PickupForm, EmailForm, BillingAddressForm, PaymentMethodForm, ShippingAddressForm, FiltersForm, \
@@ -433,9 +433,12 @@ def partner_orders(request, partner_slug):
     return TemplateResponse(request, "checkout/partner_orders.html", context=context)
 
 
-@login_required
 def partner_order_details(request, partner_slug, cart_id):
-    partner = get_partner_or_401(request, partner_slug=partner_slug)
+    partner = get_object_or_404(Partner, slug=partner_slug)
+    if request.user not in partner.administrators.all():
+        return HttpResponseRedirect(
+            reverse("past_order_details", kwargs={'cart_id': cart_id})
+        )
     try:
         past_cart = Cart.submitted.get(id=cart_id)
         form = TrackingInfoForm(instance=past_cart)
