@@ -1,13 +1,15 @@
 {% load templatehelpers %}
 {% if cart.lines.all %}
-    {% with cart.not_only_digital as extra_col %}
+    {% with status_col=cart.not_only_digital seller_col=cart.single_partner %}
         <table class="table checkout-table">
             <thead>
             <tr>
                 <th scope="col">Item</th>
                 <th scope="col">Type</th>
-                <th scope="col">Seller</th>
-                {% if extra_col %}
+                {% if seller_col %}
+                    <th scope="col">Seller</th>
+                {% endif %}
+                {% if status_col %}
                     <th scope="col">Status</th>
                 {% endif %}
                 <th scope="col">Quantity</th>
@@ -42,13 +44,17 @@
                     </td>
                     <td>{% include 'shop/snippets/item_type_icon.html' with item=line.item %}</td>
 
-                    <td>{% if line.partner_at_time_of_submit %}
-                        {{ line.partner_at_time_of_submit }}
-                    {% else %}
-                        {{ line.item.partner }}
+                    {% if seller_col %}
+                        <td>
+                            {% if line.partner_at_time_of_submit %}
+                                {{ line.partner_at_time_of_submit }}
+                            {% else %}
+                                {{ line.item.partner }}
+                            {% endif %}
+                        </td>
                     {% endif %}
-                    </td>
-                    {% if extra_col %}
+                
+                    {% if status_col %}
                         <td>
                             <text>{{ line.status_text|linebreaks }}</text>
                             {% if manage and cart.status != "Cancelled" and not line.cancelled %}
@@ -112,8 +118,10 @@
             <tr>
                 <td></td>
                 <td></td>
-                <td></td>
-                {% if cart.not_only_digital %}
+                {% if seller_col %}
+                    <td></td>
+                {% endif %}
+                {% if status_col %}
                     <td></td>
                 {% endif %}
                 <td></td>
@@ -125,8 +133,10 @@
                 <tr>
                     <td></td>
                     <td></td>
-                    <td></td>
-                    {% if extra_col %}
+                    {% if seller_col %}
+                        <td></td>
+                    {% endif %}
+                    {% if status_col %}
                         <td></td>
                     {% endif %}
                     <td></td>
@@ -147,8 +157,10 @@
             <tr>
                 <td></td>
                 <td></td>
-                <td></td>
-                {% if extra_col %}
+                {% if seller_col %}
+                    <td></td>
+                {% endif %}
+                {% if status_col %}
                     <td></td>
                 {% endif %}
                 <td></td>
@@ -168,8 +180,10 @@
             <tr>
                 <td></td>
                 <td></td>
-                <td></td>
-                {% if extra_col %}
+                {% if seller_col %}
+                    <td></td>
+                {% endif %}
+                {% if status_col %}
                     <td></td>
                 {% endif %}
                 <td></td>
@@ -186,8 +200,10 @@
                 <tr>
                     <td></td>
                     <td></td>
-                    <td></td>
-                    {% if extra_col %}
+                    {% if seller_col %}
+                        <td></td>
+                    {% endif %}
+                    {% if status_col %}
                         <td></td>
                     {% endif %}
                     <td></td>
@@ -199,8 +215,10 @@
                 <tr>
                     <td>Discount code applied: {{ cart.discount_code.code }}</td>
                     <td></td>
-                    <td></td>
-                    {% if extra_col %}
+                    {% if seller_col %}
+                        <td></td>
+                    {% endif %}
+                    {% if status_col %}
                         <td></td>
                     {% endif %}
                     <td></td>

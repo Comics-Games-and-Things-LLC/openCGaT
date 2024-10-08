@@ -949,6 +949,18 @@ class Cart(RepresentationMixin, models.Model):
             for line in self.lines.all():
                 line.purchase()
 
+    @property
+    def single_partner(self):
+        partners, count = self.get_order_partners()
+        if count != 1:
+            return False
+        partner = partners.first()
+        if self.pickup_partner and self.pickup_partner != partner:
+            return False
+        if self.payment_partner and self.payment_partner != partner:
+            return False
+        return True
+
     def get_pickup_partners(self):
         partner_id_list = Item.objects.filter(id__in=self.lines.values('item_id')).not_instance_of(
             DigitalItem).values_list('partner_id', flat=True).distinct()
