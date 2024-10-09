@@ -184,6 +184,32 @@
         </table>
     {% endif %}
     {% include 'checkout/snippets/static_cart_summary.html' with cart=past_cart %}
+    {% if other_items_for_customer %}
+        <h4> Your other items <small> as of {% now " d/m/Y  g:i A T" %}</small></h4>
+        <table class="table">
+            <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Status</th>
+                <th scope="col">Order</th>
+                <th scope="col">Date</th>
+
+            </tr>
+            {% for line in other_items_for_customer %}
+                <tr>
+                    <td>
+                        {% if line.item.product %}
+                            {{ line.item.product.name }}
+                        {% endif %}
+                    </td>
+                    <td>{{ line.quantity }}</td>
+                    <td>{{ line.status_text }}</td>
+                    <td>{{ line.cart.id }}</td>
+                    <td>{{ line.cart.date_submitted }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
 </div>
 </body>
 </html>

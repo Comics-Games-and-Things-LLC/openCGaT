@@ -330,17 +330,28 @@ def checkout_complete(request, order_id):
     return TemplateResponse(request, "checkout/checkout_done.html", context=context)
 
 
+def other_items_for_customer(user, cart=None, paid_only=False):
+    lines = CheckoutLine.objects.filter(cart__owner=user,
+                                        fulfilled=False,
+                                        cancelled=False,
+                                        cart__date_submitted__isnull=False,
+                                        ).order_by('-cart__date_submitted')
+    if paid_only:
+        lines = lines.filter(cart__status=Cart.PAID)
+    else:
+        lines = lines.filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID])
+
+    if not cart:
+        return lines
+    return lines.exclude(cart__id=cart.id)
+
+
 @login_required
 def past_orders(request):
     orders = Cart.submitted.filter(owner=request.user).order_by('date_submitted')
     context = {'past_orders': orders,
-               'other_items_for_customer': CheckoutLine.objects.filter(cart__owner=request.user,
-                                                                       fulfilled=False,
-                                                                       cancelled=False,
-                                                                       cart__date_submitted__isnull=False
-                                                                       ).exclude(cart__status__in=[Cart.COMPLETED,
-                                                                                                   Cart.CANCELLED]
-                                                                                 ).order_by('-cart__date_submitted')}
+               'other_items_for_customer': other_items_for_customer(request.user),
+               }
     return TemplateResponse(request, "checkout/past_orders.html", context=context)
 
 
@@ -474,13 +485,7 @@ def partner_order_details(request, partner_slug, cart_id):
                 print(past_cart)
         context['comments_form'] = PartnerCommentsForm(instance=past_cart)
         if past_cart.owner:
-            context['other_items_for_customer'] = CheckoutLine.objects.filter(cart__owner=past_cart.owner,
-                                                                              cart__status=Cart.PAID,
-                                                                              fulfilled=False
-                                                                              ).exclude(
-                cart__id=past_cart.id
-            )
-
+            context['other_items_for_customer'] = other_items_for_customer(past_cart.owner, past_cart, paid_only=True)
         return TemplateResponse(request, "checkout/partner_order_details.html", context=context)
     except Cart.DoesNotExist:
         return HttpResponse(status=404)
@@ -494,6 +499,8 @@ def partner_order_printout(request, partner_slug, cart_id):
         past_cart.invoice_been_printed = True
         past_cart.save()
         context = {'past_cart': past_cart, 'partner': partner}
+        if past_cart.owner:
+            context['other_items_for_customer'] = other_items_for_customer(past_cart.owner, past_cart, paid_only=True)
         return TemplateResponse(request, "checkout/partner_order_printout.html", context=context)
     except Cart.DoesNotExist:
         return HttpResponse(status=404)
