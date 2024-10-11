@@ -103,7 +103,7 @@
         <script type="text/javascript">
             new QRCode(document.getElementById("manageQrCode"),
                 {
-                    text: "{% site_url order %}{% url 'partner_order_details' partner_slug=partner.slug cart_id=cart.id %}",
+                    text: "{% site_url order %}{% url 'partner_order_details' partner_slug=partner.slug cart_id=past_cart.id %}",
                     width: 128,
                     height: 128,
                 });
