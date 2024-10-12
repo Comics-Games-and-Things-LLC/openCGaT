@@ -16,8 +16,6 @@ class Command(BaseCommand):
                     try:
                         for intent in cart.stripepaymentintent_set.all():
                             print(intent)
-                            intent.captured = False
-                            intent.save()  # Reset status of all payment intents that haven't actually through.
                             intent.try_mark_captured()  # Check to see if they now have correct data
                     except Exception as e:
                         print(e)
