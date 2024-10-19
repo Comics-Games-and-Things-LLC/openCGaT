@@ -70,8 +70,18 @@ def generate_image_for_order(line: CheckoutLine):
         draw.text((0, 0), "PAID", font=fnt_xl)
 
     draw.text((pct_w(50), 0), str(line.cart.id), font=fnt_med)
-    if line.cart.num_items > 1:
-        draw.text((pct_w(50), pct_h(20)), f"{line.cart.num_ready_items} / {line.cart.num_active_items}" , font=fnt_med)
+
+    other_addendum = ""
+    other_items = line.cart.get_other_items_for_customer(paid_only=True)
+    if other_items is not None:
+        count = other_items.filter(ready=True).count()
+        if count > 0:
+            other_addendum = f"+ {count}"
+
+    if line.cart.num_items > 1 or other_addendum:
+        draw.text((pct_w(50), pct_h(20)),
+                  f"{line.cart.num_ready_items} / {line.cart.num_active_items} {other_addendum}",
+                  font=fnt_med)
 
     draw.text((pct_w(50), pct_h(40)), str(line.cart.delivery_method), font=fnt_med)
 
