@@ -15,7 +15,6 @@ const CartRow: React.FunctionComponent<IRowProps> = (props: IRowProps): JSX.Elem
     let price_id = "price_" + props.price_per_unit_override
 
     let partner_cell = null
-    let total_price_cell = null
     let quantity_field = <td>{props.quantity} </td>
     let type_cell = null
 

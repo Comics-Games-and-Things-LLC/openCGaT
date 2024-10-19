@@ -23,14 +23,15 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
     let subtotal_header = null
 
 
-    let show_status_col = props.cart.show_status_col && props.full && !props.pos
+    let show_status_col = props.cart.show_status_col && props.full && (!props.pos || !props.cart.open)
     let show_cost_col = props.showCost && props.pos
 
-    let num_empty_cols = 4;
+    let num_empty_cols = props.pos ? 2 : 4;
     if (show_status_col) {
-        num_empty_cols = 5
-    } else if (props.pos) {
-        num_empty_cols = show_cost_col ? 3 : 2;
+        num_empty_cols++;
+    }
+    if (show_cost_col) {
+        num_empty_cols++;
     }
 
     const remaining_balance = props.cart.final_total ?
