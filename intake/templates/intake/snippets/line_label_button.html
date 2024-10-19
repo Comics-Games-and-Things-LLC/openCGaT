@@ -1,0 +1,4 @@
+<button onclick="PrintImageFromUrl('{% url 'get_order_image' partner_slug=partner.slug checkoutline_id=checkoutline_id %}')"
+        class="btn btn-primary" id="print_order{{ checkoutline_id }}">
+    Print Label
+</button>

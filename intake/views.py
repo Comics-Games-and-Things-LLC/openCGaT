@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedire
 from django.shortcuts import render, get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 
 from checkout.models import CheckoutLine, Cart
 from partner.models import Partner, get_partner_or_401
@@ -239,12 +240,11 @@ def get_image(request, partner_slug, item_id):
     return response
 
 
-@login_required
+@csrf_exempt
 def get_order_image(request, partner_slug, checkoutline_id):
     partner = get_partner_or_401(request, partner_slug)
     line = CheckoutLine.objects.get(id=checkoutline_id)
     if partner != line.partner_at_time_of_submit:
-        print(line.partner_at_time_of_submit)
         return HttpResponse(status=401)
     image = generate_image_for_order(line)
     response = HttpResponse(content_type="image/png")

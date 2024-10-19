@@ -113,6 +113,40 @@
     {% endblock %}
     {% block extrastyle %}
     {% endblock %}
+    {% if partner %}
+        <script>
+            function AutoPrintImagePage(source) {
+                return "<html><head><scri" + "pt>function step1(){\n" +
+                    "setTimeout('step2()', 10);}\n" +
+                    "function step2(){window.print();window.close()}\n" +
+                    "</scri" + "pt></head><body onload='step1()'>\n" +
+                    "<img src='" + source + "' /></body></html>";
+            }
+
+            {#  https://stackoverflow.com/questions/2909033/using-javascript-to-print-images #}
+
+            function OpenPrintImagePage(source) {
+                var Pagelink = "about:blank";
+                var pwa = window.open(Pagelink, "_new");
+                pwa.document.open();
+                pwa.document.write(AutoPrintImagePage(source));
+                pwa.document.close();
+            }
+
+            function PrintImageFromUrl(target_url) {
+                console.log("attempting print")
+                let request = new Request(target_url);
+                fetch(request, {
+                    method: 'POST',
+                    mode: 'same-origin', // Do not send CSRF token to another domain.
+                }).then(response => response.blob()
+                ).then(imageBlob => OpenPrintImagePage(URL.createObjectURL(imageBlob))
+                );
+                return false;
+            }
+            
+        </script>
+    {% endif %}
 </head>
 <body class="flex flex-col min-h-screen">
 <header class="align-self-stretch sticky top-0 z-20">

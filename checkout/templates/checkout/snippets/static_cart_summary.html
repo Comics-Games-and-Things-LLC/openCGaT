@@ -40,6 +40,9 @@
                             <br>
                             <small> Expected release date {{ line.item.product.release_date }} </small>
                         {% endif %}
+                        {% if manage %}
+                            {% include 'intake/snippets/line_label_button.html' with checkoutline_id=line.id %}
+                        {% endif %}
 
                     </td>
                     <td>{% include 'shop/snippets/item_type_icon.html' with item=line.item %}</td>
@@ -53,7 +56,7 @@
                             {% endif %}
                         </td>
                     {% endif %}
-                
+
                     {% if status_col %}
                         <td>
                             <text>{{ line.status_text|linebreaks }}</text>
