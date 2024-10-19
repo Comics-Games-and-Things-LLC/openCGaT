@@ -71,7 +71,8 @@ export const updatePOSFull = createAsyncThunk<// Return type of the payload crea
     // Types for ThunkAPI
     {
         state: RootState;
-    }>("cart/updatePOSFull", async (_, {getState}) => {
+    }>("cart/updatePOSFull", async (_, {getState, dispatch}) => {
+    dispatch(setPOSLoading());
     const pos = getState().cart.pos;
     return fetch(`${pos.url}/${pos.active_cart.id}/data/`).then((response) =>
         response.json()
@@ -346,6 +347,9 @@ export const cartSlice = createSlice({
         setCart(state, action) {
             state.cart = action.payload as ICart;
         },
+        setPOSLoading(state) {
+            state.pos.loading = true;
+        },
         setPOS(state, action) {
             state.pos = action.payload as IPOSProps;
         },
@@ -400,6 +404,7 @@ export const cartSlice = createSlice({
 export const {
     setCart,
     setPOS,
+    setPOSLoading,
     setPOSCartID,
     setPopoverOpen,
     addButtonItem,

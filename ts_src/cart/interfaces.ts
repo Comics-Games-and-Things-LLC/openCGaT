@@ -106,6 +106,7 @@ export interface IPartner {
 }
 
 export interface IPOSProps {
+    loading?: boolean;
     active_cart?: ICart;
     open_carts?: [ICart];
     pay_in_store_carts?: [ICart];
