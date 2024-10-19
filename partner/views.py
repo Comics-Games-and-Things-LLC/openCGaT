@@ -11,7 +11,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 
-from checkout.models import Cart, CheckoutLine
+from checkout.models import Cart, CheckoutLine, other_items_for_customer
 from digitalitems.models import DigitalItem
 from partner.forms import FiltersForm, DiscountForm, BanForm, StaffLogPaymentForm
 from partner.models import Partner, get_partner_or_401, PartnerTransaction
@@ -229,6 +229,7 @@ def customer_details(request, partner_slug, user_id):
         'partner': partner,
         'customer': customer,
         'orders': orders.filter(owner=customer),
+        'other_items_for_customer': other_items_for_customer(customer),
         'items': DigitalItem.objects.filter(downloads__user=customer, partner__slug=partner_slug),
         'banform': BanForm(instance=customer),
         'campaigns': campaigns
