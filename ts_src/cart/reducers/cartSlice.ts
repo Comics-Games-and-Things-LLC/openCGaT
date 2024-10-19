@@ -59,7 +59,7 @@ export const updatePOSCart = createAsyncThunk<// Return type of the payload crea
     }>("cart/updatePOSCart", async (_, {getState}) => {
     const pos = getState().cart.pos;
     return fetch(`${pos.url}/${pos.active_cart.id}/cart/`)
-        .then((response) =>  response.json())
+        .then((response) => response.json())
         .then((response) => response.active_cart); // Just the active cart part of the state
 });
 
@@ -78,18 +78,18 @@ export const updatePOSFull = createAsyncThunk<// Return type of the payload crea
     );
 });
 
-export const updatePOSFullAndChangeToCartID = createAsyncThunk<// Return type of the payload creator
+export const updatePOSAndChangeToCartID = createAsyncThunk<// Return type of the payload creator
     object,
     // First argument to the payload creator
     number,
     // Types for ThunkAPI
     {
         state: RootState;
-    }>("cart/updatePOSFullAndChangeToCartID", async (cartID, {getState}) => {
+    }>("cart/updatePOSAndChangeToCartID", async (cartID, {getState}) => {
     const pos = getState().cart.pos;
-    return fetch(`${pos.url}/${cartID}/data`).then((response) =>
-        response.json()
-    );
+    return fetch(`${pos.url}/${cartID}/cart/`)
+        .then((response) => response.json())
+        .then((response) => response.active_cart); // Just the active cart part of the state
 });
 
 export const addToCart = createAsyncThunk<// Return type of the payload creator
@@ -388,12 +388,12 @@ export const cartSlice = createSlice({
             .addCase(updatePOSFull.fulfilled, (state, action) => {
                 state.pos = action.payload as IPOSProps;
             })
-            .addCase(updatePOSFullAndChangeToCartID.fulfilled, (state, action) => {
-                state.pos = action.payload as IPOSProps;
+            .addCase(updatePOSAndChangeToCartID.fulfilled, (state, action) => {
+                state.pos.active_cart = action.payload as ICart;
             })
             .addCase(updatePOSCart.fulfilled, (state, action) => {
-                    state.pos.active_cart = action.payload as ICart;
-                })
+                state.pos.active_cart = action.payload as ICart;
+            })
     },
 });
 
