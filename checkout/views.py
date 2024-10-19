@@ -25,7 +25,7 @@ from shop.models import CustomChargeItem, Product, Item, InventoryItem
 from shop.serializers import ItemSerializer
 from .forms import PickupForm, EmailForm, BillingAddressForm, PaymentMethodForm, ShippingAddressForm, FiltersForm, \
     TrackingInfoForm, PartnerCommentsForm
-from .models import Cart, CheckoutLine, StripeCustomerId, StripePaymentIntent
+from .models import Cart, CheckoutLine, StripeCustomerId, StripePaymentIntent, other_items_for_customer
 from .serializers import CartSerializer, get_pos_props, get_active_cart, get_pos_cart_list
 
 
@@ -328,22 +328,6 @@ def checkout_complete(request, order_id):
 
     context = {'order': old_cart}
     return TemplateResponse(request, "checkout/checkout_done.html", context=context)
-
-
-def other_items_for_customer(user, cart=None, paid_only=False):
-    lines = CheckoutLine.objects.filter(cart__owner=user,
-                                        fulfilled=False,
-                                        cancelled=False,
-                                        cart__date_submitted__isnull=False,
-                                        ).order_by('-cart__date_submitted')
-    if paid_only:
-        lines = lines.filter(cart__status=Cart.PAID)
-    else:
-        lines = lines.filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID])
-
-    if not cart:
-        return lines
-    return lines.exclude(cart__id=cart.id)
 
 
 @login_required

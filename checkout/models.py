@@ -709,6 +709,11 @@ class Cart(RepresentationMixin, models.Model):
                 'sum']
         return 0
 
+    def get_other_items_for_customer(self, paid_only=False):
+        if not self.owner:
+            return None
+        return other_items_for_customer(self.owner, cart=self, paid_only=paid_only)
+
     @property
     def time_before_submit(self):
         if not self.date_submitted:
@@ -1577,3 +1582,19 @@ def handle_null_money(val: Money or Decimal or None) -> Money:
     if val is None:
         return Money(0, 'USD')
     return Money(val, 'USD')
+
+
+def other_items_for_customer(user, cart=None, paid_only=False):
+    lines = CheckoutLine.objects.filter(cart__owner=user,
+                                        fulfilled=False,
+                                        cancelled=False,
+                                        cart__date_submitted__isnull=False,
+                                        ).order_by('-cart__date_submitted')
+    if paid_only:
+        lines = lines.filter(cart__status=Cart.PAID)
+    else:
+        lines = lines.filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID])
+
+    if not cart:
+        return lines
+    return lines.exclude(cart__id=cart.id)
