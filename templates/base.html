@@ -74,6 +74,12 @@
     <meta name="theme-color" content="#563d7c">
 
     <style>
+        /* Fix for safari incorrectly coloring links */
+        .section {
+            -webkit-text-fill-color: initial;
+        }
+
+
         .bd-placeholder-img {
             font-size: 1.125rem;
             text-anchor: middle;
@@ -144,7 +150,7 @@
                 );
                 return false;
             }
-            
+
         </script>
     {% endif %}
 </head>
