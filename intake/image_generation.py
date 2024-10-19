@@ -4,8 +4,6 @@ from barcode import Code128
 
 from checkout.models import CheckoutLine
 
-
-
 image_width = 1000
 image_height = int(image_width * 450 / 1000)
 
@@ -17,16 +15,19 @@ def pct_w(percent):
 def pct_h(percent):
     return int(image_height * percent / 100)
 
+
 FNTPATH = "intake/static/DroidSans.ttf"
 fnt = ImageFont.truetype(FNTPATH, pct_h(22))
 fnt_xl = ImageFont.truetype(FNTPATH, pct_h(50))
 fnt_med = ImageFont.truetype(FNTPATH, pct_h(15))
 fnt_small = ImageFont.truetype(FNTPATH, pct_h(11))
 
+
 def draw_multiline_text(draw, name, pct_h_start):
     draw.text((0, pct_h(pct_h_start)), name[:39], font=fnt_small)
     if len(name) > 39:
-        draw.text((0, pct_h(pct_h_start+11)), name[39:].strip(), font=fnt_small)
+        draw.text((0, pct_h(pct_h_start + 11)), name[39:].strip(), font=fnt_small)
+
 
 def generate_product_sticker(item):
     to_print = Image.new('L', (image_width, image_height), 'white')
@@ -43,7 +44,7 @@ def generate_product_sticker(item):
     draw.text((0, 100), "Our Price:", font=fnt_med)  # currency field
     draw.text((pct_w(50), 100), str("$" + str(item.default_price.amount)), font=fnt)  # currency field
 
-    draw_multiline_text(draw, item.product.name, 50 )
+    draw_multiline_text(draw, item.product.name, 50)
 
     if item.product.needs_barcode_printed:
         barcode_options = {'module_width': .4, 'module_height': 5}
@@ -57,6 +58,7 @@ def generate_product_sticker(item):
     else:
         draw.text((0, 350), item.partner.name, font=fnt_small)
     return to_print
+
 
 def generate_image_for_order(line: CheckoutLine):
     item = line.item
@@ -77,8 +79,6 @@ def generate_image_for_order(line: CheckoutLine):
         draw_multiline_text(draw, str(line.cart.owner), 50)
     draw_multiline_text(draw, str(line.cart.get_order_email()), 61)
 
-
     draw_multiline_text(draw, item.product.name, 75)
 
     return to_print
-
