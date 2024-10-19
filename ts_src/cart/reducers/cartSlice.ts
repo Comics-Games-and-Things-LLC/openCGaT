@@ -199,7 +199,7 @@ export const createNewPOSCart = createAsyncThunk<// Return type of the payload c
         .then((response) => response.json())
         .then((data) => {
             dispatch(setPOSCartID(data.id));
-            return dispatch(updatePOSFull());
+            dispatch(updatePOSCart());
         });
 });
 
