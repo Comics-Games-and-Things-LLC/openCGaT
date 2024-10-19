@@ -13,7 +13,7 @@ from django.core import mail
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.mail import EmailMessage
 from django.db import models, transaction
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Q
 from django.template.loader import get_template
 from django.utils import timezone
 from django.utils.timezone import now
@@ -692,8 +692,22 @@ class Cart(RepresentationMixin, models.Model):
         """Return number of items"""
         if self.id is not None:
             return self.lines.aggregate(sum=Sum("quantity"))['sum']
-        else:
-            return 0
+        return 0
+
+    @property
+    def num_active_items(self):
+        """Return number of items that are not cancelled"""
+        if self.id is not None:
+            return self.lines.filter(cancelled=False).aggregate(sum=Sum("quantity"))['sum']
+        return 0
+
+    @property
+    def num_ready_items(self):
+        """Return number of items that are ready or complete"""
+        if self.id is not None:
+            return self.lines.filter(Q(ready=True, fulfilled=False) | Q(fulfilled=True)).aggregate(sum=Sum("quantity"))[
+                'sum']
+        return 0
 
     @property
     def time_before_submit(self):

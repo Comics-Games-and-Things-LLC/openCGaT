@@ -69,7 +69,7 @@ def generate_image_for_order(line: CheckoutLine):
 
     draw.text((pct_w(50), 0), str(line.cart.id), font=fnt_med)
     if line.cart.num_items > 1:
-        draw.text((pct_w(50), pct_h(20)), f"     / {line.cart.num_items}" , font=fnt_med)
+        draw.text((pct_w(50), pct_h(20)), f"{line.cart.num_ready_items} / {line.cart.num_active_items}" , font=fnt_med)
 
     draw.text((pct_w(50), pct_h(40)), str(line.cart.delivery_method), font=fnt_med)
 
