@@ -1,6 +1,8 @@
 import csv
 import datetime
 
+from django.conf import settings
+from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
@@ -19,11 +21,15 @@ class Command(BaseCommand):
         start_range = None
         end_range = None
         all_time = options.pop("all")
+        nice_name = f"Sales Tax Report {datetime.date.today().isoformat()}"
         filename = 'reports/sales_tax_report_{}.csv'.format(datetime.date.today().isoformat())
 
         if not all_time:
             start_range, end_range = get_previous_month_range()
-            filename = 'reports/sales_tax_report_from_{}_to_{}.csv'.format(start_range.isoformat(), end_range.isoformat())
+            nice_name = 'Sales Tax Report from {} to {}'.format(start_range.isoformat(), end_range.isoformat())
+
+            filename = 'reports/sales_tax_report_from_{}_to_{}.csv'.format(start_range.isoformat(),
+                                                                           end_range.isoformat())
         with open(filename, 'w',
                   newline='') as csvfile:
             fieldnames = ['Cart Number', 'Contact Info', 'Date Paid', 'Sales Tax Charged', 'Subtotal', 'Shipping',
@@ -67,6 +73,10 @@ class Command(BaseCommand):
                 pbar.update()
             pbar.close()
         print(f"Saved report to {filename}")
+        email = EmailMessage(nice_name, "Attached is the report", to=[settings.EMAIL_HOST_USER])
+        email.attach_file(filename)
+        email.send()
+        print(f"Emailed to {settings.EMAIL_HOST_USER}")
 
 
 def get_previous_month_range():

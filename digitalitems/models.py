@@ -4,6 +4,7 @@ from datetime import datetime
 
 from azure.common import AzureMissingResourceHttpError
 from dateutil import tz
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage
@@ -161,7 +162,7 @@ class DigitalItem(Item):
                                            This email could be a mistake and should be manually checked
                                            """.format(cart.owner, self, cart.id),
                                from_email=None,
-                               to=["nsh@comicsgamesandthings.com"])
+                               to=[settings.EMAIL_HOST_USER])
             msg.content_subtype = 'html'
             msg.send(fail_silently=True)
 
