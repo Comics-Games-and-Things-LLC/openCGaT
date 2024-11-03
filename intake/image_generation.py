@@ -1,3 +1,5 @@
+import datetime
+
 import barcode
 from PIL import Image, ImageDraw, ImageFont
 from barcode import Code128
@@ -90,5 +92,7 @@ def generate_image_for_order(line: CheckoutLine):
     draw_multiline_text(draw, str(line.cart.get_order_email()), 61)
 
     draw_multiline_text(draw, item.product.name, 75)
+    if item.product.release_date > datetime.date.today():
+        draw.text((pct_w(75), pct_h(0)), item.product.release_date.strftime("%d/%m/%y"), font=fnt_small)
 
     return to_print
