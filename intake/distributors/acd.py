@@ -47,7 +47,14 @@ def download_images(upc):
     pass  # For now do nothing
 
 
-def query_for_info(upc):
+def get_name_and_msrp(upc):
+    info = query_for_info(upc)
+    if len(info) == 0:
+        return None, None
+    return info['Name'], info["MSRP"]
+
+
+def query_for_info(upc, get_full=False):
     try:
         result = requests.get(
             f"https://www.acdd.com/catalogsearch/advanced/result/?name=&sku=&description=&price%5Bfrom%5D=&price%5Bto%5D=&acd_upc={upc}&acd_preorder=&acd_instock=")
@@ -55,6 +62,7 @@ def query_for_info(upc):
         card_elements = soup.find_all("li", class_="item product product-item")
         # Assume only one result since we are searching by UPC.
         link_element = card_elements[0].find_next("a", class_="product-item-link")
+        page_link = link_element['href']
         name = link_element.get_text().strip()
         acd_msrp = card_elements[0].find_next(
             "div",
@@ -63,8 +71,36 @@ def query_for_info(upc):
             "span",
             class_="price"
         ).get_text().replace("$", "")
-        return name, acd_msrp
+        if not get_full:
+            return {
+                "Name": name,
+                "MSRP": acd_msrp,
+            }
+        print("Querying for more information")
+        print(page_link)
+        result = requests.get(page_link)
+        soup = BeautifulSoup(result.text, features="html5lib")
+        description_elements = soup.find_all("div", class_="product attribute description")
+        description = None
+        if description_elements:
+            description = description_elements[0].get_text()
+        picture_elements = soup.find_all("img",
+                                         class_="gallery-placeholder__image")
+        picture_src = None
+        if picture_elements:
+            picture_src = picture_elements[0]['src']
 
-    except Exception:
-        pass
-    return None, None
+        release_date = None
+        release_date_elements = soup.find_all('td', class_="col data", attrs={"data-th": "Release Date"})
+        if release_date_elements:
+            release_date = release_date_elements[0].get_text()
+        return {
+            "Name": name,
+            "MSRP": acd_msrp,
+            "Description": description,
+            "Picture Source": picture_src,
+            "Release Date": release_date
+        }
+    except Exception as e:
+        print(e)
+    return {}

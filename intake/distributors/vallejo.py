@@ -42,7 +42,7 @@ def import_records():
             print(f"Asking ACD for the paint {display_number}")
 
             time.sleep(1)
-            name, acd_msrp = acd.query_for_info(barcode)
+            name, acd_msrp = acd.get_name_and_msrp(barcode)
             msrp = None
             price = None
             if acd_msrp == "3.99":
