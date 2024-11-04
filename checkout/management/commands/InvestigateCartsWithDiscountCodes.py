@@ -21,6 +21,8 @@ class Command(BaseCommand):
 
             writer.writeheader()
             for email in tqdm(Cart.submitted.values_list("email", flat=True).distinct(), unit=" Emails"):
+                if email is None:
+                    continue
                 carts = Cart.submitted.filter(email=email)
                 data = {"Email": email.strip()}
                 data.update(get_data_from_carts(carts))
