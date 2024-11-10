@@ -30,6 +30,7 @@
             integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct"
             crossorigin="anonymous"></script>
 
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 
     {% block disablebootstrap %}
         <!-- Bootstrap core CSS -->
@@ -151,6 +152,14 @@
                 return false;
             }
 
+            function CopyToClipboard(clicked_element) {
+                const text = clicked_element.innerText
+                navigator.clipboard.writeText(text);
+                Toastify({
+                    text: `Copied '${text}' to clipboard`,
+                    duration: 3000
+                }).showToast();
+            }
         </script>
     {% endif %}
 </head>
@@ -359,5 +368,6 @@
         });
     }
 </script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </body>
 </html>

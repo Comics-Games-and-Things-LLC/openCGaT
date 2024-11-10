@@ -80,7 +80,7 @@
                 {% endif %}
                 {% if partner and item.enable_restock_alert %}
                     <p class="text-gray-400">
-                        {{ item.low_inventory_alert_threshold }} Threshold                 
+                        {{ item.low_inventory_alert_threshold }} Threshold
                     </p>
                 {% endif %}
                 {% if product.msrp %}
@@ -88,9 +88,31 @@
                         MSRP {{ product.msrp }}
                     </p>
                 {% endif %}
+                {% if partner and product.publisher_sku %}
+                    <p class="text-gray-400">
+                        SKU:
+                        <span class="font-bold text-primary-700"
+                              onclick="CopyToClipboard(this)"> 
+                            {{ product.publisher_sku }} 
+                        </span>
+                    </p>
+                {% endif %}
                 {% if partner and product.publisher_short_sku %}
                     <p class="text-gray-400">
-                        Short SKU: {{ product.publisher_short_sku }}
+                        Short SKU:
+                        <span class="font-bold text-primary-700"
+                              onclick="CopyToClipboard(this)"> 
+                            {{ product.publisher_short_sku }} 
+                        </span>
+                    </p>
+                {% endif %}
+                {% if partner and product.barcode %}
+                    <p class="text-gray-400">
+                        Barcode:
+                        <span class="font-bold text-primary-700"
+                              onclick="CopyToClipboard(this)"> 
+                            {{ product.barcode }} 
+                        </span>
                     </p>
                 {% endif %}
                 {% if product.in_store_pickup_only and not item|is_download_item %}
