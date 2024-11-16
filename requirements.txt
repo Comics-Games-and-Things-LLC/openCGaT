@@ -11,6 +11,8 @@ django-rest-framework
 django-react-templatetags
 django-cors-headers
 django-storages[azure]
+django-recaptcha
+
 
 azure-common==1.1.28
 boto3
