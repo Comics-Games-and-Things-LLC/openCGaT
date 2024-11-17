@@ -34,6 +34,6 @@ ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 
 RECAPTCHA_PUBLIC_KEY = os.getenv('RECAPTCHA_PUBLIC_KEY', '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI')
 RECAPTCHA_PRIVATE_KEY = os.getenv('RECAPTCHA_PRIVATE_KEY', '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe')
-# SILENCED_SYSTEM_CHECKS = ['django_recaptcha.recaptcha_test_key_error'] # Uncomment this for local testing without keys
+SILENCED_SYSTEM_CHECKS = ['django_recaptcha.recaptcha_test_key_error']
 
 ACCOUNT_FORMS = {'signup': 'openCGaT.forms.AllAuthCaptchaSignupForm'}
