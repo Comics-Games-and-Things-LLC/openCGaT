@@ -29,3 +29,4 @@ node_modules/
 .nvmrc
 m1_mac_env_setup.sh
 
+/jenkins.env
