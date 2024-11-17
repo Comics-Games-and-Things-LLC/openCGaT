@@ -36,12 +36,21 @@
                             <br>
                             {{ line.item.description }}
                         {% endif %}
+                        {% if manage %}
+                            {% include 'intake/snippets/line_label_button.html' with checkoutline_id=line.id %}
+                        {% endif %}
                         {% if line.is_preorder %}
                             <br>
                             <small> Expected release date {{ line.item.product.release_date }} </small>
                         {% endif %}
-                        {% if manage %}
-                            {% include 'intake/snippets/line_label_button.html' with checkoutline_id=line.id %}
+                        {% if manage and line.item and not line.is_preorder %}
+                            <br>
+                            <small> {{ line.item.current_inventory }} in stock
+                                {% for faction in line.item.product.factions.all %}
+                                    • {{ faction }}
+                                {% endfor %}
+                            </small>
+
                         {% endif %}
 
                     </td>
