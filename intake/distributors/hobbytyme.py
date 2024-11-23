@@ -58,6 +58,9 @@ def get_invoice_lines(pdf_path, po):
 
             # At this point we now have a valid line
             line_info = InvoiceLineInfo(line)
+            if line_info.qty_of_type == "0":
+                continue  # Skip lines of quantity 0 (backorders).
+
             if line_info.qty_type == "BX":
                 print("Not sure how to handle boxes, skipping line:")
                 print('\t', line)
@@ -80,6 +83,8 @@ def get_invoice_lines(pdf_path, po):
                 po_line.expected_quantity = int(line_info.qty_of_type)
             if not po_line.cost_per_item:
                 po_line.cost_per_item = Money(line_info.final_cost, "USD")
+            if not po_line.msrp_on_line:
+                po_line.msrp_on_line = Money(line_info.retail_price, "USD")
             po_line.save()
 
 
@@ -96,6 +101,7 @@ class InvoiceLineInfo:
     dist_code = None
     mfc_code = None
     sku = None
+    abridged_name = None
     retail_price = None
     first_cost = None
     final_cost = None
@@ -112,7 +118,7 @@ class InvoiceLineInfo:
         self.mfc_code = mfc_and_sku_and_abridged_name.split("/")[0]
         self.sku = mfc_and_sku_and_abridged_name.split("/")[1].split(" ")[0]
 
-        abridged_name = mfc_and_sku_and_abridged_name.split(self.dist_code)[1].strip()
+        self.abridged_name = mfc_and_sku_and_abridged_name.split(self.dist_code)[1].strip()
         self.retail_price = line[3]
         self.first_cost = line[4]
         self.final_cost = line[5]
