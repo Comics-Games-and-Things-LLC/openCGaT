@@ -6,6 +6,48 @@
         Create a new Product
     {% endif %}
 {% endblock %}
+{% block info_before %}
+    {% if not product and dist_list %}
+        <script>
+            function create_product_from_distributor() {
+                const result_element = document.getElementById("create_from_dist_info")
+                var barcode = document.getElementById("id_barcode_dist_create").value;
+                var dist_id = document.getElementById("id_distributor").value;
+                console.log(barcode)
+                console.log(dist_id)
+                if (!barcode) {
+                    result_element.textContent = "Please input a barcode"
+                    return false
+                }
+                const target_url = `{% url 'distributors' partner_slug=partner.slug %}${dist_id}/create_product/${barcode}/`
+                console.log(target_url)
+                result_element.textContent = "Attempting to create, please wait"
+                window.location.href = target_url
+
+                return false
+            }
+        </script>
+        <div class="row">
+            <div class="form-group col-md-2">
+                <select class="form-control" data-live-search="true" name="distributor" id="id_distributor">
+                    {% for dist in dist_list %}
+                        <option value="{{ dist.id }}">{{ dist }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group col-md-4">
+                <input type="text" class="form-control" name="barcode" id="id_barcode_dist_create"
+                       placeholder="Barcode">
+            </div>
+            <div class="form-group col-md-3">
+                <input onclick="create_product_from_distributor()" name="create_from_distributor"
+                       value="Create from Distributor"
+                       class="btn btn-success">
+                <p id="create_from_dist_info"></p>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
 {% block extra_submit_buttons %}
     {% if not product %}
         {% if partner.retail_partner %}

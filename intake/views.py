@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -12,6 +12,7 @@ from checkout.models import CheckoutLine, Cart
 from partner.models import Partner, get_partner_or_401
 from shop.forms import AddInventoryItemForm
 from shop.models import Product, InventoryItem
+from .distributors import acd
 from .forms import RefreshForm, AddForm, UploadInventoryForm, POForm, POLineForm, PricingRuleForm, PrintForm
 from .image_generation import generate_product_sticker, generate_image_for_order
 from .models import Distributor, DistItem, PurchaseOrder, POLine, DistributorWarehouse, DistributorInventoryFile, \
@@ -96,7 +97,7 @@ def intake_item_view(request, barcode, partner_slug):
                 if quantity == 1:
                     cart_line_marked_ready = try_mark_cart_line_ready(local_item)
                 if not cart_line_marked_ready:
-                     # If not using this for an order, add item to inventory
+                    # If not using this for an order, add item to inventory
                     local_item.adjust_inventory(quantity, reason=reason, purchase_order=po)
             count = local_item.get_inventory()
             if auto_print:
@@ -123,7 +124,7 @@ def intake_item_view(request, barcode, partner_slug):
         'auto_load': auto_load,
         'auto_print_enabled': auto_print,
         'partner': partner,
-        'print_form': PrintForm(), # We're not really using this form, mostly just for CSRF tokens.
+        'print_form': PrintForm(),  # We're not really using this form, mostly just for CSRF tokens.
         'print_x_on_load': print_x_on_load,
         'cart_line_marked_ready': cart_line_marked_ready,
     }
@@ -452,3 +453,30 @@ def scan_item_to_po(request, partner_slug, po_id, barcode):
     except Exception as e:
         print(e)
     return HttpResponse(status=200)
+
+
+def make_from_distributor(request, partner_slug, distributor_id, barcode):
+    """ Makes a product from a distributor.
+    """
+    partner = get_partner_or_401(request, partner_slug)
+    distributor = get_object_or_404(Distributor, id=distributor_id)
+
+    # First, check that a product doesn't exist already.
+    if Product.objects.filter(barcode=barcode).exists():
+        return HttpResponseBadRequest("That product already exists")
+
+    if distributor.dist_name != "ACD":
+        return HttpResponseBadRequest("We only support acd at this time")
+
+    info = acd.query_for_info(barcode, get_full=True)
+    if not info:
+        return HttpResponseBadRequest("We cannot find information on this product")
+
+    product = Product.create_from_dist_info(info)
+
+    return HttpResponseRedirect(reverse("edit_product",
+                                        kwargs={'partner_slug': partner.slug,
+                                                'product_slug': product.slug
+                                                }
+                                        )
+                                )

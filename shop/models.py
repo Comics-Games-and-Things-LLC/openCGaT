@@ -360,9 +360,10 @@ class Product(PolymorphicModel):
                     return self.map
                 else:
                     if hasattr(self.msrp, 'amount'):
-                        price = Money(Decimal(Decimal(selected_rule.percent_of_msrp) / Decimal(100) * self.msrp.amount).quantize(
-                            Decimal('.01'), rounding=ROUND_UP),
-                                      'USD', decimal_places=2)
+                        price = Money(
+                            Decimal(Decimal(selected_rule.percent_of_msrp) / Decimal(100) * self.msrp.amount).quantize(
+                                Decimal('.01'), rounding=ROUND_UP),
+                            'USD', decimal_places=2)
                         if self.map:
                             return max([self.map, price])
                         return price
@@ -386,6 +387,30 @@ class Product(PolymorphicModel):
         context["inventory_log"] = InventoryLog.objects.filter(
             item__in=Item.objects.filter(product=self, partner=partner)).order_by("-timestamp")
         return context
+
+    @staticmethod
+    def create_from_dist_info(info):
+        product = Product.objects.create(
+            all_retail=True,
+            name=info["Name"],
+            barcode=info["Barcode"],
+            description=info["Description"]
+        )
+        if info['SKU']:
+            product.publisher_sku = info['SKU']
+        if info["Release Date"]:
+            product.release_date = info["Release Date"]
+        if info["Picture Source"]:
+            image = Image.create_from_external_url(info["Picture Source"])
+            product.primary_image = image
+            product.attached_images.add(image)
+        if info["Publisher"]:
+            if Publisher.objects.filter(name=info["Publisher"]).exists():
+                product.publisher = Publisher.objects.filter(name=info["Publisher"]).first()
+        if info["MSRP"]:
+            product.msrp = Money(info["MSRP"], "USD")
+        product.save()
+        return product
 
 
 class ItemQuerySet(PolymorphicQuerySet):

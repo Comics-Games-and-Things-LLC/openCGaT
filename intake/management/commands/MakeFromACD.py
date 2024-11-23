@@ -1,6 +1,7 @@
 from django.core.management import BaseCommand
 
 from intake.distributors import acd
+from shop.models import Product
 
 
 class Command(BaseCommand):
@@ -10,6 +11,9 @@ class Command(BaseCommand):
         parser.add_argument('upc', type=str)
 
     def handle(self, *args, **options):
-        search = options['upc']
-        info = acd.query_for_info(search, get_full=True)
+        barcode = options['upc']
+        info = acd.query_for_info(barcode, get_full=True)
         print(info)
+
+        product = Product.create_from_dist_info(info)
+        print(product, product.id)

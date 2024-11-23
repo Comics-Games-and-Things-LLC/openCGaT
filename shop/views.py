@@ -20,7 +20,8 @@ from checkout.models import Cart
 from digitalitems.models import DigitalItem
 from images.forms import UploadImage
 from images.models import Image
-from intake.models import DistItem
+from intake.distributors.acd import dist_name
+from intake.models import DistItem, Distributor
 from partner.models import get_partner, get_partner_or_401
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm
@@ -414,6 +415,7 @@ def add_edit_product(request, partner_slug, product_slug=None):
         'form': form,
         'product': product,
         'partner': partner,
+        'dist_list': Distributor.objects.filter(dist_name='ACD'),  # Only supporting acd at this time.
     }
     return TemplateResponse(request, "shop/edit_product.html", context=context)
 

@@ -86,17 +86,25 @@ def query_for_info(upc, get_full=False):
             description = description_elements[0].get_text()
         picture_elements = soup.find_all("img",
                                          class_="gallery-placeholder__image")
+
+        if upc != get_from_table(soup, "UPC"):
+            raise Exception("We found the wrong product!")
+
         picture_src = None
         if picture_elements:
             picture_src = picture_elements[0]['src']
 
-        release_date = None
-        release_date_elements = soup.find_all('td', class_="col data", attrs={"data-th": "Release Date"})
-        if release_date_elements:
-            release_date = release_date_elements[0].get_text()
+        release_date = get_from_table(soup, "Release Date")
+        if release_date:  # <Month 3 letter> Day, Year
+            release_date = datetime.strptime(release_date, '%b %d, %Y').date()
+
         return {
             "Name": name,
             "MSRP": acd_msrp,
+            "Publisher": get_from_table(soup, "Manufacturer"),
+            "Category": get_from_table(soup, "Category"),
+            "Barcode": upc,
+            "SKU": get_from_table(soup, "SKU"),
             "Description": description,
             "Picture Source": picture_src,
             "Release Date": release_date
@@ -104,3 +112,11 @@ def query_for_info(upc, get_full=False):
     except Exception as e:
         print(e)
     return {}
+
+
+def get_from_table(soup, row_heading):
+    value = None
+    release_date_elements = soup.find_all('td', class_="col data", attrs={"data-th": row_heading})
+    if release_date_elements:
+        value = release_date_elements[0].get_text()
+    return value
