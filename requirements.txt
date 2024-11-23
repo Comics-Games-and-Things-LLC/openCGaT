@@ -3,23 +3,25 @@ gunicorn
 Django==4.2.16
 django-allauth==0.57.0
 django-b2
-django-debug-toolbar
+django-debug-toolbar~=4.2.0
 django-debug-toolbar-template-profiler
 django-polymorphic
 django-money==3.1.0
 django-rest-framework
 django-react-templatetags
 django-cors-headers
-django-storages[azure]
-django-recaptcha
-
+django-storages[azure]~=1.13.2
+django-recaptcha~=4.0.0
+django-phonenumber-field~=6.4.0
+azure-core~=1.29.1
+django-modelcluster~=6.3
 
 azure-common==1.1.28
 boto3
 
 django-imagekit
 
-python-dotenv
+python-dotenv~=1.0.0
 split-settings
 
 psycopg2-binary
@@ -35,33 +37,36 @@ django-mathfilters
 
 stripe==5.5.0
 django-address
-django-mptt
+django-mptt~=0.14.0
 
-pandas
+pandas~=2.0.3
 
 django-jquery
 
-checkdigit
+checkdigit~=0.5.0
 
 django-extensions
 pyparsing
 pydot
-py-moneyed
-djangorestframework
-pilkit
+py-moneyed~=2.0
+djangorestframework~=3.14.0
+pilkit~=2.0
 Pillow==10.3.0 # was 9.5
-python-barcode
-requests
-xlrd
-beautifulsoup4
+python-barcode~=0.15.1
+requests~=2.31.0
+xlrd~=2.0.1
+beautifulsoup4~=4.11.2
 django-treebeard
-django-oscar
-pytz
+django-oscar~=3.2.4
+pytz~=2023.3
 
-python-dateutil
+python-dateutil~=2.8.2
 setuptools
 six
-b2sdk
+b2sdk~=1.0.2
 
-sentry-sdk
-tqdm
+sentry-sdk~=1.29.2
+tqdm~=4.66.1
+
+camelot-py[base]~=0.11.0
+pypdf~=5.1.0

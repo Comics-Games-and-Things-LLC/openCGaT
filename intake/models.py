@@ -7,6 +7,7 @@ from django.db.models import Sum, F, Q, Value
 from djmoney.models.fields import MoneyField, CurrencyField
 from djmoney.money import Money
 
+from intake.distributors import acd
 from openCGaT.components.djmoney import CURRENCY_CHOICES_PURCHASING
 from partner.models import Partner
 from shop.models import Category, Product
@@ -28,6 +29,9 @@ class Distributor(models.Model):
 
     class Meta:
         ordering = ["dist_name"]
+
+    def get_helper_class(self):
+        return acd
 
 
 class DistributorDiscount(models.Model):
