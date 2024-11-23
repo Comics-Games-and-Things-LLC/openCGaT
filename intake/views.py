@@ -224,9 +224,9 @@ def distributors(request, partner_slug):
                 dist_data[distributor.dist_name][''] = None
 
     context = {
+        'partner': partner,
         'form': form,
         'distributors': dist_data,
-        'partner': partner.slug,
 
     }
     return render(request, "intake/distributors.html", context)
