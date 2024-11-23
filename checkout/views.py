@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, OuterRef, Subquery, F, Sum
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -343,7 +343,7 @@ def past_order_details(request, cart_id):
     try:
         past_cart = Cart.submitted.get(id=cart_id)
         if past_cart.owner and past_cart.owner != request.user and not request.user.is_staff:
-            return HttpResponse(status=403)
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
         context = {'past_cart': past_cart}
         return TemplateResponse(request, "checkout/order_details.html", context=context)
     except Cart.DoesNotExist:
