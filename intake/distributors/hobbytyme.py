@@ -1,6 +1,6 @@
 from datetime import datetime
 
-import camelot
+import pypdf_table_extraction
 from moneyed import Money
 from pypdf import PdfReader
 
@@ -15,7 +15,7 @@ def get_dist_object():
 def read_pdf_invoice(pdf_path):
     info = get_invoice_summary(pdf_path)
     # Not strictly necessary to use distributor here as po_number is our primary key, but we will likely want to change that in the future.
-
+    print("Invoice number:", info.invoice_number)
     po = PurchaseOrder.objects.get(po_number=info.invoice_number, distributor=get_dist_object())
     if not po.amount_charged:
         po.amount_charged = Money(info.final_total, 'USD')
@@ -32,10 +32,10 @@ def read_pdf_invoice(pdf_path):
 
 
 def get_invoice_lines(pdf_path, po):
-    tables = camelot.read_pdf(pdf_path,
-                              flavor='stream',
-                              pages="1-end"
-                              )
+    tables = pypdf_table_extraction.read_pdf(pdf_path,
+                                             flavor='stream',
+                                             pages="1-end"
+                                             )
     line_index = 0
     for table in tables:
         found_start = False
@@ -145,10 +145,9 @@ def get_invoice_summary(pdf_path):
     info = InvoiceInfo()
     for line in text.splitlines():
         if customer_number in line:
-            if not (customer_number == line.strip().split(' ')[0]):
-                raise Exception("Customer number not where we expected")
-            info.date = line.strip().split(' ')[1]
-            info.invoice_number = line.strip().split(' ')[2]
+            line_past_customer_number = line.strip().split(customer_number)[1].strip()
+            info.date = line_past_customer_number.split(' ')[0]
+            info.invoice_number = line_past_customer_number.split(' ')[1]
 
         if "CREDIT CARD AMOUNT:" in line:
             charge_information_index = 1

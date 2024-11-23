@@ -39,7 +39,7 @@ stripe==5.5.0
 django-address
 django-mptt~=0.14.0
 
-pandas~=2.0.3
+pandas~=2.2.2
 
 django-jquery
 
@@ -68,5 +68,4 @@ b2sdk~=1.0.2
 sentry-sdk~=1.29.2
 tqdm~=4.66.1
 
-camelot-py~=0.11.0
-pypdf~=5.1.0
+pypdf_table_extraction
