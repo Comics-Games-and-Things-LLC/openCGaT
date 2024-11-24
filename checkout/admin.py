@@ -8,7 +8,7 @@ from realaddress.admin import UserAddressAdmin
 class CartAdmin(admin.ModelAdmin):
     exclude = ['partner_transactions', "delivery_name", "delivery_apartment", "delivery_address", "old_billing_address"]
     search_fields = ['id', 'owner__email', 'owner__username', 'email']
-    autocomplete_fields = ['owner', 'billing_address', 'shipping_address']
+    autocomplete_fields = ['owner', 'billing_address', 'shipping_address', 'merge_target']
 
 
 class CartLineAdmin(admin.ModelAdmin):
