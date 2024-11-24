@@ -192,20 +192,25 @@ class PurchaseOrder(models.Model):
     def fee_ratio(self) -> Decimal:
         if not self.amount_charged:
             return Decimal(1.0)
-        if self.subtotal:
+        if self.subtotal is not None:
             subtotal = self.subtotal.amount
         else:
             subtotal = self.get_line_total().amount
         if subtotal == 0:
             return Decimal(1.0)
+        if self.amount_charged is None:
+            return Decimal(1.0)
         return self.amount_charged.amount / subtotal
 
-    def get_line_total(self):
-        return sum(
-            ((line.cost_per_item if line.cost_per_item is not None else Money(0,
-                                                                              self.distributor.currency)) * line.expected_quantity)
-            for line in self.lines.all()
-        )
+
+    def get_line_total(self) -> Money:
+        return Money(sum(
+            ((line.cost_per_item
+              if line.cost_per_item is not None
+              else Money(0, ) * line.expected_quantity)
+             for line in self.lines.all()
+             )
+        ), self.distributor.currency)
 
     def get_total_item_count(self):
         return sum(line.quantity for line in self.lines.all())
@@ -244,11 +249,12 @@ class PurchaseOrder(models.Model):
 
     @property
     def cost_does_not_match_up(self):
-        if self.subtotal:
-            calculated = self.calculated_total_cost
-            if calculated:
-                return abs(calculated - self.subtotal.amount) > 1
-        return True
+        if self.subtotal is None:
+            return True
+        calculated = self.calculated_total_cost
+        if calculated is None:
+            return True
+        return abs(calculated - self.subtotal.amount) > 1
 
     @property
     def completed(self):
