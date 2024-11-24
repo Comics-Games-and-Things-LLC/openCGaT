@@ -195,7 +195,7 @@ class PurchaseOrder(models.Model):
         if self.subtotal is not None:
             subtotal = self.subtotal.amount
         else:
-            subtotal = self.get_line_total().amount
+            subtotal = self.get_line_total()
         if subtotal == 0:
             return Decimal(1.0)
         if self.amount_charged is None:
