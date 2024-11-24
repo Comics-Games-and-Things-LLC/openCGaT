@@ -20,7 +20,6 @@ from checkout.models import Cart
 from digitalitems.models import DigitalItem
 from images.forms import UploadImage
 from images.models import Image
-from intake.distributors.acd import dist_name
 from intake.models import DistItem, Distributor
 from partner.models import get_partner, get_partner_or_401
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \

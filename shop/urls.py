@@ -1,5 +1,6 @@
 from django.urls import path, include
 
+import images.views
 from . import views
 
 urlpatterns = [
@@ -14,7 +15,8 @@ urlpatterns = [
          name='edit_related_products'),
 
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/copy/', views.copy_product, name='copy_product'),
-    path('manage/<slug:partner_slug>/product/<slug:product_slug>/replace/', views.replace_product, name='replace_product'),
+    path('manage/<slug:partner_slug>/product/<slug:product_slug>/replace/', views.replace_product,
+         name='replace_product'),
 
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/main_image/', views.upload_primary_image,
          name='upload_primary_image'),
@@ -27,7 +29,9 @@ urlpatterns = [
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/set_primary_image/<image_id>',
          views.set_image_as_primary,
          name='set_image_as_primary'),
-
+    path('manage/<slug:partner_slug>/product/<slug:product_slug>/edit_image_alt_text/<image_id>',
+         images.views.edit_alt_text,
+         name='edit_image_alt_text'),
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/delete/<int:confirm>/', views.delete_product,
          name='delete_product'),
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/why_visible/', views.why_visibile, name='why_visible'),
@@ -46,7 +50,6 @@ urlpatterns = [
          name='create_custom_charge'),
 
     path('manage/<slug:partner_slug>/bulk/', views.bulk_edit, name='bulk_edit'),
-
 
     path('item/<item_id>/', views.get_item_details, name='get_item_details'),
 ]

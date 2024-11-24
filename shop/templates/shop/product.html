@@ -136,6 +136,10 @@
                                href="{% url 'set_image_as_primary' product_slug=product.slug partner_slug=partner.slug image_id=image.id %}">
                                 Set as primary
                             </a>
+                            <a type="button" class="btn btn-secondary"
+                               href="{% url 'edit_image_alt_text' product_slug=product.slug partner_slug=partner.slug image_id=image.id %}">
+                                Edit Alt Text
+                            </a>
                         {% endif %}
                     </div>
                 {% endfor %}

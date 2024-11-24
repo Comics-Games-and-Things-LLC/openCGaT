@@ -1,0 +1,7 @@
+{% extends 'create_from_form.html' %}
+{% load static %}
+
+{% block title %} Edit Image Alt Text {{ image.alt_text }} {% endblock %}
+{% block info_before %}
+    <img src="{{ image.image_src.url }}"/>
+{% endblock %}
