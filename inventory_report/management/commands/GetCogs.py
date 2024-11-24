@@ -90,13 +90,15 @@ def mark_previous_items_as_sold(f, year=None, verbose=True):
         pol.remaining_quantity = pol.received_quantity
         pol.save()
 
-    if year == None:
+    if year is None:
         return
 
     # Get all carts for the years before to ensure those items are removed from inventory first.
     cost_of_goods_sold = Money("0", 'USD')
     for cart in tqdm(Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED],
-                                           date_submitted__year__lt=year).order_by("date_submitted")):
+                                           date_submitted__year__lt=year).order_by("date_submitted"),
+                     desc=f"Removing items sold before {year} from po remaining quantities"
+                     ):
         for line in cart.lines.filter(partner_at_time_of_submit=partner, item__isnull=False):
             try:
                 item = InventoryItem.objects.get(id=line.item_id)
