@@ -102,7 +102,8 @@ class Payment(PolymorphicModel):
 
 
 class CashPayment(Payment):
-    pass
+    def check_payment(self):
+        pass  # Unsure if we need to implement anything for this, as CashPayment is currently unused.
 
 
 class StripePayment(Payment):
@@ -357,6 +358,9 @@ class PaypalPayment(Payment):
             }
         )
         return response.json()['client_token']
+
+    def check_payment(self):
+        self.check_status_and_mark_paid()
 
     def check_status_and_mark_paid(self):
         """
