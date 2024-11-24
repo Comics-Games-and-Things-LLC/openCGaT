@@ -202,15 +202,12 @@ class PurchaseOrder(models.Model):
             return Decimal(1.0)
         return self.amount_charged.amount / subtotal
 
-
-    def get_line_total(self) -> Money:
-        return Money(sum(
-            ((line.cost_per_item
-              if line.cost_per_item is not None
-              else Money(0, ) * line.expected_quantity)
-             for line in self.lines.all()
-             )
-        ), self.distributor.currency)
+    def get_line_total(self) -> Decimal:
+        line_total = Decimal(0)
+        for line in self.lines.all():
+            if line.cost_per_item is not None:
+                line_total += (line.cost_per_item.amount * line.expected_quantity)
+        return line_total
 
     def get_total_item_count(self):
         return sum(line.quantity for line in self.lines.all())
