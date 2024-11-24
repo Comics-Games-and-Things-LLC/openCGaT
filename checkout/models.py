@@ -92,6 +92,8 @@ class Cart(RepresentationMixin, models.Model):
     status = models.CharField(
         "Status", max_length=128, default=OPEN, choices=STATUS_CHOICES)
 
+    merge_target = models.ForeignKey('Cart', on_delete=models.SET_NULL, blank=True, null=True)
+
     date_created = models.DateTimeField("Date created", auto_now_add=True)
     date_merged = models.DateTimeField("Date merged", null=True, blank=True)
     date_processing = models.DateTimeField("Date processing started", null=True, blank=True)
@@ -314,9 +316,15 @@ class Cart(RepresentationMixin, models.Model):
         add_quantities: Whether to add line quantities when they are merged.
         """
         print("Attempting to merge Carts")
+        if cart2.payments.filter(collected=True):
+            cart2.mark_processing()  # Mark the cart as processing, since this cart should not be open.
+            # This may still miss carts if the payment status rolls back
+        if cart2.is_submitted() or cart2.is_processing():
+            return # Do not allow a processing cart to merge.
         for line_to_merge in cart2.lines.all():
             self.merge_line(line_to_merge, add_quantities)
         cart2.status = self.MERGED
+        cart2.merge_target = self # store what cart merged into this one, for future debugging purposes.
         cart2.date_merged = now()
         cart2.lines.all().delete()
         cart2.save()
