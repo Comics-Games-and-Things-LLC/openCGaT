@@ -27,7 +27,12 @@ class Payment(PolymorphicModel):
     applied_to_cart = models.BooleanField(default=False)
 
     def __str__(self):
-        return "Payment ({}) for {} from cart {}".format(self.id, self.requested_payment, self.cart_id)
+        text = "Payment ({}) for {} from cart {}".format(self.id, self.requested_payment, self.cart_id)
+        if self.collected:
+            text = f"Collected {text}"
+        if self.cancelled:
+            text = f"Cancelled {text}"
+        return text
 
     @property
     def amount_cents(self):
