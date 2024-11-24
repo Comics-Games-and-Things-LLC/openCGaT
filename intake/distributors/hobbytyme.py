@@ -1,9 +1,11 @@
 from datetime import datetime
+from decimal import Decimal
 
 import pypdf_table_extraction
 from moneyed import Money
 from pypdf import PdfReader
 
+from intake.distributors import vallejo
 from intake.models import PurchaseOrder, Distributor, POLine
 from shop.models import Product
 
@@ -53,7 +55,7 @@ def get_invoice_lines(pdf_path, po):
             if line_number != line_index + 1:
                 continue
             line_index += 1
-            if "HTM/WEB" in line and "Thank You For The Order!!!" in line:
+            if "HTM/WEB" in line[2] and "Thank You For The Order!!!" in line[2]:
                 continue  # This is a thank you line we can ignore.
 
             # At this point we now have a valid line
@@ -61,11 +63,12 @@ def get_invoice_lines(pdf_path, po):
             if line_info.qty_of_type == "0":
                 continue  # Skip lines of quantity 0 (backorders).
 
-            if line_info.qty_type == "BX":
-                print("Not sure how to handle boxes, skipping line:")
+            if (line_info.qty_type == "BX" and
+                    not (line_info.mfc_code in ["VAL", "TAM", "GNZ"])):
+                print("Not sure how to handle boxes not of Vallejo, Tamiya, or Mr Hobby, skipping line:")
                 print('\t', line)
                 continue
-            barcode = find_barcode_from_sku(line_info.sku)
+            barcode = find_barcode_from_sku(line_info.mfc_code, line_info.sku)
             if not barcode:
                 print(f"Could not find a specific product with sku {line_info.sku} for line:")
                 print('\t', line)
@@ -80,7 +83,7 @@ def get_invoice_lines(pdf_path, po):
             if not po_line.line_number:
                 po_line.line_number = line_info.line_number
             if not po_line.expected_quantity:
-                po_line.expected_quantity = int(line_info.qty_of_type)
+                po_line.expected_quantity = int(line_info.qty_unit)
             if not po_line.cost_per_item:
                 po_line.cost_per_item = Money(line_info.final_cost, "USD")
             if not po_line.msrp_on_line:
@@ -88,8 +91,12 @@ def get_invoice_lines(pdf_path, po):
             po_line.save()
 
 
-def find_barcode_from_sku(sku):
-    products = Product.objects.filter(publisher_sku=sku)
+def find_barcode_from_sku(mfc_code, sku):
+    if mfc_code == "VAL" and "EX" not in sku: # Ignore racks, etc
+        return vallejo.get_barcode_from_sku(sku)
+    else:
+        products = Product.objects.filter(publisher_sku=sku)
+
     if products.count() == 1:
         return products.order_by("-release_date").first().barcode
 
@@ -98,13 +105,13 @@ class InvoiceLineInfo:
     line_number = None
     qty_of_type = None
     qty_type = None
-    dist_code = None
+    qty_unit = None
     mfc_code = None
     sku = None
     abridged_name = None
     retail_price = None
     first_cost = None
-    final_cost = None
+    final_cost = None  # This is the real cost after discount, and what we want to use
     ext_before_discount = None
     other_discount = False
 
@@ -114,15 +121,30 @@ class InvoiceLineInfo:
         self.qty_of_type = qty_and_qty_type.split(" ")[0]
         self.qty_type = qty_and_qty_type.split(" ")[-1]  # Using last because there can be multiple spaces
         mfc_and_sku_and_abridged_name = line[2]
-
         self.mfc_code = mfc_and_sku_and_abridged_name.split("/")[0]
         self.sku = mfc_and_sku_and_abridged_name.split("/")[1].split(" ")[0]
 
         self.abridged_name = mfc_and_sku_and_abridged_name.split(self.dist_code)[1].strip()
-        self.retail_price = line[3]
-        self.first_cost = line[4]
-        self.final_cost = line[5]
-        self.ext_before_discount = line[6]
+        qty_per_type = 1
+        if self.qty_type == "BX":
+            qty_text = self.abridged_name.split(" ")[-1] # Last word is ideally a quantity marker
+            if qty_text.endswith("p"):
+                qty_per_type = int(qty_text[:-1]) # 6p
+            if qty_text.endswith("pk"):
+                qty_per_type = int(qty_text[:-2]) # 6pk
+            if "@" in qty_text[-1]:
+                qty_per_type = int(qty_text.split("@")[0]) # 6@$7.50
+        if qty_per_type > 1:
+            print(f"We determined {self.abridged_name} has a quantity of {qty_per_type}")
+        self.qty_unit = int(self.qty_of_type) * qty_per_type
+
+        self.ext_before_discount = Decimal(line[6]) / qty_per_type
+
+        if self.ext_before_discount > 0:  # These could be empty, so check the subtotal first.
+            self.retail_price = Decimal(line[3]) / qty_per_type
+            self.first_cost = Decimal(line[4]) / qty_per_type
+            self.final_cost = Decimal(line[5]) / qty_per_type
+
         if len(line) > 7:
             self.other_discount = line[7] == "*"
 

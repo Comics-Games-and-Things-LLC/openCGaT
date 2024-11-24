@@ -19,6 +19,11 @@ alt_name = "Vallejo"
 
 publisher_name = dist_name
 
+def get_barcode_from_sku(sku):
+    barcode_start = "8429551" + sku.replace('.', '')
+    last_digit = gs1.calculate(barcode_start)
+    return barcode_start + last_digit
+
 def import_records():
     publisher, _ = Publisher.objects.get_or_create(name=dist_name)
 
@@ -34,9 +39,7 @@ def import_records():
             number = pack_barcode[-6:-1]
             print(number)
             display_number = f"{number[:2]}.{number[2:]}"
-            barcode_start = "8429551" + number.replace('.', '')
-            last_digit = gs1.calculate(barcode_start)
-            barcode = barcode_start + last_digit
+            barcode = get_barcode_from_sku(number)
             print(barcode)
             # Wait 1 second before attempting to ask acd.
             print(f"Asking ACD for the paint {display_number}")
