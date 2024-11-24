@@ -6,6 +6,7 @@ from django.core.management import BaseCommand
 from tqdm import tqdm
 
 from intake.models import PurchaseOrder
+from openCGaT.management_util import email_report
 
 
 class Command(BaseCommand):
@@ -50,11 +51,5 @@ class Command(BaseCommand):
             for row in data:
                 writer.writerow(row)
         print(f"Saved report to {filename}")
-        pretty_name = "Incomplete purchase orders"
+        email_report("Incomplete purchase orders", filename)
 
-        if settings.DEBUG:
-            pretty_name += "(Development)"
-        email = EmailMessage(pretty_name, "Attached is the report", to=[settings.EMAIL_HOST_USER])
-        email.attach_file(filename)
-        email.send()
-        print(f"Emailed to {settings.EMAIL_HOST_USER}")

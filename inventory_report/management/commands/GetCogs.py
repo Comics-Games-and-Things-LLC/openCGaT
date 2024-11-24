@@ -8,6 +8,7 @@ from tqdm import tqdm
 from checkout.models import Cart
 from intake.models import PurchaseOrder, POLine
 from inventory_report.models import InventoryReport
+from openCGaT.management_util import email_report
 from partner.models import Partner
 from shop.models import Product, InventoryItem
 
@@ -113,8 +114,16 @@ def mark_previous_items_as_sold(f, year=None, verbose=True):
 
 
 def handle_get_cogs(year, have_inv_report=False):
-    f = open("reports/cogs_{}.txt".format(year), "a")
-    f2 = open("reports/missing costs {}.txt".format(datetime.date.today()), "a")
+    report_name = f"COGS {year}"
+    if have_inv_report:
+        report_name = f"Estimated COGS {datetime.date.today()}"
+
+    log_filename = f"reports/{report_name} log.txt"
+    f = open(log_filename, "w")
+    missing_costs_filename = f"reports/{report_name} Missing Costs.txt"
+    f2 = open(missing_costs_filename, "w")
+
+    report_file_list = [log_filename, missing_costs_filename]
 
     log(f, "End of year Cost of Goods Sold Report")
 
@@ -159,11 +168,11 @@ def handle_get_cogs(year, have_inv_report=False):
     # Also get the same number from the inventory report if we have it, might be slightly different
     # This also spits out a CSV file, so we can add any missing costs in manually in a spreadsheet.
     unsold_inventory_cost = Money("0", 'USD')
-
     if have_inv_report:
+        csv_filename = f'reports/{report_name} Inventory.csv'
+        report_file_list.append(csv_filename)
 
-        with open('reports/cogs_inventory_{}.csv'.format(year), 'w',
-                  newline='') as csvfile:
+        with open(csv_filename, 'w', newline='') as csvfile:
             fieldnames = ['Display Name', 'Barcode', 'Purchase order', 'Actual cost']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
@@ -208,7 +217,9 @@ def handle_get_cogs(year, have_inv_report=False):
         total_inventory_purchased - unsold_inventory_cost))
 
     log(f, "End of report\n\n")
+
     f.close()
+    email_report(report_name, report_file_list)
 
 
 class Command(BaseCommand):

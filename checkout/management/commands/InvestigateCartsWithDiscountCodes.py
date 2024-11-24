@@ -1,12 +1,11 @@
 import csv
 
-from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from checkout.models import Cart
+from openCGaT.management_util import email_report
 
 
 class Command(BaseCommand):
@@ -35,12 +34,7 @@ class Command(BaseCommand):
                 data.update(get_data_from_carts(carts))
                 writer.writerow(data)
 
-        email = EmailMessage("User conversion and retention re discount codes",
-                             "Attached is the report",
-                             to=[settings.EMAIL_HOST_USER])
-        email.attach_file(filename)
-        email.send()
-        print(f"Emailed to {settings.EMAIL_HOST_USER}")
+        email_report("User conversion and retention re discount codes", filename)
 
 
 def get_data_from_carts(carts):

@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from checkout.models import Cart
+from openCGaT.management_util import email_report
 from partner.views import get_address_or_old_address
 
 
@@ -73,10 +74,7 @@ class Command(BaseCommand):
                 pbar.update()
             pbar.close()
         print(f"Saved report to {filename}")
-        email = EmailMessage(nice_name, "Attached is the report", to=[settings.EMAIL_HOST_USER])
-        email.attach_file(filename)
-        email.send()
-        print(f"Emailed to {settings.EMAIL_HOST_USER}")
+        email_report(nice_name, filename)
 
 
 def get_previous_month_range():
