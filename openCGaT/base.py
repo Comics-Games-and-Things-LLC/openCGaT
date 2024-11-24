@@ -53,7 +53,7 @@ apps_to_install = [
     # v Dependencies
     'django_extensions',
     'storages',
-    'imagekit',
+    # 'imagekit', # Didn't work, removed, at least for now
     'treewidget',
     'django_b2',
     'address',

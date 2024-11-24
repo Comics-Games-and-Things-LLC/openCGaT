@@ -4,21 +4,26 @@ import urllib
 from urllib.parse import urlparse
 
 from django.db import models
-from imagekit.models import ImageSpecField
-from pilkit.processors import ResizeToFit
 
 from images.PublicAzureStorage import PublicAzureStorage
 from partner.models import Partner
 
 
+# from imagekit.models import ImageSpecField
+# from pilkit.processors import ResizeToFit
+
+
 class Image(models.Model):
     image_src = models.ImageField(upload_to='images', storage=PublicAzureStorage)
-    banner_full = ImageSpecField(source='image_src',
-                                 processors=[ResizeToFit(1800, 480)],
-                                 options={'quality': 60})
-    product_gallery_thumb = ImageSpecField(source='image_src',
-                                           processors=[ResizeToFit(100, 100)],
-                                           options={'quality': 60})
+    # These did not use the correct storage, and I'm not sure that they support alternate storage. As such I've removed them.
+    # banner_full = ImageSpecField(source='image_src',
+    #                              processors=[ResizeToFit(1800, 480)],
+    #                              options={'quality': 60})
+    # product_gallery_thumb = ImageSpecField(source='image_src',
+    #                                        processors=[ResizeToFit(100, 100)],
+    #                                        options={'quality': 60},
+    #                                        cachefile_storage=PublicAzureStorage
+    #                                        )
 
     alt_text = models.CharField(max_length=200, blank=True, null=True,
                                 help_text="Used in screen readers for the visually impared. " +
