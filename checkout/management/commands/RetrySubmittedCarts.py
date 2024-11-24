@@ -1,5 +1,7 @@
 import traceback
 
+from django.conf import settings
+from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
 
 from checkout.models import Cart
@@ -7,6 +9,14 @@ from checkout.models import Cart
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        for cart in Cart.objects.filter(status=Cart.MERGED):
+            for payment in cart.payments.all():
+                if payment.collected:
+                    email = EmailMessage(f"Found merged cart with collected payment {cart.id}",
+                                         f"Please investigate {cart.id}",
+                                         to=[settings.EMAIL_HOST_USER]
+                                         )
+                    email.send()
         for cart in Cart.objects.filter(status__in=[Cart.SUBMITTED, Cart.PROCESSING, Cart.FROZEN]).order_by('id'):
             try:
                 if cart.is_processing:  # Resubmit processing carts, as they could be in-store pickup.
