@@ -18,7 +18,7 @@ class Command(BaseCommand):
         total_po_count = PurchaseOrder.objects.count()
         completed_po_count = 0
         data = []
-        for po in tqdm(PurchaseOrder.objects.order_by("date"), unit="po"):
+        for po in tqdm(PurchaseOrder.objects.order_by("date_received").order_by("date"), unit="po"):
             if po.completed:
                 completed_po_count += 1
                 continue
