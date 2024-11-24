@@ -360,7 +360,11 @@ class PaypalPayment(Payment):
         return response.json()['client_token']
 
     def check_payment(self):
-        self.check_status_and_mark_paid()
+        data = self.get_remote_status()
+        if data["remote_status"] == "COMPLETED":
+            self.mark_collected()
+            self.refresh_from_db()
+            self.apply_to_cart()
 
     def check_status_and_mark_paid(self):
         """
