@@ -59,7 +59,7 @@
                         </small>
                     </td>
                     <td>
-                        {% if line.cart.delivery_method == past_cart.PICKUP_ALL %}
+                        {% if line.cart.delivery_method == line.cart.PICKUP_ALL %}
                             Pickup
                         {% else %}
                             Ship
