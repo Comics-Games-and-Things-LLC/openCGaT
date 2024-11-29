@@ -18,12 +18,6 @@
                 <a class="nav-link" href="{% url 'purchase_orders' partner_slug=partner|slugify %}">Purchase Orders</a>
             </nav>
             <nav class="nav-item">
-                <a class="nav-link" href="{% url 'distributors' partner_slug=partner|slugify %}">Distributors</a>
-            </nav>
-            <nav class="nav-item">
-                <a class="nav-link" href="{% url 'pricing_rules' partner_slug=partner|slugify %}">Pricing Rules</a>
-            </nav>
-            <nav class="nav-item">
                 <a class="nav-link" href="{% url 'partner_pre_and_back_orders' partner_slug=partner|slugify %}">Backorders</a>
             </nav>
             <nav class="nav-item">
@@ -44,17 +38,33 @@
                 Bulk Edit
             </a>
         </nav>
-        <nav class="nav-item">
-            <a class="nav-link" href="{% url 'referrals_index' partner_slug=partner|slugify %}">
-                Referrals and Discounts
-            </a>
+        <nav class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true"
+               aria-expanded="false">More</a>
+            <div class="dropdown-menu">
+                {% if partner.retail_partner %}
+                    <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'distributors' partner_slug=partner|slugify %}">
+                            Distributors
+                        </a>
+                    </nav>
+                    <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'pricing_rules' partner_slug=partner|slugify %}">
+                            Pricing Rules
+                        </a>
+                    </nav>
+                {% endif %}
+                <nav class="nav-item">
+                    <a class="nav-link" href="{% url 'referrals_index' partner_slug=partner|slugify %}">
+                        Referrals and Discounts
+                    </a>
+                </nav>
+                <nav class="nav-item">
+                    <a class="nav-link" href="{% url 'create_custom_charge' partner_slug=partner|slugify %}">
+                        Create Custom Charge
+                    </a>
+                </nav>
+            </div>
         </nav>
-        <nav class="nav-item">
-            <a class="nav-link" href="{% url 'create_custom_charge' partner_slug=partner|slugify %}">
-                Create Custom Charge
-            </a>
-        </nav>
-
-
     </div>
 {% endif %}
