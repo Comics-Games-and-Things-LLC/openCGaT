@@ -12,6 +12,9 @@
         </nav>
         {% if partner.retail_partner %}
             <nav class="nav-item">
+                <a class="nav-link" href="{% url 'partner_tasks' partner_slug=partner|slugify %}">Tasks</a>
+            </nav>
+            <nav class="nav-item">
                 <a class="nav-link" href="{% url 'intake_home' partner_slug=partner|slugify %}">Intake</a>
             </nav>
             <nav class="nav-item">

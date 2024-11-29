@@ -1021,3 +1021,20 @@ def all_pre_and_back_orders(request, partner_slug):
     context = {'partner': partner,
                'items': items}
     return TemplateResponse(request, "partner/all_open_items.html", context)
+
+
+def tasks(request, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+    lines_to_pick = CheckoutLine.objects.filter(
+        item__partner=partner,
+        cart__status__in=[Cart.PAID, Cart.SUBMITTED],
+        back_or_pre_order=False,
+        fulfilled=False,
+        ready=False,
+        cart__ready_for_pickup=False,
+    ).order_by('item__product__name').prefetch_related('item', 'item__product', 'cart')
+
+
+    context = {'partner': partner,
+               'lines_to_pick': lines_to_pick}
+    return TemplateResponse(request, "partner/tasks.html", context)

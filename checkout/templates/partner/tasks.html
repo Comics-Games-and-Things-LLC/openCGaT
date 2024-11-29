@@ -1,0 +1,91 @@
+{% extends 'container.html' %}
+{% load static %}
+
+{% block title %}Tasks{% endblock %}
+
+
+{% block content %}
+    <script>
+        function mark_line_ready(line_id, target_url) {
+            console.log(target_url)
+            fetch(target_url)
+                .then(response => {
+                    var button = document.getElementById("line_" + line_id)
+                    button.disabled = true;
+                    button.innerText = "Set!"
+                    button.classList.remove('btn-primary')
+                    button.classList.add('btn-success')
+                });
+        }
+    </script>
+    {% if lines_to_pick %}
+
+        <table class="table">
+            <tr>
+                <th scope="col">Mark Ready</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Product</th>
+                <th scope="col">Pickup or ship</th>
+                <th scope="col">Customer</th>
+                <th scope="col">Order ID</th>
+                <th scope="col">Date</th>
+            </tr>
+            {% for line in lines_to_pick %}
+                <tr>
+                    <td>
+                        <button class="btn btn-primary"
+                           id="line_{{ line.id }}"
+                           onclick="mark_line_ready({{ line.id }},'{% url 'partner_ready_line' cart_id=line.cart.id line_id=line.id partner_slug=partner.slug %}')">
+                            Ready
+                        </button>
+                    </td>
+                    <td>
+                        {{ line.quantity }}
+                        <br>
+                        <small> {{ line.item.current_inventory }} in stock </small>
+                    </td>
+                    <td>
+                        {% if line.item.product %}
+                            <a href="{% url  'manage_product' partner_slug=partner.slug product_slug=line.item.product.slug %}">
+                            {{ line.item.product.name }}
+                        {% else %}
+                        {% endif %}
+                        </a>
+                        <br>
+                        <small>
+                            {% for faction in line.item.product.factions.all %}
+                                • {{ faction }}
+                            {% endfor %}
+                        </small>
+                    </td>
+                    <td>
+                        {% if line.cart.delivery_method == past_cart.PICKUP_ALL %}
+                            Pickup
+                        {% else %}
+                            Ship
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if line.cart.owner %}
+                            <a href="{% url 'partner_customer_details' partner_slug=partner.slug user_id=line.cart.owner.id %}">
+                                {{ line.cart.owner.username }} ({{ line.cart.owner.email }})
+                            </a>
+                        {% else %}
+                            {{ line.cart.email }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=line.cart.id %}">
+                            {{ line.cart.id }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=line.cart.id %}">
+                            {{ line.cart.date_submitted }}
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+{% endblock %}
