@@ -5,6 +5,7 @@
 
 
 {% block content %}
+    <h2>Items to pick</h2>
     <script>
         function mark_line_ready(line_id, target_url) {
             console.log(target_url)
@@ -19,7 +20,6 @@
         }
     </script>
     {% if lines_to_pick %}
-
         <table class="table">
             <tr>
                 <th scope="col">Mark Ready</th>
@@ -34,8 +34,8 @@
                 <tr>
                     <td>
                         <button class="btn btn-primary"
-                           id="line_{{ line.id }}"
-                           onclick="mark_line_ready({{ line.id }},'{% url 'partner_ready_line' cart_id=line.cart.id line_id=line.id partner_slug=partner.slug %}')">
+                                id="line_{{ line.id }}"
+                                onclick="mark_line_ready({{ line.id }},'{% url 'partner_ready_line' cart_id=line.cart.id line_id=line.id partner_slug=partner.slug %}')">
                             Ready
                         </button>
                     </td>
@@ -88,4 +88,116 @@
             {% endfor %}
         </table>
     {% endif %}
+    {% if send_ready_for_pickup_email_order_list %}
+        <script>
+            function send_ready_for_pickup_email(cart_id, target_url) {
+                console.log(target_url)
+                fetch(target_url)
+                    .then(response => {
+                        var button = document.getElementById("cart_" + cart_id)
+                        button.disabled = true;
+                        button.innerText = "Sent!"
+                        button.classList.remove('btn-primary')
+                        button.classList.add('btn-success')
+                    });
+            }
+        </script>
+        <h2>Pickup orders to send ready for pickup emails for:</h2>
+        <table class="table">
+            <tr>
+                <th scope="col">Send Email</th>
+                <th scope="col">Release Date</th>
+                <th scope="col">ID</th>
+                <th scope="col">P?</th>
+                <th scope="col">User</th>
+                <th scope="col">Date</th>
+                <th scope="col">Items</th>
+                <th scope="col">Status</th>
+            </tr>
+            {% for order in send_ready_for_pickup_email_order_list %}
+                <tr>
+                    <td>
+                        <button class="btn btn-primary"
+                                id="cart_{{ order.id }}"
+                                onclick="send_ready_for_pickup_email({{ order.id }},'{% url 'partner_order_ready_for_pickup' partner_slug=partner.slug cart_id=order.id %}')">
+                            Send Email
+                        </button>
+                    </td>
+                    <td>
+                        not yet implemented
+                    </td>
+                    <td>
+                        <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=order.id %}">
+                            {{ order.id }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if order.invoice_been_printed %}
+                            <i class="fa fa-solid fa-check"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.owner %}
+                            <a href="{% url 'partner_customer_details' partner_slug=partner.slug user_id=order.owner.id %}">
+                                {{ order.owner.username }} ({{ order.owner.email }})
+                            </a>
+                        {% else %}
+                            {{ order.email }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=order.id %}">
+                            {{ order.date_submitted }}
+                        </a>
+                    </td>
+                    <td>{{ order.num_items }}</td>
+                    <td>{{ order.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+     {% if orders_to_ship %}
+        <h2>Orders ready to ship:</h2>
+        <table class="table">
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">P?</th>
+                <th scope="col">User</th>
+                <th scope="col">Date</th>
+                <th scope="col">Items</th>
+                <th scope="col">Status</th>
+            </tr>
+            {% for order in orders_to_ship %}
+                <tr>
+                    <td>
+                        <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=order.id %}">
+                            {{ order.id }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if order.invoice_been_printed %}
+                            <i class="fa fa-solid fa-check"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.owner %}
+                            <a href="{% url 'partner_customer_details' partner_slug=partner.slug user_id=order.owner.id %}">
+                                {{ order.owner.username }} ({{ order.owner.email }})
+                            </a>
+                        {% else %}
+                            {{ order.email }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=order.id %}">
+                            {{ order.date_submitted }}
+                        </a>
+                    </td>
+                    <td>{{ order.num_items }}</td>
+                    <td>{{ order.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
 {% endblock %}

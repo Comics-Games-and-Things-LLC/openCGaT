@@ -1033,8 +1033,18 @@ def tasks(request, partner_slug):
         ready=False,
         cart__ready_for_pickup=False,
     ).order_by('item__product__name').prefetch_related('item', 'item__product', 'cart')
-
+    all_item_ready_carts = (Cart.submitted.exclude(status__in=[Cart.COMPLETED, Cart.CANCELLED],
+                                                   )
+                            .filter(lines__ready=True)
+                            .exclude(lines__ready=False).distinct().order_by('-date_submitted'))
+    send_ready_for_pickup_email_order_list = all_item_ready_carts.filter(delivery_method=Cart.PICKUP_ALL,
+                                                                         ready_for_pickup=False,
+                                                                         # ^ ensure email hasn't been sent
+                                                                         )
 
     context = {'partner': partner,
-               'lines_to_pick': lines_to_pick}
+               'lines_to_pick': lines_to_pick,
+               'send_ready_for_pickup_email_order_list': send_ready_for_pickup_email_order_list,
+               'orders_to_ship': all_item_ready_carts.filter(delivery_method=Cart.SHIP_ALL)
+               }
     return TemplateResponse(request, "partner/tasks.html", context)

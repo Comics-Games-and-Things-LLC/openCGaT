@@ -12,7 +12,6 @@
     <th scope="col">Status</th>
 {% endblock %}
 {% block data_columns %}
-
     <td>
         <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=entry.id %}">
             {{ entry.id }}
