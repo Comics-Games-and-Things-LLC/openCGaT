@@ -111,7 +111,7 @@ class Product(PolymorphicModel):
     all_retail = models.BooleanField(default=False)
 
     name = models.CharField(max_length=200, unique=True)
-    barcode = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    barcode = models.CharField(max_length=50, unique=True, blank=True, null=True)
     needs_barcode_printed = models.BooleanField(default=False)
 
     publisher_sku = models.CharField(max_length=30, blank=True, null=True)
