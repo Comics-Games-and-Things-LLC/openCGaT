@@ -152,7 +152,7 @@ class InvoiceLineInfo:
                 qty_per_type = int(qty_text[:-2])  # 6pk
             elif "@" in qty_text[-1]:
                 qty_per_type = int(qty_text.split("@")[0])  # 6@$7.50
-            elif mfc_and_sku_and_abridged_name in ["GNZ/MC129", "TAM/87038", "TAM/87182"]:  # revert to hardcoded check
+            elif self.dist_code in ["GNZ/MC129", "TAM/87038", "TAM/87182"]:  # revert to hardcoded check
                 qty_per_type = 6
             else:
                 self.processing_error = f"Unable to determine quantity for line {self.line_number}"
