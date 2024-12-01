@@ -1256,6 +1256,7 @@ class CheckoutLine(models.Model):
 
     back_or_pre_order = models.BooleanField(default=False)  # If the quantity was zero at time of submit.
     is_preorder = models.BooleanField(default=False)  # If we were in the preorder window at the time of submit.
+    inventory_at_time_of_submit = models.IntegerField(blank=True, null=True)  # Quantity in stock at time of submit (DOES NOT INCLUDE PREALLOCATION)
 
     discount_code_message = models.TextField(blank=True, null=True)
 
@@ -1267,7 +1268,7 @@ class CheckoutLine(models.Model):
         return f"{self.cart} line {self.id}: {name} x {self.quantity}"
 
     @property
-    def completely_in_stock(self):
+    def completely_in_stock_or_allocated(self):
         if isinstance(self.item, InventoryItem):
             return self.item.get_inventory() >= self.quantity
         else:
@@ -1276,7 +1277,7 @@ class CheckoutLine(models.Model):
     @property
     def quantity_to_backorder(self):
         if isinstance(self.item, InventoryItem):
-            if not self.completely_in_stock:
+            if not self.completely_in_stock_or_allocated:
                 return self.quantity - self.item.get_inventory()
             return 0
 
@@ -1307,7 +1308,7 @@ class CheckoutLine(models.Model):
                 # Return the cart status if we don't have any line specific overrides
                 return self.cart.status
             else:
-                if self.completely_in_stock:
+                if self.completely_in_stock_or_allocated:
                     if self.item.product.is_preorder:
                         return "Preorder"
                     return "In stock"
@@ -1438,16 +1439,18 @@ class CheckoutLine(models.Model):
     def reduce_inventory(self):
         """
         Reduces inventory status and sets back_or_pre_order and "is_preorder"
-        Does not save, expects caller to save the line.
         """
         if isinstance(self.item, InventoryItem):
-            back_or_preorder = not self.completely_in_stock
+            back_or_preorder = not self.completely_in_stock_or_allocated
+            inventory_before_submit = self.item.current_inventory
             success = self.item.adjust_inventory(quantity=-self.quantity, reason="Sold in cart {}".format(self.cart_id),
                                                  line=self)
-            if success:
+            if success:  # Prevent this from running again on duplicate submits.
+                self.inventory_at_time_of_submit = inventory_before_submit
                 self.back_or_pre_order = back_or_preorder
                 if self.item.product.is_preorder:
                     self.is_preorder = True
+                self.save()
 
     def cancellable(self):
         if isinstance(self.item, DigitalItem):

@@ -1028,11 +1028,12 @@ def tasks(request, partner_slug):
     lines_to_pick = CheckoutLine.objects.filter(
         item__partner=partner,
         cart__status__in=[Cart.PAID, Cart.SUBMITTED],
-        back_or_pre_order=False,
+        inventory_at_time_of_submit__gte=1,
         fulfilled=False,
         ready=False,
         cart__ready_for_pickup=False,
     ).order_by('item__product__name').prefetch_related('item', 'item__product', 'cart')
+
     all_item_ready_carts = (Cart.submitted.exclude(status__in=[Cart.COMPLETED, Cart.CANCELLED],
                                                    )
                             .filter(lines__ready=True)
