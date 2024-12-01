@@ -320,16 +320,17 @@ class Cart(RepresentationMixin, models.Model):
             cart2.mark_processing()  # Mark the cart as processing, since this cart should not be open.
             # This may still miss carts if the payment status rolls back
         if cart2.is_submitted or cart2.is_processing:
-            return # Do not allow a processing cart to merge.
+            return  # Do not allow a processing cart to merge.
         for line_to_merge in cart2.lines.all():
             self.merge_line(line_to_merge, add_quantities)
         cart2.status = self.MERGED
-        cart2.merge_target = self # store what cart merged into this one, for future debugging purposes.
+        cart2.merge_target = self  # store what cart merged into this one, for future debugging purposes.
         cart2.date_merged = now()
         cart2.lines.all().delete()
         cart2.save()
 
-        if not self.discount_code and cart2.discount_code:
+        # Favor cart 2's discount code over cart 1's
+        if cart2.discount_code:
             cart2.discount_code.validate_code_for_cart(self)
             self.save()
         print("Merged Carts")
