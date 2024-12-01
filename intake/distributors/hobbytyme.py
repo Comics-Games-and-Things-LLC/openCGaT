@@ -63,36 +63,53 @@ def get_invoice_lines(pdf_path, po):
             if line_info.qty_of_type == "0":
                 continue  # Skip lines of quantity 0 (backorders).
 
+            if line_info.processing_error:
+                print(line)
+                print('\t', line_info.processing_error)
+                continue
+
             if (line_info.qty_type == "BX" and
                     not (line_info.mfc_code in ["VAL", "TAM", "GNZ"])):
-                print("Not sure how to handle boxes not of Vallejo, Tamiya, or Mr Hobby, skipping line:")
-                print('\t', line)
+                print(line)
+                print('\t', "Not sure how to handle boxes not of Vallejo, Tamiya, or Mr Hobby, skipping line")
                 continue
+
             barcode = find_barcode_from_sku(line_info.mfc_code, line_info.sku)
             if not barcode:
-                print(f"Could not find a specific product with sku {line_info.sku} for line:")
-                print('\t', line)
+                print(line)
+                print('\t', f"Could not find a specific product with sku {line_info.sku} for {line_info.abridged_name}")
                 continue
+
             po_lines = POLine.objects.filter(po=po, barcode=barcode)
             if po_lines.count() != 1:
-                print(f"Could not find a specific PO line for barcode {barcode} on line:")
-                print('\t', line)
+                print(line)
+                print('\t', f"Could not find a specific PO line for barcode {barcode} for {line_info.abridged_name}")
                 continue
+
             po_line = po_lines.first()
             po_line.distributor_code = line_info.dist_code
             if not po_line.line_number:
                 po_line.line_number = line_info.line_number
+            elif po_line.line_number != line_info.line_number:
+                print(f"{line}\n\tLine number differs!")
             if not po_line.expected_quantity:
                 po_line.expected_quantity = int(line_info.qty_unit)
+            elif po_line.expected_quantity != int(line_info.qty_unit):
+                print(f"{line}\n\tExpected Quantity differs!")
             if not po_line.cost_per_item:
                 po_line.cost_per_item = Money(line_info.final_cost, "USD")
+            elif po_line.cost_per_item != Money(line_info.final_cost, "USD"):
+                print(f"{line}\n\tCost differs!")
             if not po_line.msrp_on_line:
                 po_line.msrp_on_line = Money(line_info.retail_price, "USD")
+            elif po_line.msrp_on_line != Money(line_info.retail_price, "USD"):
+                print(f"{line}\n\tMSRP differs!")
+
             po_line.save()
 
 
 def find_barcode_from_sku(mfc_code, sku):
-    if mfc_code == "VAL" and "EX" not in sku: # Ignore racks, etc
+    if mfc_code == "VAL" and "EX" not in sku:  # Ignore racks, etc
         return vallejo.get_barcode_from_sku(sku)
     else:
         products = Product.objects.filter(publisher_sku=sku)
@@ -114,6 +131,7 @@ class InvoiceLineInfo:
     final_cost = None  # This is the real cost after discount, and what we want to use
     ext_before_discount = None
     other_discount = False
+    processing_error = None
 
     def __init__(self, line):
         self.line_number = int(line[0])
@@ -127,13 +145,18 @@ class InvoiceLineInfo:
         self.abridged_name = mfc_and_sku_and_abridged_name.split(self.dist_code)[1].strip()
         qty_per_type = 1
         if self.qty_type == "BX":
-            qty_text = self.abridged_name.split(" ")[-1] # Last word is ideally a quantity marker
+            qty_text = self.abridged_name.split(" ")[-1]  # Last word is ideally a quantity marker
             if qty_text.endswith("p"):
-                qty_per_type = int(qty_text[:-1]) # 6p
-            if qty_text.endswith("pk"):
-                qty_per_type = int(qty_text[:-2]) # 6pk
-            if "@" in qty_text[-1]:
-                qty_per_type = int(qty_text.split("@")[0]) # 6@$7.50
+                qty_per_type = int(qty_text[:-1])  # 6p
+            elif qty_text.endswith("pk"):
+                qty_per_type = int(qty_text[:-2])  # 6pk
+            elif "@" in qty_text[-1]:
+                qty_per_type = int(qty_text.split("@")[0])  # 6@$7.50
+            elif mfc_and_sku_and_abridged_name in ["GNZ/MC129", "TAM/87038", "TAM/87182"]:  # revert to hardcoded check
+                qty_per_type = 6
+            else:
+                self.processing_error = f"Unable to determine quantity for line {self.line_number}"
+                return
         if qty_per_type > 1:
             print(f"We determined {self.abridged_name} has a quantity of {qty_per_type}")
         self.qty_unit = int(self.qty_of_type) * qty_per_type
