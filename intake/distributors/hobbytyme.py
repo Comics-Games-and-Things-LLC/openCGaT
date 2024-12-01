@@ -99,11 +99,11 @@ def get_invoice_lines(pdf_path, po):
             if not po_line.cost_per_item:
                 po_line.cost_per_item = Money(line_info.final_cost, "USD")
             elif po_line.cost_per_item != Money(line_info.final_cost, "USD"):
-                print(f"{line}\n\tCost differs!")
+                print(f"{line}\n\tCost differs! Calculated to be {line_info.final_cost}")
             if not po_line.msrp_on_line:
                 po_line.msrp_on_line = Money(line_info.retail_price, "USD")
             elif po_line.msrp_on_line != Money(line_info.retail_price, "USD"):
-                print(f"{line}\n\tMSRP differs!")
+                print(f"{line}\n\tMSRP differs! Calculated to be {line_info.final_cost}")
 
             po_line.save()
 
