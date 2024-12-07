@@ -145,7 +145,11 @@ def get_invoice_summary(pdf_path):
     for line in text.splitlines():
         if "Order Number" in line:
             [order_number, date] = line.split("Order Number: #")[1].split("Issue Date: ")
-            info.date = datetime.strptime(date.strip(), "%B %d, %Y")
+            date = date.strip()
+            try:
+                info.date = datetime.strptime(date.strip(), "%B %d, %Y")
+            except ValueError:
+                info.date = datetime.strptime(date.replace('.', ''), "%b %d, %Y")
             info.invoice_number = order_number.strip()
 
     last_page = reader.pages[-1]
