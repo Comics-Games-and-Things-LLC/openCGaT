@@ -18,9 +18,9 @@ def read_pdf_invoice(pdf_path):
     # Not strictly necessary to use distributor here as po_number is our primary key, but we will likely want to change that in the future.
     print("Invoice number:", info.invoice_number)
     po = PurchaseOrder.objects.get(po_number=info.invoice_number, distributor=get_dist_object())
-    if not po.date:
+    if info.date and not po.date:
         po.date = info.date
-    if not po.subtotal:
+    if info.subtotal and not po.subtotal:
         po.subtotal = Money(info.subtotal, get_dist_object().currency)
     print(po.subtotal)
     po.save()
@@ -156,7 +156,6 @@ def get_invoice_summary(pdf_path):
     last_page = reader.pages[-1]
     text = last_page.extract_text()
     for line in text.splitlines():
-        print(line)
         if "Subtotal" in line:
-            info.subtotal = line.split("Subtotal £")[1].strip()
+            info.subtotal = line.split("Subtotal £")[1].strip().replace(",", "")
     return info
