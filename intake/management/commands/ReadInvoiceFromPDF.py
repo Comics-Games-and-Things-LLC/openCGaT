@@ -2,7 +2,7 @@ import os
 
 from django.core.management.base import BaseCommand
 
-from intake.distributors import hobbytyme
+from intake.distributors import hobbytyme, kingsley
 from intake.models import Distributor
 
 
@@ -27,5 +27,9 @@ class Command(BaseCommand):
         if not os.path.exists(options['invoice_file']):
             print("Please specify a path to a file that exists")
             return
-
-        hobbytyme.read_pdf_invoice(options['invoice_file'])
+        if dist == hobbytyme.get_dist_object():
+            hobbytyme.read_pdf_invoice(options['invoice_file'])
+        if dist == kingsley.get_dist_object():
+            kingsley.read_pdf_invoice(options['invoice_file'])
+        else:
+            print("Not a supported distributor")
