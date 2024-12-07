@@ -122,7 +122,10 @@ class InvoiceLineInfo:
         if "*" in self.abridged_name:
             self.abridged_name = self.abridged_name.split("*")[0]
         self.sku = line["SKU"].replace("\n", "")
-        self.final_cost = Decimal(line["Unit Price"])
+        if not line["Unit Price"] and line["Total"]:
+            self.final_cost = Decimal(line["Total"].replace("£",""))/Decimal(self.qty_unit)
+        else:
+            self.final_cost = Decimal(line["Unit Price"])
 
     @property
     def dist_code(self):
