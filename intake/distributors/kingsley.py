@@ -149,6 +149,7 @@ def get_invoice_summary(pdf_path):
             try:
                 info.date = datetime.strptime(date.strip(), "%B %d, %Y")
             except ValueError:
+                date = date.replace("Sept", "Sep")
                 info.date = datetime.strptime(date.replace('.', ''), "%b %d, %Y")
             info.invoice_number = order_number.strip()
 
