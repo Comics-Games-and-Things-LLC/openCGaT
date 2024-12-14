@@ -1,9 +1,11 @@
+import csv
 import os
 
 from django.core.management.base import BaseCommand
 
 from intake.distributors import hobbytyme, kingsley
 from intake.models import Distributor
+from openCGaT.management_util import email_report
 
 
 class Command(BaseCommand):
@@ -23,13 +25,21 @@ class Command(BaseCommand):
             print("Please choose a distributor:")
             print(dists)
             return
-
+        po_object = None
+        could_not_process_lines = None
         if not os.path.exists(options['invoice_file']):
             print("Please specify a path to a file that exists")
             return
         if dist == hobbytyme.get_dist_object():
             hobbytyme.read_pdf_invoice(options['invoice_file'])
         if dist == kingsley.get_dist_object():
-            kingsley.read_pdf_invoice(options['invoice_file'])
+            po, could_not_process_lines = kingsley.read_pdf_invoice(options['invoice_file'])
         else:
             print("Not a supported distributor")
+        if could_not_process_lines:
+            with open('reports/lines_that_could_not_be_processed.csv', 'w', newline='') as csvfile:
+                writer = csv.DictWriter(csvfile, could_not_process_lines[0].keys())
+                writer.writeheader()
+                writer.writerows(could_not_process_lines)
+
+            email_report(f"{po}: {len(could_not_process_lines)} lines that could not be processed", ['reports/lines_that_could_not_be_processed.csv'])

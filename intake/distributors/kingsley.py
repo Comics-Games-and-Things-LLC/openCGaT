@@ -24,7 +24,7 @@ def read_pdf_invoice(pdf_path):
         po.subtotal = Money(info.subtotal, get_dist_object().currency)
     print(po.subtotal)
     po.save()
-    get_invoice_lines(pdf_path, po)
+    return po, get_invoice_lines(pdf_path, po)
 
 
 def get_invoice_lines(pdf_path, po):
@@ -36,6 +36,7 @@ def get_invoice_lines(pdf_path, po):
     line_index = 0
     columns = ['Item Name', 'SKU', 'HS\nCode', 'COO', 'Unit Price', 'Quantity', 'Total', 'Total Tax']
     found_start = False
+    could_not_process_lines = []
 
     for table in tables:
         for line in table.df.to_numpy():
@@ -57,6 +58,7 @@ def get_invoice_lines(pdf_path, po):
             # At this point we now have a valid line
             line_info = InvoiceLineInfo(line)
             line_info.line_number = line_index
+            line = {'Line Number': line_index} | line
 
             if line_info.processing_error:
                 print(line)
@@ -67,12 +69,14 @@ def get_invoice_lines(pdf_path, po):
             if not barcode:
                 print(line)
                 print('\t', f"Could not find a specific product with sku {line_info.sku} for {line_info.abridged_name}")
+                could_not_process_lines.append(line)
                 continue
 
             po_lines = POLine.objects.filter(po=po, barcode=barcode)
             if po_lines.count() != 1:
                 print(line)
                 print('\t', f"Could not find a specific PO line for barcode {barcode} for {line_info.abridged_name}")
+                could_not_process_lines.append(line)
                 continue
 
             po_line = po_lines.first()
@@ -93,6 +97,7 @@ def get_invoice_lines(pdf_path, po):
 
             po_line.save()
     print(f"{line_index} lines processed")
+    return could_not_process_lines
 
 
 def find_barcode_from_product(sku, name):
@@ -123,7 +128,7 @@ class InvoiceLineInfo:
             self.abridged_name = self.abridged_name.split("*")[0]
         self.sku = line["SKU"].replace("\n", "")
         if not line["Unit Price"] and line["Total"]:
-            self.final_cost = Decimal(line["Total"].replace("£",""))/Decimal(self.qty_unit)
+            self.final_cost = Decimal(line["Total"].replace("£", "")) / Decimal(self.qty_unit)
         else:
             self.final_cost = Decimal(line["Unit Price"])
 
