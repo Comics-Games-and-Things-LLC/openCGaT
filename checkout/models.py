@@ -10,7 +10,7 @@ from django.conf import settings
 from django.conf.global_settings import AUTH_USER_MODEL
 from django.contrib.sites.models import Site
 from django.core import mail
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist, BadRequest
 from django.core.mail import EmailMessage
 from django.db import models, transaction
 from django.db.models import F, Sum, Q
@@ -241,6 +241,10 @@ class Cart(RepresentationMixin, models.Model):
         print(hasattr(item, 'cart_owner_allowed_to_purchase'))
         if hasattr(item, 'cart_owner_allowed_to_purchase') and not item.cart_owner_allowed_to_purchase(self):
             raise PermissionDenied
+
+        if quantity == 0:
+            raise BadRequest
+
         if self.is_frozen:
             self.thaw()
 
