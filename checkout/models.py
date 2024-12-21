@@ -1343,6 +1343,7 @@ class CheckoutLine(models.Model):
             second_line.id = None
             # Second line is now a copy of the inital line.
             second_line.quantity = second_quantity
+            second_line.inventory_at_time_of_submit = None
             second_line.save()
             line.quantity -= second_quantity
             line.save()
