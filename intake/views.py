@@ -356,7 +356,7 @@ def po_details(request, partner_slug, po_id):
     context = {
         'partner': partner,
         'po': po,
-        'lines': po.lines.order_by('line_number').all()
+        'lines': po.lines.order_by(po.distributor.get_secondary_sort_key(), 'line_number').all(),
     }
     return TemplateResponse(request, "purchase_order/po_details.html", context)
 

@@ -15,6 +15,11 @@ from shop.models import Category, Product
 PERCENTAGE_VALIDATOR = [MinValueValidator(0), MaxValueValidator(100)]
 
 
+class SecondarySortChoice(models.TextChoices):
+    ALPHABETICAL = "name"
+    BARCODE = "barcode"
+
+
 class Distributor(models.Model):
     dist_name = models.CharField(max_length=200)
     expected_filename = models.CharField(max_length=200, blank=True, null=True)
@@ -24,14 +29,27 @@ class Distributor(models.Model):
                                                help_text="Determines if that column shows on purchase orders")
     currency = CurrencyField(choices=CURRENCY_CHOICES_PURCHASING)
 
+    secondary_sort = models.CharField(choices=SecondarySortChoice.choices,
+                                      max_length=len(SecondarySortChoice.BARCODE),
+                                      default=SecondarySortChoice.ALPHABETICAL,
+                                      )
+
     def __str__(self):
         return self.dist_name
 
     class Meta:
         ordering = ["dist_name"]
+        app_label = "intake"
 
     def get_helper_class(self):
         return acd
+
+    def get_secondary_sort_key(self):
+        match self.secondary_sort:
+            case SecondarySortChoice.ALPHABETICAL:
+                return "name"
+            case SecondarySortChoice.BARCODE:
+                return "barcode"
 
 
 class DistributorDiscount(models.Model):
