@@ -32,7 +32,7 @@ class Command(BaseCommand):
         total_collected = Money(0, 'USD')
         with open('reports/eoy_gross_{}.csv'.format(year), 'w',
                   newline='') as csvfile:
-            fieldnames = ['Cart', 'subtotal', 'final_total', 'subtotal_after_cancellations', 'collected']
+            fieldnames = ['Cart', 'subtotal', 'final_total', 'subtotal_after_cancellations', 'collected', 'payments']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for cart in tqdm(Cart.submitted.filter(status__in=[Cart.PAID, Cart.COMPLETED], date_paid__year=year)
@@ -60,6 +60,12 @@ class Command(BaseCommand):
                     row_data['collected'] = min(cart.final_total, cart.total_paid or Money(0, 'USD'))
                 except moneyed.classes.CurrencyDoesNotExist:
                     pass  # If total_paid is not set, currency will be XYZ, which crashes moneyed
+                payments = []
+                for payment in cart.payments.all():
+                    payments.append(str(payment))
+                for payment in cart.stripepaymentintent_set.all():
+                    payments.append(str(payment))
+                row_data['payments'] = payments
                 writer.writerow(row_data)
 
         log(f, "{} was collected gross (net sales tax) in {}".format(gross, year))
