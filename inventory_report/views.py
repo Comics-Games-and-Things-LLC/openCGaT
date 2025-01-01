@@ -13,7 +13,7 @@ def index(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
     context = {
         'partner': partner,
-        'reports': InventoryReport.objects.filter(partner=partner),
+        'reports': InventoryReport.objects.filter(partner=partner).order_by("-date"),
     }
     return render(request, "inventory_report/index.html", context)
 

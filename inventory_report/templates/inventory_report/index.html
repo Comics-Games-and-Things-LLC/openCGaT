@@ -15,10 +15,12 @@
 
         </tr>
         {% for report in reports %}
-            <td>{{ report.date }}</td>
-            <td>
-                <a href="{% url 'report' partner_slug=partner.slug report_id=report.id %}">{{ report }}</a>
-            </td>
+            <tr>
+                <td>{{ report.date }}</td>
+                <td>
+                    <a href="{% url 'report' partner_slug=partner.slug report_id=report.id %}">{{ report }}</a>
+                </td>
+            </tr>
 
         {% endfor %}
     </table>

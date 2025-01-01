@@ -67,6 +67,14 @@
                         Create Custom Charge
                     </a>
                 </nav>
+                {% if partner.retail_partner %}
+                    <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'inv_report_home' partner_slug=partner|slugify %}">
+                            Inventory report
+                        </a>
+                    </nav>
+                {% endif %}
+
             </div>
         </nav>
     </div>
