@@ -1,4 +1,5 @@
 import csv
+import datetime
 from decimal import Decimal
 
 import moneyed
@@ -12,8 +13,14 @@ from partner.models import Partner
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument("--year", type=int)
+
     def handle(self, *args, **options):
-        year = 2023
+        year = options.pop('year')  # Last year by default
+        if year is None:
+            year = datetime.date.today().year - 1
+
         f = open(f"reports/eoy_gross_{year}.txt", "a")
         partner = Partner.objects.get(name__icontains="Valhalla")
 
