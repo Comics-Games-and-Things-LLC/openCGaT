@@ -139,9 +139,9 @@ class DiscountCode(models.Model):
             .order_by("cart__date_paid")
         )
         if self.restrict_to_publishers:
-            applicable_lines.filter(item__product__publisher__in=self.publishers.all())
+            applicable_lines =applicable_lines.filter(item__product__publisher__in=self.publishers.all())
         if self.exclude_publishers:
-            applicable_lines.exclude(item__product__publisher__in=self.publishers.all())
+            applicable_lines = applicable_lines.exclude(item__product__publisher__in=self.publishers.all())
 
         return applicable_lines
 
