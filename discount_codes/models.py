@@ -84,6 +84,8 @@ class DiscountCode(models.Model):
         prev_message = line.discount_code_message
         found_partner = False
         for discount in self.partner_discounts.filter(partner=line.item.partner):  # Try each discount from the partner
+            if discount.discount_percentage == 0:
+                return False, line.item.price # Vague performance improvement, skip all these other checks if there's no discount.
             found_partner = True
             if self.min_cart_for_discount and (line.cart.get_pre_discount_subtotal() < self.min_cart_for_discount):
                 line.discount_code_message = "The code '{}' requires {} to activate".format(self,
