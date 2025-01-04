@@ -74,9 +74,9 @@ def referral_report(request, partner_slug, referrer_slug):
         code_details[code] = {}
 
         kickback_percentage = Decimal(code.partner_discounts.get(partner=partner).referrer_kickback / 100)
-        sales_amount = CheckoutLine.objects.exclude(cart__status=Cart.CANCELLED, cancelled=True).filter(
-            cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED], cart__discount_code=code).order_by(
-            "cart__date_paid").aggregate(sum=Sum(F('price_per_unit_at_submit') * F('quantity')))["sum"]
+
+        applicable_lines = code.get_applicable_lines()
+        sales_amount = applicable_lines.aggregate(sum=Sum(F('price_per_unit_at_submit') * F('quantity')))["sum"]
 
         if sales_amount:
             kickback_amount = Money(sales_amount * kickback_percentage, "USD")
@@ -107,9 +107,7 @@ def referral_code_report(request, partner_slug, referrer_slug, code):
 
     kickback_lines = {}  # Cart: {earnings: Money, items: str}
     kickback_percentage = Decimal(code.partner_discounts.get(partner=partner).referrer_kickback / 100)
-    referred_lines = CheckoutLine.objects.exclude(cart__status=Cart.CANCELLED, cancelled=True).filter(
-        cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED], cart__discount_code=code).order_by(
-        "cart__date_paid")
+    referred_lines = code.get_applicable_lines()
     for line in referred_lines:
         print(line)
         earnings_this_line = line.price_per_unit_at_submit * line.quantity * kickback_percentage

@@ -4,11 +4,13 @@ from decimal import Decimal
 from django.conf.global_settings import AUTH_USER_MODEL
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.db.models import Subquery
 from django.template.defaultfilters import slugify
 from djmoney.models.fields import MoneyField
 from pytz import utc
 
-from checkout.models import Cart
+from checkout.models import Cart, CheckoutLine
+from shop.models import Publisher
 
 # Create your models here.
 PERCENTAGE_VALIDATOR = [MinValueValidator(0), MaxValueValidator(100)]
@@ -120,6 +122,26 @@ class DiscountCode(models.Model):
             line.save()
 
         return False, line.item.price
+
+    def get_applicable_lines(self, existing_query=None):
+
+        publishers_excluded_from_discounts = Publisher.objects.filter(no_discount_codes=True)
+
+        if existing_query is None:
+            existing_query = CheckoutLine.objects.all()
+        applicable_lines = (
+            existing_query
+            .exclude(cart__status=Cart.CANCELLED, cancelled=True)
+            .filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED], cart__discount_code=self)
+            .exclude(item__product__publisher__in=Subquery(publishers_excluded_from_discounts.values('id')))
+            .order_by("cart__date_paid")
+        )
+        if self.restrict_to_publishers:
+            applicable_lines.filter(item__product__publisher__in=self.publishers)
+        if self.exclude_publishers:
+            applicable_lines.exclude(item__product__publisher__in=self.publishers)
+
+        return applicable_lines
 
     def save(self, *args, **kwargs):
         self.code = self.code.lower()
