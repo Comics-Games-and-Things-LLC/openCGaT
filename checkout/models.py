@@ -313,6 +313,15 @@ class Cart(RepresentationMixin, models.Model):
             existing_line.save()
             line.delete()
 
+    @property
+    def text_summary(self):
+        text = str(self)
+        if self.discount_code:
+            text += "\n\tWith Code: " + str(self.discount_code)
+        for line in self.lines.all():
+            text += "\n\t" + str(line.simple_string_summary)
+        return text
+
     def merge(self, cart2, add_quantities=True):
         """
         Merges another cart with this one.
@@ -320,6 +329,8 @@ class Cart(RepresentationMixin, models.Model):
         add_quantities: Whether to add line quantities when they are merged.
         """
         print("Attempting to merge Carts")
+        before_state_1 = self.text_summary
+        before_state_2 = cart2.text_summary
         if cart2.payments.filter(collected=True):
             cart2.mark_processing()  # Mark the cart as processing, since this cart should not be open.
             # This may still miss carts if the payment status rolls back
@@ -337,7 +348,22 @@ class Cart(RepresentationMixin, models.Model):
         if cart2.discount_code:
             cart2.discount_code.validate_code_for_cart(self)
             self.save()
-        print("Merged Carts")
+
+        after_state = self.text_summary
+        email = EmailMessage("Merged Cart Debug Information",
+                             f"""
+We merged two carts. Double check that the cart merge was correct.
+Cart 1 initial state:
+{before_state_1}
+
+Cart 2 initial state:
+{before_state_2}
+
+Final state: 
+{after_state}
+""",
+                             to=[settings.EMAIL_HOST_USER])
+        email.send()
 
     def freeze(self):
         """
@@ -1260,7 +1286,8 @@ class CheckoutLine(models.Model):
 
     back_or_pre_order = models.BooleanField(default=False)  # If the quantity was zero at time of submit.
     is_preorder = models.BooleanField(default=False)  # If we were in the preorder window at the time of submit.
-    inventory_at_time_of_submit = models.IntegerField(blank=True, null=True)  # Quantity in stock at time of submit (DOES NOT INCLUDE PREALLOCATION)
+    inventory_at_time_of_submit = models.IntegerField(blank=True,
+                                                      null=True)  # Quantity in stock at time of submit (DOES NOT INCLUDE PREALLOCATION)
 
     discount_code_message = models.TextField(blank=True, null=True)
 
@@ -1268,8 +1295,12 @@ class CheckoutLine(models.Model):
         ordering = ["-date_added"]
 
     def __str__(self):
+        return f"{self.cart} {self.simple_string_summary}"
+
+    @property
+    def simple_string_summary(self):
         name = self.name_of_item if self.submitted else self.item
-        return f"{self.cart} line {self.id}: {name} x {self.quantity}"
+        return f"Line {self.id}: {name} x {self.quantity}"
 
     @property
     def completely_in_stock_or_allocated(self):
