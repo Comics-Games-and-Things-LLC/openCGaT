@@ -804,13 +804,13 @@ Final state:
     # Query methods
     # =============
 
-    def get_total_subtotal(self):
+    def get_total_subtotal(self) -> Money:
         total = Money(0, "USD")
         for line in self.lines.prefetch_related('item', 'item__product').all():
             total += line.get_subtotal()
         return total
 
-    def get_subtotal_after_cancellations(self):
+    def get_subtotal_after_cancellations(self) -> Money:
         total = Money(0, "USD")
         if self.status == Cart.CANCELLED:
             return total
