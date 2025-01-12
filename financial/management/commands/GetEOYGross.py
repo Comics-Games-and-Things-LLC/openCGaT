@@ -77,9 +77,9 @@ class Command(BaseCommand):
                 for payment in cart.payments.all():
                     payments.append(str(payment))
                     if payment.collected:
-                        if payment is StripePayment:
+                        if type(payment) is StripePayment:
                             stripe_payments_for_cart_total += payment.requested_payment
-                        if payment is PaypalPayment:
+                        if type(payment) is PaypalPayment:
                             paypal_payments_for_cart_total += payment.requested_payment
 
                 for payment in cart.stripepaymentintent_set.all():
@@ -95,7 +95,7 @@ class Command(BaseCommand):
 
                 writer.writerow(row_data)
 
-        log(f, "{} was collected total".format(total_collected))
+        log(f, "{} was collected total (including cancellations)".format(total_collected))
         log(f, "{} of that was shipping charges".format(shipping))
         log(f, "{} of that was sales tax".format(tax))
 
