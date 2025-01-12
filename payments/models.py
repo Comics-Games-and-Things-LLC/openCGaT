@@ -113,10 +113,12 @@ class StripePayment(Payment):
     intent_id = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
-        name = "Stripe Payment Intent {} for cart {}, {} cents".format(self.intent_id, self.cart_id, self.amount_cents)
+        text = f"Stripe Payment ({self.id}) Intent {self.intent_id} for {self.requested_payment} from cart {self.cart_id}"
         if self.collected:
-            name += ", captured"
-        return name
+            text = f"Collected {text}"
+        if self.cancelled:
+            text = f"Cancelled {text}"
+        return text
 
     def check_payment(self):
         if not self.collected and not self.cancelled:
@@ -233,6 +235,14 @@ class PaypalPayment(Payment):
     """
     order_id = models.CharField(max_length=50, unique=True, null=True)
     payment_id = models.CharField(max_length=50, null=True)
+
+    def __str__(self):
+        text = "Paypal Payment ({}) for {} from cart {}".format(self.id, self.requested_payment, self.cart_id)
+        if self.collected:
+            text = f"Collected {text}"
+        if self.cancelled:
+            text = f"Cancelled {text}"
+        return text
 
     @property
     def reference_id(self):
