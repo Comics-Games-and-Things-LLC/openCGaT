@@ -47,6 +47,7 @@ class Command(BaseCommand):
                 subtotal_after_cancellations = cart.get_subtotal_after_cancellations()
                 cancellations = subtotal - subtotal_after_cancellations
                 row_data = {"Cart": cart.id,
+                            "Status": cart.status,
                             'subtotal': subtotal,
                             'final_total': cart.final_total,
                             'subtotal_after_cancellations': subtotal_after_cancellations,
