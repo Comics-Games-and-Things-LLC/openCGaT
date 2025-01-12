@@ -107,7 +107,8 @@ class Command(BaseCommand):
             " probably collected in cash, paypal direct, or bank transfers ")
 
         log(f, "This report does not handle refunds very well." +
-            " It doesn't know if we refunded that order or if it was used it as for another item." +
+            " It doesn't know if we refunded that order or if it was used as credit for another item, "
+            "or maybe never collected payment for that order at all." +
             " That's why we should get the amount refunded from the payment processors.")
         log(f, f"{not_cancelled_subtotal} was the total subtotal from customers that was not cancelled.")
         log(f, f"{total_cancellations} was the total of cancelled items" +
