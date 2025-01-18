@@ -30,7 +30,7 @@ def read_pdf_invoice(pdf_path):
     print(po.subtotal)
     po.save()
 
-    get_invoice_lines(pdf_path, po)
+    return po, get_invoice_lines(pdf_path, po)
 
 
 def get_invoice_lines(pdf_path, po):
@@ -38,6 +38,11 @@ def get_invoice_lines(pdf_path, po):
                                              flavor='stream',
                                              pages="1-end"
                                              )
+    could_not_process_lines = []
+
+    columns = ["Line", "QTY/UM", "MFG / ITEM NO. and DESCRIPTION", "RETAIL PRICE", "FIRST COST", "FINAL COST",
+               "EXT BEFORE DISCOUNT", ]
+
     line_index = 0
     for table in tables:
         found_start = False
@@ -58,32 +63,44 @@ def get_invoice_lines(pdf_path, po):
             if "HTM/WEB" in line[2] and "Thank You For The Order!!!" in line[2]:
                 continue  # This is a thank you line we can ignore.
 
+
+
             # At this point we now have a valid line
             line_info = InvoiceLineInfo(line)
+
+            try: # Turn line into a dictionary for nice output
+                line = {columns[i]: line[i] for i in range(len(line))}
+            except Exception:
+                continue
+
             if line_info.qty_of_type == "0":
                 continue  # Skip lines of quantity 0 (backorders).
 
             if line_info.processing_error:
                 print(line)
                 print('\t', line_info.processing_error)
+                could_not_process_lines.append(line)
                 continue
 
             if (line_info.qty_type == "BX" and
                     not (line_info.mfc_code in ["VAL", "TAM", "GNZ"])):
                 print(line)
                 print('\t', "Not sure how to handle boxes not of Vallejo, Tamiya, or Mr Hobby, skipping line")
+                could_not_process_lines.append(line)
                 continue
 
             barcode = find_barcode_from_sku(line_info.mfc_code, line_info.sku)
             if not barcode:
                 print(line)
                 print('\t', f"Could not find a specific product with sku {line_info.sku} for {line_info.abridged_name}")
+                could_not_process_lines.append(line)
                 continue
 
             po_lines = POLine.objects.filter(po=po, barcode=barcode)
             if po_lines.count() != 1:
                 print(line)
                 print('\t', f"Could not find a specific PO line for barcode {barcode} for {line_info.abridged_name}")
+                could_not_process_lines.append(line)
                 continue
 
             po_line = po_lines.first()
@@ -106,6 +123,7 @@ def get_invoice_lines(pdf_path, po):
                 print(f"{line}\n\tMSRP differs! Calculated to be {line_info.retail_price}")
 
             po_line.save()
+    return could_not_process_lines
 
 
 def find_barcode_from_sku(mfc_code, sku):

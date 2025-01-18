@@ -1,7 +1,11 @@
+import csv
 import datetime
+import io
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.mail import EmailMessage
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.template.response import TemplateResponse
@@ -12,8 +16,9 @@ from checkout.models import CheckoutLine, Cart
 from partner.models import Partner, get_partner_or_401
 from shop.forms import AddInventoryItemForm
 from shop.models import Product, InventoryItem
-from .distributors import acd
-from .forms import RefreshForm, AddForm, UploadInventoryForm, POForm, POLineForm, PricingRuleForm, PrintForm
+from .distributors import acd, hobbytyme, kingsley
+from .forms import RefreshForm, AddForm, UploadInventoryForm, POForm, POLineForm, PricingRuleForm, PrintForm, \
+    UploadPoFileForm
 from .image_generation import generate_product_sticker, generate_image_for_order
 from .models import Distributor, DistItem, PurchaseOrder, POLine, DistributorWarehouse, DistributorInventoryFile, \
     PricingRule
@@ -353,10 +358,39 @@ def edit_po(request, partner_slug, po_id=None):
 def po_details(request, partner_slug, po_id):
     partner = get_partner_or_401(request, partner_slug)
     po = get_object_or_404(PurchaseOrder, po_number=po_id, partner=partner)
+    form = None
+    processing_result = None
+    if request.method == "POST":
+        form = UploadPoFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            could_not_process_lines = []
+            if po.distributor == hobbytyme.get_dist_object():
+                _, could_not_process_lines = hobbytyme.read_pdf_invoice(request.FILES["file"])
+            if po.distributor == kingsley.get_dist_object():
+                _, could_not_process_lines = kingsley.read_pdf_invoice(request.FILES["file"])
+            print(len(could_not_process_lines))
+            if len(could_not_process_lines):
+                csvfile = io.StringIO()
+                writer = csv.DictWriter(csvfile, could_not_process_lines[0].keys())
+                writer.writeheader()
+                writer.writerows(could_not_process_lines)
+                email = EmailMessage(f"{po}: {len(could_not_process_lines)} lines that could not be processed",
+                                     "Attached is the summary ",
+                                     to=[settings.EMAIL_HOST_USER])
+                email.attach("lines_that_could_not_be_processed.csv",
+                             csvfile.getvalue(), 'text/csv')
+                email.send()
+
+            processing_result = "File processed, report emailed to admin"
+    else:
+        if po.distributor.dist_name in ["Hobbytyme", "Kingsley"]:  # List of distributors that support PDF import
+            form = UploadPoFileForm()
     context = {
         'partner': partner,
         'po': po,
         'lines': po.lines.order_by('line_number', po.distributor.get_secondary_sort_key()).all(),
+        'form': form,
+        'processing_result': processing_result,
     }
     return TemplateResponse(request, "purchase_order/po_details.html", context)
 

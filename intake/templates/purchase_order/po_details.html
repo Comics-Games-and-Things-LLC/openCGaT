@@ -8,7 +8,7 @@
 
 {% block content %}
     <script src="{% static "js/onscan.min.js" %}"></script>
-    <div class="grid grid-cols-2">
+    <div class="grid {% if form %} grid-cols-2 {% endif %}">
         <div class="w-full">
             <h2>
                 {{ po.distributor }} {{ po.po_number }}
@@ -110,7 +110,14 @@
             </p>
         </div>
         <div class="w-full">
-            TODO: Upload PDF
+            {% if form %}
+                <form action="." method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% include 'snippets/form_body.html' %}
+                    <input type="submit" value="Submit">
+                </form>
+                <h3> {{ processing_result|linebreaks }} </h3>
+            {% endif %}
         </div>
     </div>
 

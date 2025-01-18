@@ -127,3 +127,7 @@ class POLineForm(forms.ModelForm):
 
 
 FOUR_PLACES = decimal.Decimal("0.0001")
+
+
+class UploadPoFileForm(forms.Form):
+    file = forms.FileField()

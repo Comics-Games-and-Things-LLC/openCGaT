@@ -31,7 +31,7 @@ class Command(BaseCommand):
             print("Please specify a path to a file that exists")
             return
         if dist == hobbytyme.get_dist_object():
-            hobbytyme.read_pdf_invoice(options['invoice_file'])
+            po, could_not_process_lines = hobbytyme.read_pdf_invoice(options['invoice_file'])
         if dist == kingsley.get_dist_object():
             po, could_not_process_lines = kingsley.read_pdf_invoice(options['invoice_file'])
         else:
@@ -42,4 +42,5 @@ class Command(BaseCommand):
                 writer.writeheader()
                 writer.writerows(could_not_process_lines)
 
-            email_report(f"{po}: {len(could_not_process_lines)} lines that could not be processed", ['reports/lines_that_could_not_be_processed.csv'])
+            email_report(f"{po}: {len(could_not_process_lines)} lines that could not be processed",
+                         ['reports/lines_that_could_not_be_processed.csv'])
