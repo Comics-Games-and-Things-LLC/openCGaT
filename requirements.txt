@@ -48,7 +48,7 @@ pyparsing
 pydot
 py-moneyed~=2.0
 djangorestframework~=3.14.0
-Pillow==10.3.0 # was 9.5
+Pillow~=10.4.0
 python-barcode~=0.15.1
 requests~=2.31.0
 xlrd~=2.0.1
