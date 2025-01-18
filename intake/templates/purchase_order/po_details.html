@@ -8,105 +8,112 @@
 
 {% block content %}
     <script src="{% static "js/onscan.min.js" %}"></script>
+    <div class="grid grid-cols-2">
+        <div class="w-full">
+            <h2>
+                {{ po.distributor }} {{ po.po_number }}
 
-    <h2>
-        {{ po.distributor }} {{ po.po_number }}
+            </h2>
+            {% if po.separate_invoice_number %}
+                <h3> Invoiced as {{ po.separate_invoice_number }} </h3>
+            {% endif %}
+            <h4>{{ po.date }}</h4>
+            <p>
+                {% if not po.subtotal is None %}
+                    Subtotal: {{ po.subtotal }}
+                {% else %}
+                    Line Total: {{ po.get_line_total }} (Subtotal needs set!)
+                {% endif %}
+                , Sum(Costs) = {{ po.calculated_total_cost }}
+                {% if po.subtotal != po.subtotal_with_credits %}
+                    <br/>
+                    Original Subtotal: {{ po.subtotal_with_credits }}
 
-    </h2>
-    {% if po.separate_invoice_number %}
-        <h3> Invoiced as {{ po.separate_invoice_number }} </h3>
-    {% endif %}
-    <h4>{{ po.date }}</h4>
-    <p>
-        {% if not po.subtotal is None %}
-            Subtotal: {{ po.subtotal }}
-        {% else %}
-            Line Total: {{ po.get_line_total }} (Subtotal needs set!)
-        {% endif %}
-        , Sum(Costs) = {{ po.calculated_total_cost }}
-        {% if po.subtotal != po.subtotal_with_credits %}
-            <br/>
-            Original Subtotal: {{ po.subtotal_with_credits }}
-
-        {% endif %}
-        <br>
-        Amount Paid: {{ po.amount_charged }}
-        {% if po.amount_charged != po.amount_charged_with_credits %}
-            <br/>
-            Original Amount Paid: {{ po.amount_charged_with_credits }}
-        {% endif %}
-    </p>
-    {% if po.notes %}
-        <h4>Notes:</h4>
-        <p>
-            {{ po.notes }}
-        </p>
-        <br>
-    {% endif %}
-    <p>
-        <a href="{% url 'edit_po' partner_slug=partner|slugify po_id=po.po_number %}">
-            Edit
-        </a>
-        {% if po.empty %}
-            <a href="{% url 'delete_po' partner_slug=partner|slugify po_id=po.po_number confirm=0 %}">
-                Delete
-            </a>
-        {% else %}
-            You can only delete an empty Purchase Order
-        {% endif %}
-    </p>
-    <p>
-        {% if po.completed %}
-            <span class="text-green">
+                {% endif %}
+                <br>
+                Amount Paid: {{ po.amount_charged }}
+                {% if po.amount_charged != po.amount_charged_with_credits %}
+                    <br/>
+                    Original Amount Paid: {{ po.amount_charged_with_credits }}
+                {% endif %}
+            </p>
+            {% if po.notes %}
+                <h4>Notes:</h4>
+                <p>
+                    {{ po.notes }}
+                </p>
+                <br>
+            {% endif %}
+            <p>
+                <a href="{% url 'edit_po' partner_slug=partner|slugify po_id=po.po_number %}">
+                    Edit
+                </a>
+                {% if po.empty %}
+                    <a href="{% url 'delete_po' partner_slug=partner|slugify po_id=po.po_number confirm=0 %}">
+                        Delete
+                    </a>
+                {% else %}
+                    You can only delete an empty Purchase Order
+                {% endif %}
+            </p>
+            <p>
+                {% if po.completed %}
+                    <span class="text-green">
                 <i class="fas fa-check-circle"></i>
             </span>
-        {% else %}
-            <span class="text-red">
+                {% else %}
+                    <span class="text-red">
                     <i class="fas fa-times-circle"></i>
-                {% if po.empty %}
-                    Empty;
-                {% endif %}
-                {% if po.missing_costs %}
-                    Missing costs;
-                {% endif %}
-                {% if po.missing_quantities %}
-                    Missing quantity;
-                {% endif %}
-                {% if po.cost_does_not_match_up %}
-                    Subtotal != Sum(Costs)
-                {% endif %}
+                        {% if po.empty %}
+                            Empty;
+                        {% endif %}
+                        {% if po.missing_costs %}
+                            Missing costs;
+                        {% endif %}
+                        {% if po.missing_quantities %}
+                            Missing quantity;
+                        {% endif %}
+                        {% if po.cost_does_not_match_up %}
+                            Subtotal != Sum(Costs)
+                        {% endif %}
             </span>
-        {% endif %}
-    </p>
-    <p>
-        Scan to add a new line, refresh to view added lines. Last Scanned: <span id="last_scan_id"></span>
-        <script>
-            onScan.attachTo(document, {
-                keyCodeMapper: function (oEvent) {
-                    if (oEvent.which == 189) {
-                        return '-';
-                    }
-                    // Fall back to the default decoder in all other cases
-                    return onScan.decodeKeyEvent(oEvent);
-                },
-                suffixKeyCodes: [13], // enter-key expected at the end of a scan
-                reactToPase: true, // Compatibility to built-in scanners in paste-mode (as opposed to keyboard-mode)
-                avgTimeByChar: 60, //Slowed down for newer scanner
-                onScan: function (sCode, iQty) { // Alternative to document.addEventListener('scan')
-                    console.log('Scanned: ' + iQty + 'x ' + sCode);
-                    let url = "/partner/{{ partner.slug }}/intake/purchase_orders/{{ po.po_number }}/"
-                    fetch(url + "scan/" + sCode + "/")
-                    document.getElementById("last_scan_id").innerHTML = sCode
-                    window.refresh()
-                },
-                {% comment %}
-                        onKeyDetect: function (iKeyCode) { // output all potentially relevant key events - great for debugging!
-                           console.log('Pressed: ' + iKeyCode);
-                       }
-               {% endcomment %}
-            });
-        </script>
-    </p>
+                {% endif %}
+            </p>
+            <p>
+                Scan to add a new line, refresh to view added lines. Last Scanned: <span id="last_scan_id"></span>
+                <script>
+                    onScan.attachTo(document, {
+                        keyCodeMapper: function (oEvent) {
+                            if (oEvent.which == 189) {
+                                return '-';
+                            }
+                            // Fall back to the default decoder in all other cases
+                            return onScan.decodeKeyEvent(oEvent);
+                        },
+                        suffixKeyCodes: [13], // enter-key expected at the end of a scan
+                        reactToPase: true, // Compatibility to built-in scanners in paste-mode (as opposed to keyboard-mode)
+                        avgTimeByChar: 60, //Slowed down for newer scanner
+                        onScan: function (sCode, iQty) { // Alternative to document.addEventListener('scan')
+                            console.log('Scanned: ' + iQty + 'x ' + sCode);
+                            let url = "/partner/{{ partner.slug }}/intake/purchase_orders/{{ po.po_number }}/"
+                            fetch(url + "scan/" + sCode + "/")
+                            document.getElementById("last_scan_id").innerHTML = sCode
+                            window.refresh()
+                        },
+                        {% comment %}
+                                onKeyDetect: function (iKeyCode) { // output all potentially relevant key events - great for debugging!
+                                   console.log('Pressed: ' + iKeyCode);
+                               }
+                       {% endcomment %}
+                    });
+                </script>
+            </p>
+        </div>
+        <div class="w-full">
+            TODO: Upload PDF
+        </div>
+    </div>
+
     <table class="table">
         <tr>
             <th></th>
