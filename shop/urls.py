@@ -29,7 +29,7 @@ urlpatterns = [
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/set_primary_image/<image_id>',
          views.set_image_as_primary,
          name='set_image_as_primary'),
-    path('manage/<slug:partner_slug>/product/<slug:product_slug>/edit_image_alt_text/<image_id>',
+    path('manage/<slug:partner_slug>/product/<slug:product_slug>/edit_image_alt_text/<image_id>/',
          images.views.edit_alt_text,
          name='edit_image_alt_text'),
     path('manage/<slug:partner_slug>/product/<slug:product_slug>/delete/<int:confirm>/', views.delete_product,
