@@ -46,6 +46,12 @@
                         {% if manage and line.item and not line.is_preorder %}
                             <br>
                             <small> {{ line.item.current_inventory }} in stock
+                                {% if line.item.enable_restock_alert %}
+                                     / {{ line.item.low_inventory_alert_threshold }} Threshold
+                                {% endif %}
+                                {% if line.item.product.factions.exists %}
+                                    <br>
+                                {% endif %}
                                 {% for faction in line.item.product.factions.all %}
                                     • {{ faction }}
                                 {% endfor %}
