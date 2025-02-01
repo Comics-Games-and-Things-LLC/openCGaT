@@ -800,6 +800,10 @@ Final state:
     def in_store_pickup_only(self):
         return self.lines.filter(item__product__in_store_pickup_only=True).exists()
 
+    @property
+    def latest_release_date(self):
+        return self.lines.latest('item__product__release_date').item.product.release_date
+
     # =============
     # Query methods
     # =============

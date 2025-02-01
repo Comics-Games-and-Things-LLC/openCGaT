@@ -126,7 +126,7 @@
                         </button>
                     </td>
                     <td>
-                        not yet implemented
+                        {{ order.latest_release_date }}
                     </td>
                     <td>
                         <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=order.id %}">
