@@ -179,13 +179,13 @@ def create_stripe_payment(request):
 def confirm_stripe_capture(request):
     intent_id = request.GET.get("payment_intent")
     payment = StripePayment.objects.get(intent_id=intent_id)
-    print(payment.id)
+    cart = payment.cart
+    cart.mark_processing()
     try:
         payment.check_payment()
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-    cart = payment.cart
     return HttpResponseRedirect(reverse("checkout_complete", kwargs={"order_id": cart.id}))
 
 
