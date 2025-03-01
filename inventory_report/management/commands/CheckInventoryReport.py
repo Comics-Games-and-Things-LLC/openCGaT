@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from checkout.models import Cart
 from inventory_report.models import InventoryReport
+from openCGaT.management_util import email_report
 from partner.models import Partner
 from shop.models import Product, InventoryItem
 
@@ -23,7 +24,8 @@ class Command(BaseCommand):
         if year is None:
             year = datetime.date.today().year - 1
 
-        f2 = open(f"reports/Inventory Mismatches for {year} entries.csv", "w")
+        filename = f"reports/Inventory Mismatches for {year} entries.csv"
+        f2 = open(filename, "w")
         entries_writer = csv.DictWriter(f2, ["Product", "PO Count", "Sold Count", "Inventory Report Count",
                                              "Off by",
                                              "Resolved?",
@@ -87,3 +89,4 @@ class Command(BaseCommand):
                                          "POs": " | ".join([str(po_line.po) for po_line in all_po_lines]),
                                          "Carts": " | ".join([str(cart_line.cart) for cart_line in all_cart_lines]),
                                          })
+        email_report("Inventory Mismatches", filename)
