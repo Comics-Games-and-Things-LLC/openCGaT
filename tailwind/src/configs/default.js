@@ -51,6 +51,8 @@ module.exports = {
     corePlugins: {
         preflight: false,
         visibility: false, // Temporary fix for navbar
+        textOpacity: false, // Disable text opacity for safari compatability
+
     },
     important: true,
 };
