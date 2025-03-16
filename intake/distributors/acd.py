@@ -1,3 +1,5 @@
+import json
+
 import pandas
 import requests
 from bs4 import BeautifulSoup
@@ -57,57 +59,37 @@ def get_name_and_msrp(upc):
 def query_for_info(upc, get_full=False):
     try:
         result = requests.get(
-            f"https://www.acdd.com/catalogsearch/advanced/result/?name=&sku=&description=&price%5Bfrom%5D=&price%5Bto%5D=&acd_upc={upc}&acd_preorder=&acd_instock=")
+            f"https://www.acdd.com/search-advanced/results?upc={upc}")
         soup = BeautifulSoup(result.text, features="html5lib")
-        card_elements = soup.find_all("li", class_="item product product-item")
-        # Assume only one result since we are searching by UPC.
-        link_element = card_elements[0].find_next("a", class_="product-item-link")
-        page_link = link_element['href']
-        name = link_element.get_text().strip()
-        acd_msrp = card_elements[0].find_next(
-            "div",
-            class_="msrp-value"
-        ).find_next(
-            "span",
-            class_="price"
-        ).get_text().replace("$", "")
-        if not get_full:
-            return {
-                "Name": name,
-                "MSRP": acd_msrp,
-            }
-        print("Querying for more information")
-        print(page_link)
-        result = requests.get(page_link)
-        soup = BeautifulSoup(result.text, features="html5lib")
-        description_elements = soup.find_all("div", class_="product attribute description")
-        description = None
-        if description_elements:
-            description = description_elements[0].get_text()
-        picture_elements = soup.find_all("img",
-                                         class_="gallery-placeholder__image")
+        script_elements = soup.find_all("script")
+        # Assume only the first result matters since we are searching by UPC.
+        page_data = ""
+        prefix = 'self.__next_f.push([1,"'
+        for script in script_elements:
+            if not script.string:
+                continue
+            if prefix not in script.string:
+                continue
+            page_data += script.string[len(prefix):-len("\\n\")]")]
 
-        if upc != get_from_table(soup, "UPC"):
-            raise Exception("We found the wrong product!")
-
-        picture_src = None
-        if picture_elements:
-            picture_src = picture_elements[0]['src']
-
-        release_date = get_from_table(soup, "Release Date")
-        if release_date:  # <Month 3 letter> Day, Year
-            release_date = datetime.strptime(release_date, '%b %d, %Y').date()
-
+        readable_data = bytes(page_data, "utf-8").decode("unicode_escape")
+        last_line = readable_data.splitlines()[-1]
+        page_json_data = json.loads(last_line.split("5:")[1])
+        results = []
+        search_key(page_json_data, "products", results)
+        item_details = results[0][0]
+        print(json.dumps(item_details, sort_keys=True, indent=4))
+        for field in item_details["customFields"]:
+            item_details[field["name"]] = field["value"]
         return {
-            "Name": name,
-            "MSRP": acd_msrp,
-            "Publisher": get_from_table(soup, "Manufacturer"),
-            "Category": get_from_table(soup, "Category"),
+            "Name": item_details["name"],
+            "MSRP": item_details["prices"]["price"]["value"],
             "Barcode": upc,
-            "SKU": get_from_table(soup, "SKU"),
-            "Description": description,
-            "Picture Source": picture_src,
-            "Release Date": release_date
+            "SKU": item_details["sku"],
+            "Description": item_details["description"], # Todo: Fix encoding issues (ie ™ to â¢)
+            "Picture Source": item_details["defaultImage"]["url"],
+            "Release Date": item_details["release_date"],
+            "Publisher": item_details["manufacturer_code"], #TODO: translate into a category
         }
     except Exception as e:
         print(e)
@@ -120,3 +102,20 @@ def get_from_table(soup, row_heading):
     if release_date_elements:
         value = release_date_elements[0].get_text()
     return value
+
+
+def search_key(data, target_key, results=None):
+    if results is None:
+        results = []
+
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key == target_key:
+                results.append(value)
+            search_key(value, target_key, results)  # Recursive call
+
+    elif isinstance(data, list):
+        for item in data:
+            search_key(item, target_key, results)  # Recursive call
+
+    return results
