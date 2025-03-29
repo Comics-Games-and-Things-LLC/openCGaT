@@ -6,7 +6,7 @@ from discount_codes.models import Referrer
 
 
 def migrate_data_forward(apps, schema_editor):
-    print("/n")
+    print("\n")
     for instance in Referrer.objects.all():
         print("Generating slug for %s" % instance)
         instance.save()  # Will trigger slug update
