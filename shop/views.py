@@ -284,6 +284,7 @@ def product_list(request, partner_slug=None):
         'page_number': int(page_number),
         'partner_slug': partner_slug,
         'manage': manage,
+        'collection': collection,
     }
     if partner:
         context['partner'] = partner

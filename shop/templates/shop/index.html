@@ -19,4 +19,20 @@
 
 {% block alternate %}
     <p class="p-6">No products are available that match your search criteria.</p>
+    {% if collection %}
+        <p class="p-6">
+            You are currently searching in {{ collection }}. <a href="."> Start a new search </a> or look through
+            another collection.
+        </p>
+    {% else %}
+        <p class="p-6"><a href="."> Start a new search </a> or expand your search criteria.</p>
+    {% endif %}
 {% endblock %}
+{% if collection %}
+    {% block end_search %}
+        <p class="text-sm text-gray-700 m-0">
+            You've reached the end of {{ collection }}. Didn't find what you're looking for?
+            Try <a href="."> a new search </a> or look through another collection.
+        </p>
+    {% endblock %}
+{% endif %}

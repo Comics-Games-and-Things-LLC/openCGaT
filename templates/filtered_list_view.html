@@ -87,6 +87,17 @@
                                 {% endfor %}
                             </ul>
                         {% endblock %}
+                        {% if not page.has_next %}
+                            <div class="bg-white px-4 py-3 sm:border-t-2 sm:border-neutral_back sm:px-6 rounded-md lg:rounded-none mb-4 lg:mb-0">
+                                {% block end_search %}
+                                    <p class="text-sm text-gray-700 m-0">
+                                        You've reached the end of the list. Didn't find what you're looking for?
+                                        Try <a href="."> a new search </a> or changing your search criteria
+                                    </p>
+                                {% endblock %}
+
+                            </div>
+                        {% endif %}
                         {% with form=filters_form %}
                             {% include 'snippets/page_numbers.html' %}
                         {% endwith %}
@@ -171,7 +182,7 @@
                                 {% list_append manual_form_fields "in_stock_only" as manual_form_fields %}
                                 {% list_append manual_form_fields "featured_products_only" as manual_form_fields %}
                             {% endif %}
-                        {% if filters_form.available_for_order_only and filters_form.allocated_only %}
+                            {% if filters_form.available_for_order_only and filters_form.allocated_only %}
                                 <!-- In stock only and featured products -->
                                 <div class="col-span-2 flex flex-row gap-4">
                                     <label for="{{ filters_form.available_for_order_only.auto_id }}"
@@ -235,6 +246,8 @@
                         {% endfor %}
                     </div>
                     <input class='btn btn-secondary mb-4 xl:mb-0' type="submit" value="Update"/>
+                    <a class='btn btn-warning mb-4 xl:mb-0' href="."> Clear </a>
+
                 </div>
                 <div class="flex xl:hidden flex-row gap-2 w-full justify-between cursor-pointer"
                      id="toggleFiltersButton">
