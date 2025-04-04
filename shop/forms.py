@@ -9,7 +9,7 @@ from treewidget.fields import TreeModelMultipleChoiceField
 from game_info.models import Game, Faction
 from intake.models import Distributor
 from partner.models import Partner
-from shop.models import Product, Item, Category, MadeToOrder, InventoryItem, CustomChargeItem, Publisher
+from shop.models import Product, Item, Category, MadeToOrder, InventoryItem, CustomChargeItem, Publisher, Collection
 
 
 class AddProductForm(forms.ModelForm):
@@ -139,6 +139,8 @@ class FiltersForm(forms.Form):
     game = forms.ModelChoiceField(Game.objects.all().order_by('name'), required=False)
     faction = forms.ModelChoiceField(Faction.objects.all().order_by('name').prefetch_related('game'), required=False)
 
+    collection = forms.ModelChoiceField(Collection.objects.all().order_by('name'), required=False)
+
     distributor = forms.ModelChoiceField(Distributor.objects.all().order_by('dist_name'), required=False)
 
     out_of_stock_only = forms.BooleanField(required=False)
@@ -153,11 +155,11 @@ class FiltersForm(forms.Form):
         super(FiltersForm, self).__init__(*args, **kwargs)
 
         publisher = self.data.get('publisher')
-        if publisher and not publisher.isnumeric(): # Validate in case we have invalid input
+        if publisher and not publisher.isnumeric():  # Validate in case we have invalid input
             publisher = None
 
         game = self.data.get('game')
-        if game and not game.isnumeric(): # Validate in case we have invalid input
+        if game and not game.isnumeric():  # Validate in case we have invalid input
             game = None
 
         distributor = self.data.get('distributor')
@@ -166,7 +168,7 @@ class FiltersForm(forms.Form):
 
         if manage and distributor:
             self.fields['publisher'].queryset = Publisher.objects.filter(available_through_distributors=distributor
-                                                                ).order_by('name')
+                                                                         ).order_by('name')
 
         if publisher:
             self.fields['game'].queryset = Game.objects.filter(publisher=publisher).order_by('name')
@@ -184,8 +186,6 @@ class FiltersForm(forms.Form):
             self.fields.pop('templates')
             self.fields.pop('drafts_only')
             self.fields.pop('missing_image')
-
-
 
 
 class AddMTOItemForm(forms.ModelForm):

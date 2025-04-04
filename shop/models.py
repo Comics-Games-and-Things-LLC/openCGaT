@@ -805,3 +805,11 @@ class ContainsProducts(models.Model):
     exact = models.BooleanField(default=True)
     same_except_box = models.BooleanField(default=False)
     notes = models.TextField(null=True, blank=True)
+
+
+class Collection(models.Model):
+    name = models.CharField(max_length=200)
+    contents = models.ManyToManyField("product", related_name="in_collection")
+
+    def __str__(self):
+        return self.name

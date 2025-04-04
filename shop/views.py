@@ -69,6 +69,7 @@ def product_list(request, partner_slug=None):
     distributor = None
     drafts_only = False
     missing_image = False
+    collection = None
     if form.is_valid():
         restock_alert_only = form.cleaned_data.get('restock_alert_only')
         if form.cleaned_data.get('in_stock_only'):
@@ -111,7 +112,7 @@ def product_list(request, partner_slug=None):
                     include_self=True)
         drafts_only = form.cleaned_data.get('drafts_only')
         missing_image = form.cleaned_data.get('missing_image')
-
+        collection = form.cleaned_data.get('collection')
     else:
         if partner_slug:
             partner = get_partner_or_401(request, partner_slug)
@@ -242,6 +243,9 @@ def product_list(request, partner_slug=None):
 
     if missing_image:
         displayed_products = displayed_products.filter(primary_image__isnull=True)
+
+    if collection:
+        displayed_products = displayed_products.filter(in_collection=collection)
 
     displayed_products = displayed_products.distinct()
 

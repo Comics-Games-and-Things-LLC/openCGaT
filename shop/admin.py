@@ -30,3 +30,11 @@ admin.site.register(MadeToOrder, ItemAdmin)
 admin.site.register(UsedItem, ItemAdmin)
 
 admin.site.register(ProductImage)
+
+
+class CollectionAdmin(admin.ModelAdmin):
+    search_fields = ['contents__name', 'contents__barcode']
+    autocomplete_fields = ['contents']
+
+
+admin.site.register(Collection, CollectionAdmin)
