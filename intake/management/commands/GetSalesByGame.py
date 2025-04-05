@@ -9,6 +9,7 @@ from game_info.models import Game
 from intake.distributors.utility import log
 from intake.models import POLine
 from inventory_report.management.commands.GetCogs import get_purchased_as, mark_previous_items_as_sold, partner
+from openCGaT.management_util import email_report
 from shop.models import Product, Publisher, Category, Item
 
 GAME = "Game"
@@ -29,20 +30,22 @@ def get_sales_by_thing(thing=GAME, **options):
     if year is None:
         display_year = "all time"
 
-    f = open(f"reports/earnings by {thing} for {display_year}.txt", "a", encoding="UTF-8")
+    report_name = f"Earnings by {thing} for {display_year}"
 
-    f2 = open(f"reports/earnings by {thing} for {display_year} entries.csv", "w", encoding="UTF-8")
+    f = open(f"reports/{report_name}.txt", "a", encoding="UTF-8")
+
+    f2 = open(f"reports/{report_name} entries.csv", "w", encoding="UTF-8")
     entries_writer = csv.DictWriter(f2, [f"{thing}", "Product", "Quantity", "Cart",
                                          "Collected", "Shipping", "Spent",
                                          "Total Costs", "Net", "Margin"])
     entries_writer.writeheader()
 
-    f3 = open(f"reports/earnings by {thing} for {display_year}.csv", "w", encoding="UTF-8")
+    f3 = open(f"reports/{report_name}.csv", "w", encoding="UTF-8")
     summary_writer = csv.DictWriter(f3, [f"{thing}", "Spent on Sold", "Shipping on Sold", "Costs on Sold",
                                          "Collected", "Collected for events", "Collected Locally", "Spent this year"])
     summary_writer.writeheader()
 
-    log(f, f"Earnings by {thing} for {display_year}:")
+    log(f, f"{report_name}:")
 
     cart_lines = CheckoutLine.objects.filter(partner_at_time_of_submit=partner,
                                              cart__status__in=[Cart.PAID, Cart.COMPLETED]).order_by("cart__date_paid")
@@ -192,10 +195,13 @@ def get_sales_by_thing(thing=GAME, **options):
         )
 
     log(f, "End of report\n\n")
-    print(f"Results and errors in in '{f.name}'")
-    print(f"CSV results in '{f.name}'")
-    print(f"Per-line results in '{f2.name}'")
     f.close()
+    f2.close()
+    f3.close()
+    print(f"Results and errors in in '{f.name}'")
+    print(f"CSV results in '{f3.name}'")
+    print(f"Per-line results in '{f2.name}'")
+    email_report(report_name, [f.name, f2.name, f3.name])
 
 
 class Command(BaseCommand):
