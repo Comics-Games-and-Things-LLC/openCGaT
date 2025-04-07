@@ -154,7 +154,13 @@ class Product(PolymorphicModel):
     # or after release_date. A product will be purchasable if past the pre-order date if accepts pre-orders is checked
     # or past release date otherwise.
 
-    description = RichTextField(blank=True, null=True, features=['h2', 'h3', 'bold', 'italic', 'ol', 'ul'])
+    description = RichTextField(blank=True, null=True,
+                                features=[
+                                    'h2', 'h3', 'h4',
+                                    'bold', 'italic',
+                                    'ol', 'ul',
+                                    'hr',
+                                    'link'])
 
     msrp = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True)
     map = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True)
