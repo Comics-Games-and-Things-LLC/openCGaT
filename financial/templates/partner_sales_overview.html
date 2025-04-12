@@ -9,5 +9,22 @@
 
 {% endblock %}
 {% block content %}
-    {% include 'snippets/sales_table.html' with carts=carts %}
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">Day</th>
+            <th scope="col">Gross</th>
+            <th scope="col">Post Tax</th>
+
+        </tr>
+        </thead>
+        {% for day in gross_by_day %}
+            <tr>
+                <td>{{ day.date_paid__date }}</td>
+                <td>{{ day.gross }}</td>
+                <td>{{ day.post_tax }}</td>
+            </tr>
+        {% endfor %}
+
+    </table>
 {% endblock %}
