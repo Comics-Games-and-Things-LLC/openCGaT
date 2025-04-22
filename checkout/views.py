@@ -1032,6 +1032,7 @@ def tasks(request, partner_slug):
         fulfilled=False,
         ready=False,
         cart__ready_for_pickup=False,
+        cart__at_pos=False,
     ).order_by('item__product__name').prefetch_related('item', 'item__product', 'cart')
 
     all_item_ready_carts = (Cart.submitted.exclude(status__in=[Cart.COMPLETED, Cart.CANCELLED],
