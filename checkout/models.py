@@ -1339,12 +1339,14 @@ class CheckoutLine(models.Model):
                     delivery_method = "for pickup"
                     if self.cart.delivery_method == Cart.SHIP_ALL:
                         delivery_method = "to ship"
-                    return "Ready {}".format(delivery_method)
+                    if not self.item or not self.item.product.is_preorder:
+                        return "Ready {}".format(delivery_method)
+                    return f"Ready {delivery_method} on {self.item.product.release_date}"
                 if self.cart.status != Cart.COMPLETED and self.back_or_pre_order:
                     if self.is_preorder:
                         return "Preorder"
                     return backorder_or_preorder.title()  # make the first letter capital
-                # Return the cart status if we don't have any line specific overrides
+                # Return the cart status if we don't have any line-specific overrides
                 return self.cart.status
             else:
                 if self.completely_in_stock_or_allocated:
