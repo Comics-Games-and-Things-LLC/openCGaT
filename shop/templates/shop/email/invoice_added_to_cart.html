@@ -1,6 +1,7 @@
 {% extends 'checkout/email/email_base.html' %}
+{% load templatehelpers %}
 {% block content %}
 
-    Hello! An item you have requested a quote for was added to your cart on Comics, Games, and Things.com.
-    You can find it <a href="{% url 'view_cart' %}">here.</a>
+    Hello! An item you have requested a quote for was added to your cart.
+    You can find it <a href="{% site_url order %}{% url 'view_cart' %}">here.</a>
 {% endblock %}

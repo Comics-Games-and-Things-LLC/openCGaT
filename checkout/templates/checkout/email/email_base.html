@@ -2,9 +2,12 @@
 {% block content %}
 
 {% endblock %}
-<h3><a href="{% site_url order %}{% url 'past_order_details' cart_id=order.id %}">
-    Order {{ order.id }}
-</a></h3>
+{% if order.is_submitted %}
+    <h3><a href="{% site_url order %}{% url 'past_order_details' cart_id=order.id %}">
+        Order {{ order.id }}
+    </a></h3>
+{% endif %}
+
 {% if order.public_comments %}
     <div>
         <h4>
