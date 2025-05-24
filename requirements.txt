@@ -64,7 +64,7 @@ setuptools
 six
 b2sdk~=1.0.2
 
-sentry-sdk~=1.29.2
+sentry-sdk~=2.29.1
 tqdm~=4.66.1
 
 pypdf_table_extraction
