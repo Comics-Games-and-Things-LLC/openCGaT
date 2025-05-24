@@ -1,6 +1,8 @@
 FROM hdgigante/python-opencv:4.11.0-alpine
 #  ^ Python 3.13
 
+RUN apk add --update redis
+
 COPY requirements.txt /app/requirements.txt
 
 RUN set -ex \
