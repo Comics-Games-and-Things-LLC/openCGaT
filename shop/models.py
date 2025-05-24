@@ -570,6 +570,19 @@ class Item(RepresentationMixin, PolymorphicModel):
     def purchase(self, cart):
         pass  # Most items do nothing when purchased
 
+    def notify_user_of_custom_charge(self, cart):
+        user = cart.owner
+        if user is None:
+            return
+        context = {'order': cart}
+        html_template = get_template('shop/email/invoice_added_to_cart.html')
+        msg = EmailMessage(subject='Item added to cart',
+                           body=html_template.render(context),
+                           from_email=None,
+                           to=[user.email])
+        msg.content_subtype = 'html'
+        msg.send()
+
 
 class InventoryItem(Item):
     use_linked_inventory = models.BooleanField(default=False)
@@ -732,17 +745,6 @@ class MadeToOrder(Item):
 class CustomChargeItem(Item):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     description = models.TextField()
-
-    def notify_user_of_custom_charge(self, cart):
-        if self.user:
-            context = {'order': cart}
-            html_template = get_template('shop/email/invoice_added_to_cart.html')
-            msg = EmailMessage(subject='Invoice added to cart',
-                               body=html_template.render(context),
-                               from_email=None,
-                               to=[self.user.email])
-            msg.content_subtype = 'html'
-            msg.send()
 
 
 # class ComicItem(Item):

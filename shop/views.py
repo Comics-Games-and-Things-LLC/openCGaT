@@ -22,6 +22,7 @@ from images.forms import UploadImage
 from images.models import Image
 from intake.models import DistItem, Distributor
 from partner.models import get_partner, get_partner_or_401
+from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm
 from .models import Product, Item, InventoryItem, MadeToOrder
@@ -799,6 +800,43 @@ def create_custom_charge(request, partner_slug):
     context = {
         'partner': partner,
         'form': form,
+    }
+    return TemplateResponse(request, "create_from_form.html", context=context)
+
+
+@login_required
+def add_to_users_cart(request, partner_slug, product_slug, item_id):
+    partner = get_partner_or_401(request, partner_slug)
+    item = get_object_or_404(Item, id=item_id)
+    error_text = ""
+    form = UserSelectForm()
+    if request.method == 'POST':
+        form = UserSelectForm(request.POST)
+        if form.is_valid():
+            for user in form.cleaned_data.get('users'):
+                # Add item to user's cart
+                carts = Cart.open.filter(owner=user)
+                if not carts.exists():
+                    error_text += f"Could not find cart for {user}. \n"
+                # If there are multiple carts, we'll just get the first. Multiple carts should be merged on user login.
+                cart = carts.first()
+                cart.add_item(item)
+
+                # Email user
+                item.notify_user_of_custom_charge(cart)
+
+                # Redirect to somewhere useful
+            if not error_text:
+                return HttpResponseRedirect(
+                    reverse("manage_product",
+                            kwargs={'partner_slug': partner.slug, 'product_slug': product_slug}))
+        else:
+            print("Form not valid")
+
+    context = {
+        'partner': partner,
+        'form': form,
+        'result': error_text,
     }
     return TemplateResponse(request, "create_from_form.html", context=context)
 

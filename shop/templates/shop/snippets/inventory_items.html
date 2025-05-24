@@ -11,10 +11,13 @@
                                     at {{ item.partner }}</h5>
                                 {% if partner and partner == item.partner %}
                                     <a href="{% url 'edit_item' partner_slug=partner.slug product_slug=product.slug item_id=item.id %}">
-                                    Edit
+                                        Edit
                                     </a>
                                     <a href="{% url 'delete_item' partner_slug=partner.slug product_slug=product.slug item_id=item.id confirm=0 %}">
-                                    Delete
+                                        Delete
+                                    </a>
+                                    <a href="{% url 'add_to_users_cart' partner_slug=partner.slug product_slug=product.slug item_id=item.id %}">
+                                        Shoot
                                     </a>
                                 {% endif %}
                                 <div class="row">
