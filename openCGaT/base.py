@@ -73,6 +73,7 @@ apps_to_install = [
     # http://whitenoise.evans.io/en/stable/django.html#using-whitenoise-in-development
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
+    'django_select2',
 
     'mathfilters',
     'polymorphic',

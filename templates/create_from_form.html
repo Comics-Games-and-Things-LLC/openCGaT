@@ -20,7 +20,11 @@
 
     {{ form.media.js }}
     {{ form.media.css }}
-
+    <style>
+        .django-select2 {
+            width: 100%
+        }
+    </style>
 
 {% endblock %}
 {% block content %}
@@ -34,5 +38,6 @@
         {% endblock %}
     </form>
     {% block info_after %}
+        {{ result }}
     {% endblock %}
 {% endblock %}

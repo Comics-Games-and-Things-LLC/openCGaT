@@ -48,7 +48,7 @@ urlpatterns = [
 
                   path("non-admin-draftail/",
                        include("wagtail_non_admin_draftail.urls", namespace="wagtail_non_admin_draftail")),
-
+                  path("select2/", include("django_select2.urls")),
                   re_path(r'^cms/', include(wagtailadmin_urls)),
                   re_path(r'^documents/', include(wagtaildocs_urls)),
                   re_path(r'', include(wagtail_urls)),
