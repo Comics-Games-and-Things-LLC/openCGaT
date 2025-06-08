@@ -26,7 +26,7 @@ from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm
 from .models import Product, Item, InventoryItem, MadeToOrder
-from .serializers import ItemSerializer
+from .serializers import ItemSerializer, ManageItemSerializer
 from .views_api import item_list_filter
 
 
@@ -914,7 +914,7 @@ def bulk_edit(request, partner_slug):
     page_obj = paginator.get_page(page_number)
     serialized_list = []
     for item in page_obj.object_list:
-        serialized_list.append(ItemSerializer(item).data)
+        serialized_list.append(ManageItemSerializer(item).data)
 
     context = {
         'partner': partner,

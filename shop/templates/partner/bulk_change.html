@@ -13,6 +13,7 @@
             <th>Product</th>
             <th>Inventory</th>
             <th>Price</th>
+            <th>Total Sold</th>
             <th>Allow Backorders?</th>
         </tr>
         {% for item in serialized_list %}
@@ -37,6 +38,9 @@
                 </td>
                 <td>
                     ${{ item.price }}
+                </td>
+            <td>
+                    {{ item.sold_count }}
                 </td>
                 <td>
                     <input type="checkbox" disabled {% if item.backorders_enabled %} checked {% endif %}/>

@@ -1,5 +1,7 @@
+from django.db.models import Sum
 from rest_framework import serializers
 
+from checkout.models import CheckoutLine, Cart
 from digitalitems.models import DigitalItem
 from images.serializers import ImageSerializer
 from partner.serializers import PartnerSerializer
@@ -86,3 +88,16 @@ class ItemSerializer(serializers.ModelSerializer):
         if isinstance(item, InventoryItem):
             return item.low_inventory_alert_threshold
         return None
+
+
+class ManageItemSerializer(ItemSerializer):
+    sold_count = serializers.SerializerMethodField()
+
+    class Meta(ItemSerializer.Meta):
+        fields = ItemSerializer.Meta.fields + ('sold_count',)
+
+    @staticmethod
+    def get_sold_count(item):
+        return int(CheckoutLine.objects.filter(item=item,
+                                           cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED]) \
+            .exclude(cancelled=True).aggregate(sum=Sum("quantity"))['sum'] or 0)
