@@ -3,13 +3,26 @@ from django.contrib.admin.widgets import AdminDateWidget
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.forms import widgets
+from django_select2 import forms as s2forms
 from djmoney.forms import MoneyField
 from treewidget.fields import TreeModelMultipleChoiceField
 
-from game_info.models import Game, Faction
+from game_info.models import Game, Faction, Attribute
 from intake.models import Distributor
 from partner.models import Partner
 from shop.models import Product, Item, Category, MadeToOrder, InventoryItem, CustomChargeItem, Publisher, Collection
+
+
+class NameWidget(s2forms.ModelSelect2Widget):
+    search_fields = [
+        "name__icontains",
+    ]
+
+
+class NamesWidget(s2forms.ModelSelect2MultipleWidget):
+    search_fields = [
+        "name__icontains",
+    ]
 
 
 class AddProductForm(forms.ModelForm):
@@ -20,9 +33,11 @@ class AddProductForm(forms.ModelForm):
 
     categories.widget.attrs.update({'class': 'w-full'})
 
-    publisher = forms.ModelChoiceField(Publisher.objects.all().order_by('name'), required=False)
-    games = forms.ModelMultipleChoiceField(Game.objects.all().order_by('name'), required=False)
-    factions = forms.ModelMultipleChoiceField(Faction.objects.all().order_by('name'), required=False)
+    publisher = forms.ModelChoiceField(Publisher.objects.all().order_by('name'), required=False, widget=NameWidget)
+    games = forms.ModelMultipleChoiceField(Game.objects.all().order_by('name'), required=False, widget=NamesWidget)
+    factions = forms.ModelMultipleChoiceField(Faction.objects.all().order_by('name'), required=False,
+                                              widget=NamesWidget)
+    attributes = forms.ModelMultipleChoiceField(Attribute.objects.all(), required=False, widget=NamesWidget)
 
     class Meta:
         model = Product
