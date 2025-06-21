@@ -236,9 +236,11 @@ def get_active_cart(cart_id=None):
 
 
 def get_pos_cart_list(partner):
-    open_carts = Cart.open.filter(at_pos=True, payment_partner=partner)
-    pay_in_store_carts = Cart.submitted.filter(payment_partner=partner, status=Cart.SUBMITTED)
-    pickup_carts = Cart.submitted.filter(pickup_partner=partner, status=Cart.PAID)
+    open_carts = Cart.open.filter(at_pos=True, payment_partner=partner).order_by('owner__email', 'email')
+    pay_in_store_carts = Cart.submitted.filter(payment_partner=partner, status=Cart.SUBMITTED) \
+        .order_by('owner__email', 'email', '-date_submitted')
+    pickup_carts = Cart.submitted.filter(pickup_partner=partner, status=Cart.PAID) \
+        .order_by('owner__email', 'email', '-date_submitted')
     return {'open_carts': CartSummarySerializer(open_carts, many=True).data,
             'pay_in_store_carts': CartSummarySerializer(pay_in_store_carts, many=True).data,
             'pickup_carts': CartSummarySerializer(pickup_carts, many=True).data,
