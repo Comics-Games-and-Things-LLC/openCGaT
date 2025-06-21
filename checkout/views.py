@@ -8,7 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Prefetch, OuterRef, Subquery, F, Sum
+from django.db.models import Prefetch, OuterRef, Subquery, F, Sum, Max
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
@@ -1038,7 +1038,10 @@ def tasks(request, partner_slug):
     all_item_ready_carts = (Cart.submitted.exclude(status__in=[Cart.COMPLETED, Cart.CANCELLED],
                                                    )
                             .filter(lines__ready=True)
-                            .exclude(lines__ready=False).distinct().order_by('-date_submitted'))
+                            .exclude(lines__ready=False).distinct()
+                            .annotate(latest_release_date=Max('lines__item__product__release_date')
+                                      ).order_by('latest_release_date')
+                            )
     send_ready_for_pickup_email_order_list = all_item_ready_carts.filter(delivery_method=Cart.PICKUP_ALL,
                                                                          ready_for_pickup=False,
                                                                          # ^ ensure email hasn't been sent

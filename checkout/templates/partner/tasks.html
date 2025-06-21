@@ -163,6 +163,7 @@
         <table class="table">
             <tr>
                 <th scope="col">ID</th>
+                <th scope="col">Release Date</th>
                 <th scope="col">P?</th>
                 <th scope="col">User</th>
                 <th scope="col">Date</th>
@@ -175,6 +176,9 @@
                         <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=order.id %}">
                             {{ order.id }}
                         </a>
+                    </td>
+                    <td>
+                        {{ order.latest_release_date }}
                     </td>
                     <td>
                         {% if order.invoice_been_printed %}
