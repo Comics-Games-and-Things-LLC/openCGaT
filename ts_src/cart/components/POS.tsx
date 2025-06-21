@@ -205,7 +205,7 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                             <p>
                                 Owner:{" "} {currentStatus.active_cart.owner_info}
                             </p>
-                            {currentStatus.active_cart.open ? (
+                            {["Open", "Submitted"].includes(currentStatus.active_cart.status) ? (
                                 <>
                                     <form onSubmit={HandleAdd}>
                                         <h3>Add Item (Or Scan):</h3>
