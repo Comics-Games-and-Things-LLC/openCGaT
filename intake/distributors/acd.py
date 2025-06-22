@@ -1,5 +1,7 @@
+import decimal
 import json
 import traceback
+from decimal import ROUND_DOWN
 
 import pandas
 import requests
@@ -87,13 +89,10 @@ def query_for_info(upc, get_full=False, debug=False):
             print(json.dumps(item_details, sort_keys=True, indent=4))
 
         msrp = None
-        try:
-            msrp_object = item_details["prices"].get("retailPrice")
-            if msrp_object:
-                msrp = msrp_object["value"]
-        except KeyError:
-            pass
-            # Don't trust any of the other prices to be the price.
+        msrp_object = item_details["prices"].get("retailPrice")
+        if msrp_object:
+            msrp = decimal.Decimal(msrp_object["value"]).quantize(Decimal('.01'), rounding=ROUND_DOWN)
+        # Don't trust any of the other prices to be the price.
 
         for field in item_details["customFields"]:
             item_details[field["name"]] = field["value"]

@@ -1,4 +1,5 @@
 import csv
+import decimal
 import time
 
 from django.core.management.base import BaseCommand
@@ -26,7 +27,6 @@ class Command(BaseCommand):
             time.sleep(1)
             msrp = query_for_info(barcode).get('MSRP')
             if msrp is None:
-                print(f"Failure for {barcode}")
                 continue
             print(f"Success for {barcode}")
             for product in Product.objects.filter(barcode=barcode):
@@ -34,6 +34,6 @@ class Command(BaseCommand):
                     log(f, f"{product} does not have a MSRP set:")
                     log(f, f"\t{product.barcode} should be: {msrp}, is null")
 
-                if str(Decimal(product.msrp.amount)) != str(Decimal(msrp)):
+                if abs(product.msrp.amount - msrp) > 0.01:
                     log(f, f"{product} does not have the correct MSRP:")
-                    log(f, f"\t{product.barcode} should be: {msrp}, is: {product.msrp}")
+                    log(f, f"\t{product.barcode} should be: {msrp}, is: {product.msrp.amount}")
