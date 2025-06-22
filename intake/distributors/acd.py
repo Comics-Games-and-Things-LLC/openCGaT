@@ -1,4 +1,5 @@
 import json
+import traceback
 
 import pandas
 import requests
@@ -56,7 +57,7 @@ def get_name_and_msrp(upc):
     return info['Name'], info["MSRP"]
 
 
-def query_for_info(upc, get_full=False):
+def query_for_info(upc, get_full=False, debug=False):
     try:
         result = requests.get(
             f"https://www.acdd.com/search-advanced/results?upc={upc}")
@@ -74,11 +75,15 @@ def query_for_info(upc, get_full=False):
 
         readable_data = bytes(page_data, "utf-8").decode("unicode_escape")
         last_line = readable_data.splitlines()[-1]
+        if debug:
+            print(upc)
+            print(last_line)
         page_json_data = json.loads(last_line.split("5:")[1])
         results = []
         search_key(page_json_data, "products", results)
         item_details = results[0][0]
-        print(json.dumps(item_details, sort_keys=True, indent=4))
+        if debug:
+            print(json.dumps(item_details, sort_keys=True, indent=4))
 
         msrp = None
         try:
@@ -96,11 +101,14 @@ def query_for_info(upc, get_full=False):
             "SKU": item_details["sku"],
             "Description": item_details["description"],  # Todo: Fix encoding issues (ie ™ to â¢)
             "Picture Source": item_details["defaultImage"]["url"],
-            "Release Date": item_details["release_date"],
+            "Release Date": item_details.get("release_date"),
             "Publisher": item_details["manufacturer_code"],  # TODO: translate into a category
         }
     except Exception as e:
         print(e)
+        if debug:
+            traceback.print_exc()
+
     return {}
 
 
