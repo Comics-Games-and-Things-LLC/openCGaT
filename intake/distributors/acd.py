@@ -58,6 +58,8 @@ def get_name_and_msrp(upc):
 
 
 def query_for_info(upc, get_full=False, debug=False):
+    if upc is None or "":
+        return {}
     try:
         result = requests.get(
             f"https://www.acdd.com/search-advanced/results?upc={upc}")

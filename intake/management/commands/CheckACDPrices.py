@@ -26,6 +26,7 @@ class Command(BaseCommand):
             time.sleep(1)
             msrp = query_for_info(barcode).get('MSRP')
             if msrp is None:
+                print(f"Failure for {barcode}")
                 continue
             print(f"Success for {barcode}")
             for product in Product.objects.filter(barcode=barcode):
