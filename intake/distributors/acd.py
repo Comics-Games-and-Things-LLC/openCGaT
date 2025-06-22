@@ -102,11 +102,11 @@ def query_for_info(upc, get_full=False, debug=False):
             image_url = default_image["url"]
 
         return {
-            "Name": item_details["name"],
+            "Name": fix_text(item_details["name"]),
             "MSRP": msrp,
             "Barcode": upc,
             "SKU": item_details["sku"],
-            "Description": item_details["description"],  # Todo: Fix encoding issues (ie ™ to â¢)
+            "Description": fix_text(item_details["description"]),
             "Picture Source": image_url,
             "Release Date": item_details.get("release_date"),
             "Publisher": item_details["manufacturer_code"],  # TODO: translate into a category
@@ -117,6 +117,13 @@ def query_for_info(upc, get_full=False, debug=False):
             traceback.print_exc()
 
     return {}
+
+
+def fix_text(text):  # Fix bad encoding and invalid HTML
+    fixed_text = text.encode('latin-1').decode('utf-8')
+    if "<" in fixed_text:
+        return str(BeautifulSoup(fixed_text, "html5lib"))
+    return fixed_text
 
 
 def get_from_table(soup, row_heading):
