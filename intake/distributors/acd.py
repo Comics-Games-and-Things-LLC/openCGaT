@@ -96,13 +96,19 @@ def query_for_info(upc, get_full=False, debug=False):
 
         for field in item_details["customFields"]:
             item_details[field["name"]] = field["value"]
+
+        default_image = item_details["defaultImage"]
+        image_url = None
+        if default_image:
+            image_url = default_image["url"]
+
         return {
             "Name": item_details["name"],
             "MSRP": msrp,
             "Barcode": upc,
             "SKU": item_details["sku"],
             "Description": item_details["description"],  # Todo: Fix encoding issues (ie ™ to â¢)
-            "Picture Source": item_details["defaultImage"]["url"],
+            "Picture Source": image_url,
             "Release Date": item_details.get("release_date"),
             "Publisher": item_details["manufacturer_code"],  # TODO: translate into a category
         }
