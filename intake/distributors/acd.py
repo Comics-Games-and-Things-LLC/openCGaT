@@ -79,17 +79,25 @@ def query_for_info(upc, get_full=False):
         search_key(page_json_data, "products", results)
         item_details = results[0][0]
         print(json.dumps(item_details, sort_keys=True, indent=4))
+
+        msrp = None
+        try:
+            msrp = item_details["prices"]["retailPrice"]["value"]
+        except KeyError:
+            pass
+            # Don't trust any of the other prices to be the price.
+
         for field in item_details["customFields"]:
             item_details[field["name"]] = field["value"]
         return {
             "Name": item_details["name"],
-            "MSRP": item_details["prices"]["price"]["value"],
+            "MSRP": msrp,
             "Barcode": upc,
             "SKU": item_details["sku"],
-            "Description": item_details["description"], # Todo: Fix encoding issues (ie ™ to â¢)
+            "Description": item_details["description"],  # Todo: Fix encoding issues (ie ™ to â¢)
             "Picture Source": item_details["defaultImage"]["url"],
             "Release Date": item_details["release_date"],
-            "Publisher": item_details["manufacturer_code"], #TODO: translate into a category
+            "Publisher": item_details["manufacturer_code"],  # TODO: translate into a category
         }
     except Exception as e:
         print(e)
