@@ -79,7 +79,6 @@ def query_for_info(upc, get_full=False, debug=False):
         last_line = readable_data.splitlines()[-1]
         if debug:
             print(upc)
-            print(last_line)
         page_json_data = json.loads(last_line.split("5:")[1])
         results = []
         search_key(page_json_data, "products", results)
@@ -89,7 +88,9 @@ def query_for_info(upc, get_full=False, debug=False):
 
         msrp = None
         try:
-            msrp = item_details["prices"]["retailPrice"]["value"]
+            msrp_object = item_details["prices"].get("retailPrice")
+            if msrp_object:
+                msrp = msrp_object["value"]
         except KeyError:
             pass
             # Don't trust any of the other prices to be the price.
