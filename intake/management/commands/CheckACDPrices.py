@@ -29,6 +29,6 @@ class Command(BaseCommand):
                 continue
             print(f"Success for {barcode}")
             for product in Product.objects.filter(barcode=barcode):
-                if product.msrp.amount != Decimal(msrp):
+                if Decimal(product.msrp.amount) != Decimal(msrp):
                     log(f, f"{product} does not have the correct MSRP:")
                     log(f, f"\t{product.barcode} should be: {msrp}, is: {product.msrp}")
