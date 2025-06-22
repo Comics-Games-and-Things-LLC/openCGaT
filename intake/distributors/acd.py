@@ -113,7 +113,7 @@ def query_for_info(upc, get_full=False, debug=False):
             "Publisher": item_details["manufacturer_code"],  # TODO: translate into a category
         }
     except Exception as e:
-        print(e)
+        print(f"error for {upc}: {e}")
         if debug:
             traceback.print_exc()
 
