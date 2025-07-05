@@ -146,6 +146,9 @@ class Product(PolymorphicModel):
     visible_on_preorder_secondary = models.BooleanField("Visible on above date", default=False,
                                                         help_text=VISIBLE_HELP_TEXT)
 
+    in_store_early_release_date = models.DateField('Date for early release in store', null=True, blank=True,
+                                                   help_text="YYYY-MM-DD or MM/DD/YYYY")
+
     page_is_draft = models.BooleanField("Draft (unpublished)", default=True)
 
     page_is_template = models.BooleanField(default=False, help_text="An unpublished page that can be easily copied")

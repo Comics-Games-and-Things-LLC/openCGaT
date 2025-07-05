@@ -1317,6 +1317,12 @@ class CheckoutLine(models.Model):
             return 0
 
     @property
+    def eligible_for_early_release(self):
+        if self.cart.delivery_method != Cart.PICKUP_ALL:
+            return False
+        return self.item and self.item.product.in_store_early_release_date is not None
+
+    @property
     def status_text(self):
         if isinstance(self.item, InventoryItem):
             if self.item.product.is_preorder:
@@ -1337,7 +1343,10 @@ class CheckoutLine(models.Model):
                         delivery_method = "to ship"
                     if not self.item or not self.item.product.is_preorder:
                         return "Ready {}".format(delivery_method)
-                    return f"Ready {delivery_method} on {self.item.product.release_date}"
+                    release_date = self.item.product.release_date
+                    if self.eligible_for_early_release:
+                        release_date = self.item.product.in_store_early_release_date
+                    return f"Ready {delivery_method} on {release_date}"
                 if self.cart.status != Cart.COMPLETED and self.back_or_pre_order:
                     if self.is_preorder:
                         return "Preorder"

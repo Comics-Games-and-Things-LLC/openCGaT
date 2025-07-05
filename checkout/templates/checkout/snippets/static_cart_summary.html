@@ -41,13 +41,18 @@
                         {% endif %}
                         {% if line.is_preorder %}
                             <br>
-                            <small> Expected release date {{ line.item.product.release_date }} </small>
+                            {% if line.eligible_for_early_release %}
+                                <small> Expected early release
+                                    date {{ line.item.product.in_store_early_release_date }} </small>
+                            {% else %}
+                                <small> Expected release date {{ line.item.product.release_date }} </small>
+                            {% endif %}
                         {% endif %}
                         {% if manage and line.item and not line.is_preorder %}
                             <br>
                             <small> {{ line.item.current_inventory }} in stock
                                 {% if line.item.enable_restock_alert %}
-                                     / {{ line.item.low_inventory_alert_threshold }} Threshold
+                                    / {{ line.item.low_inventory_alert_threshold }} Threshold
                                 {% endif %}
                                 {% if line.item.product.factions.exists %}
                                     <br>
