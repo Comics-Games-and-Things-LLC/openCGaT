@@ -193,6 +193,13 @@
                             </td>
                         </tr>
                     {% endif %}
+                    {% if item.product.in_store_early_release_date %}
+                        <tr>
+                            <td>
+                                In-Store Early Release {{ item.product.in_store_early_release_date }}
+                            </td>
+                        </tr>
+                    {% endif %}
                     {% if product.in_store_pickup_only %}
                         <tr>
                             <td>

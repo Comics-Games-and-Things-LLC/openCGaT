@@ -13,6 +13,10 @@
                                 {% if item.product.is_preorder %}
                                     Preorder
                                 {% endif %}
+                            {% if item.product.in_store_early_release_date %}
+                                <br>
+                                In-Store Early Release {{ item.product.in_store_early_release_date }}
+                            {% endif %}
                             </div>
                             <div class="card-text mt-auto font-weight-bold text-white"
                                  style=" text-align: right; text-shadow: 1px 1px black, 2px 2px 4px #1c211e, 3px 3px 10px #1c211e">

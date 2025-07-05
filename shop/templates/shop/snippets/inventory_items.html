@@ -25,6 +25,12 @@
                                         {% include 'checkout/snippets/addtocartbutton.html' %}
                                     </div>
                                 </div>
+                                {% if item.product.is_preorder and item.product.in_store_early_release_date %}
+                                    <br>
+                                    <p class="font-bold">
+                                        In-Store Early Release {{ item.product.in_store_early_release_date }}
+                                    </p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

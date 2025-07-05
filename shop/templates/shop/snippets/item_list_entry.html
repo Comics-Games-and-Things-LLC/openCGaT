@@ -121,6 +121,11 @@
                     </p>
                 {% endif %}
                 {% if product.release_date %}
+                    {% if item.product.is_preorder and item.product.in_store_early_release_date %}
+                        <p class="font-bold text-primary-700">
+                            In-Store Early Release {{ item.product.in_store_early_release_date }}
+                        </p>
+                    {% endif %}
                     <p class="text-gray-400">
                         Released on <span class="font-bold text-gray-500">{{ product.release_date }}</span>
                     </p>
