@@ -174,7 +174,8 @@ class PurchaseOrder(models.Model):
     date_received = models.DateField(null=True, blank=True, default=datetime.today)
     po_number = models.CharField(max_length=40, primary_key=True)
     archived = models.BooleanField(default=False)
-    amount_charged = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True)
+    amount_charged = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True,
+                                help_text="Final USD amount charged, including tariffs and currency conversions")
     amount_credited_charge = MoneyField(max_digits=8, decimal_places=2, default_currency='USD',
                                         default=Money(0, 'USD'),
                                         help_text="Added to amount charged to get actual amount charged"
