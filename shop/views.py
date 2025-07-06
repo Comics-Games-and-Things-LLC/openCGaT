@@ -875,6 +875,7 @@ def bulk_edit(request, partner_slug):
             drafts_only=form.cleaned_data.get('drafts_only'),
             missing_image=form.cleaned_data.get('missing_image'),
             categories_to_include=categories_to_include,
+            order_by=form.cleaned_data.get('order_by'),
         )
         # Update items if action tells us to.
         action = form.cleaned_data.get('action_to_take')

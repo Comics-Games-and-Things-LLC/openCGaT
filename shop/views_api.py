@@ -1,5 +1,5 @@
 from django.contrib.postgres.search import SearchQuery
-from django.db.models import F,Q
+from django.db.models import F, Q
 from moneyed import Money
 
 from shop.models import Item
@@ -24,6 +24,7 @@ def item_list_filter(managing_partner=None,
                      distributor=None,
                      drafts_only=False,
                      missing_image=False,
+                     order_by="-release_date",
                      ):
     if price_low is None:
         price_low = Money(0, 'USD')
@@ -69,7 +70,6 @@ def item_list_filter(managing_partner=None,
     if missing_image:
         displayed_items = displayed_items.filter(product__primary_image__isnull=True)
 
-
     displayed_items = displayed_items.distinct()
 
     if search_query:
@@ -81,7 +81,31 @@ def item_list_filter(managing_partner=None,
             | Q(product__description__search=SearchQuery(search_query, search_type='websearch'))
         )
 
-    return displayed_items.prefetch_related('partner', 'product')
+    # Handle ordering.
+    reverse_sort = True if order_by[:1] == '-' else False
+
+    def invert_order_string(order_str):
+        return order_str[1:] if order_str.startswith('-') else '-' + order_str
+
+    order_str=order_by
+    if order_str.startswith('-'):
+        order_str = order_str[1:]
+    if order_str not in ['name', 'release_date', 'price']:
+        raise ValueError("Unsupported sort method")
+    else:
+        if order_str == 'name':
+            order_by = 'product__name'
+        elif order_str == 'release_date':
+            order_by = 'product__release_date'
+
+    if reverse_sort:
+        order_by = '-' + order_by
+
+    secondary_sort_string = '-product__name'
+    secondary_order_string = invert_order_string(secondary_sort_string) if reverse_sort else secondary_sort_string
+
+    return displayed_items.prefetch_related('partner', 'product').order_by(
+        order_by, secondary_order_string)
 
 
 def get_item_list(request, partner_slug=None):
