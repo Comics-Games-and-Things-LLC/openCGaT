@@ -30,4 +30,4 @@ class Command(BaseCommand):
 
         print("All count: " , len(all_customers))
 
-        print(",".join(customers_with_accounts))
+        print(",".join(all_customers))
