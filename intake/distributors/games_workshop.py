@@ -435,7 +435,6 @@ def get_product_information_from_product_code(product_code):
     if product_code.startswith("99129915"):  # Chaos Daemons
         games.append(Game.objects.get_or_create(name=WARHAMMER_40K)[0])
         games.append(Game.objects.get_or_create(name=AGE_OF_SIGMAR)[0])
-        games.append(Game.objects.get_or_create(name=("%s" % HORUS_HERESY))[0])
         for game in games:
             faction, _ = game.factions.get_or_create(name=CHAOS_DAEMONS)
             factions.append(faction)
