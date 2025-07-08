@@ -6,11 +6,13 @@ from partner.models import Partner
 
 
 class Command(BaseCommand):
-    pass
+    def add_arguments(self, parser):
+        parser.add_argument('Distributor', type=str)
 
     def handle(self, *args, **options):
+        search = options['Distributor']
         partner = Partner.objects.get(name__icontains="Valhalla")
-        game = Game.objects.get(name="Warhammer: The Horus Heresy")
+        game = Game.objects.get(name=search)
         print(game)
 
         customers_with_accounts = CheckoutLine.objects.filter(item__product__games=game).exclude(
