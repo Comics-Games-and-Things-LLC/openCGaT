@@ -52,9 +52,13 @@
 
                         <td>
                             {% if line.cart.at_pos %}
-                                {{ line.cart.payment_partner }}
+                                POS
                             {% else %}
-                                Online
+                                {% if line.cart.delivery_method == line.cart.SHIP_ALL %}
+                                    Ship
+                                {% else %}
+                                    Pickup
+                                {% endif %}
                             {% endif %}
                         </td>
                         <td>{{ line.status_text }}</td>

@@ -40,9 +40,13 @@
     <td>{{ entry.final_total }}</td>
     <td>
         {% if entry.at_pos %}
-            {{ entry.payment_partner }}
+            POS
         {% else %}
-            Online
+            {% if entry.delivery_method == entry.SHIP_ALL %}
+                Ship
+            {% else %}
+                Pickup
+            {% endif %}
         {% endif %}
     </td>
     <td>{{ entry.status }}</td>
