@@ -6,7 +6,7 @@ from dist_requests.models import DistRequest, DistRequestLine
 # Register your models here.
 @admin.register(DistRequest)
 class DistRequestAdmin(admin.ModelAdmin):
-    list_display = ('partner', 'distributor', 'date')
+    list_display = ('request_name', 'distributor', 'date', 'partner', )
     list_filter = ('partner', 'distributor', 'date')
     search_fields = ('request_name',)
     ordering = ('date', 'distributor', 'request_name')

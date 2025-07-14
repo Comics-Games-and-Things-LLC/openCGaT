@@ -332,6 +332,7 @@ def product_details(request, product_slug, partner_slug=None):
     if manage:
         context["partner"] = partner
         context.update(product.get_sold_info(partner=partner))
+        context.update(product.get_request_info(partner=partner))
 
     else:
         if not product.visible:

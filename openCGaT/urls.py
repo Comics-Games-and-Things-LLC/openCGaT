@@ -32,6 +32,8 @@ urlpatterns = [
                   path('accounts/profile/', include('checkout.urls-account')),
                   path('accounts/', include('allauth.urls')),
                   path('shop/', include('shop.urls')),
+                  path('', include('dist_requests.urls')),
+
                   path('download/', include('digitalitems.urls-download')),
                   path('admin/', admin.site.urls),
 

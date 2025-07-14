@@ -397,6 +397,14 @@ class Product(PolymorphicModel):
             item__in=Item.objects.filter(product=self, partner=partner)).order_by("-timestamp")
         return context
 
+    def get_request_info(self, partner):
+        from dist_requests.models import DistRequestLine
+        requests = DistRequestLine.objects.filter(product=self, request__partner=partner).order_by("-request__date")
+        context = {}
+        context["requests"] = requests
+        context["x_requested"] = requests.aggregate(sum=Sum("quantity"))['sum']
+        return context
+
     @staticmethod
     def create_from_dist_info(info):
         product = Product.objects.create(

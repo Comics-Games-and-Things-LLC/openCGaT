@@ -20,6 +20,9 @@ class DistRequest(models.Model):
             ("partner", "distributor", "request_name"),
         )
 
+    def __str__(self):
+        return f"{self.distributor} {self.request_name} {self.date}"
+
 
 class DistRequestLine(models.Model):
     request = models.ForeignKey(DistRequest, on_delete=models.CASCADE)

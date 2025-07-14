@@ -86,6 +86,47 @@
 
     </div>
 {% endif %}
+{% if requests %}
+    <div class="row mb-3 p-0.5">
+        <h2> Requests ({{ x_requested }} Requested) </h2>
+        <p>
+            <a href="{% url 'log_dist_request' partner_slug=partner.slug  product_slug=product.slug %}">
+                Log New Request
+            </a>
+        </p>
+        <table class="table">
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Distributor</th>
+                <th scope="col">Request Name</th>
+                <th scope="col">Quantity</th>
+            </tr>
+            {% for line in requests %}
+                <tr>
+                    <td>{{ line.request.date }}</td>
+                    <td>{{ line.request.distributor }}</td>
+                    <td>
+                        {{ line.request.request_name }}
+                    </td>
+                    <td>{{ line.quantity }}</td>
+                </tr>
+                {% if line.notes %}
+                    <tr class="table-secondary">
+                        <td colspan="2"></td>
+                        <td colspan="2"><small> <i>{{ line.notes }} </i></small>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="row mb-3 p-0.5">
+        <a href="{% url 'log_dist_request' partner_slug=partner.slug  product_slug=product.slug %}">
+            Log New Request
+        </a>
+    </div>
+{% endif %}
 {% if inventory_log %}
     <div class="row mb-3 p-0.5">
         <h2> Inventory Log </h2>
