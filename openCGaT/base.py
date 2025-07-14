@@ -31,6 +31,7 @@ apps_to_install = [
     'home_and_info',
     'shop',
     'intake',
+    'dist_requests',
     'digitalitems',
     'checkout',
     'inventory_report',
