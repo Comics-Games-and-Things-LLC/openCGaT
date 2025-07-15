@@ -413,7 +413,9 @@
             <div class="row mb-3 p-0.5">
                 <p> {{ product.description|richtext }} </p>
             </div>
-            {% include 'shop/snippets/sales_history.html' %}
+            {% if partner %}
+                {% include 'shop/snippets/sales_history.html' %}
+            {% endif %}
         </div>
     </div>
 
