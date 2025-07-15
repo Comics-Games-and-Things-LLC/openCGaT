@@ -120,7 +120,7 @@
             {% endfor %}
         </table>
     </div>
-{% else %}
+{% elif product %}
     <div class="row mb-3 p-0.5">
         <a href="{% url 'log_dist_request' partner_slug=partner.slug  product_slug=product.slug %}">
             Log New Request
