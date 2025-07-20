@@ -7,7 +7,7 @@ import POSPayment from "./POSPayment"
 import CartBody from "./CartBody";
 import CartSelector from "./CartSelector";
 import {RootState, useAppDispatch} from "../store";
-import {addCustomPOSItem, addNewPOSItem, errorsClear, setPOS, setPOSOwner,} from "../reducers/cartSlice";
+import {addCustomPOSItem, addNewPOSItem, clearPOSOwner, errorsClear, setPOS, setPOSOwner,} from "../reducers/cartSlice";
 import {useSelector} from "react-redux";
 import {Autocomplete, TextField} from "@mui/material";
 import getCookie from "./get_cookie";
@@ -113,6 +113,10 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
         (event.target as HTMLFormElement).reset()
     }
 
+    const HandleClearOwner = () => {
+        dispatch(clearPOSOwner())
+    }
+
     const handleEmailChange = (event: React.SyntheticEvent, value: string, reason: string) => {
         console.log(reason)
         setCurrentEmail(value)
@@ -199,6 +203,7 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                                                                                   label="Email"/>}
                                 />
                                 <input type="submit" value="Set" className="btn btn-secondary"/>
+                                <button onClick={HandleClearOwner} className="btn btn-warning">Clear</button>
                             </form>
 
 

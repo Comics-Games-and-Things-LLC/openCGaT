@@ -303,6 +303,29 @@ export const setPOSOwner = createAsyncThunk<// Return type of the payload creato
     }
 );
 
+export const clearPOSOwner = createAsyncThunk<// Return type of the payload creator
+    object,
+    // First argument to the payload creator
+    void,
+    // Types for ThunkAPI
+    {
+        state: RootState;
+    }>(
+    "cart/setOwnerPOS",
+    async (payload: void, {getState, dispatch}) => {
+        const pos = getState().cart.pos;
+        let response = await fetch(`${pos.url}/${pos.active_cart.id}/clear_owner/`);
+
+        if (response.ok) {
+            dispatch(updatePOSCart());
+            return response.json();
+        } else {
+            let text = await response.text();
+            throw new Error("Request Failed: " + text);
+        }
+    }
+);
+
 
 interface setPOSDiscountCodeProps {
     code: string;

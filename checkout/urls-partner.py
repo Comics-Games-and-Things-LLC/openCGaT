@@ -43,6 +43,7 @@ urlpatterns = [
     path('pos/<int:cart_id>/add_custom/', pos_add_custom, name='pos_add_custom'),
     path('pos/<int:cart_id>/set_owner/', pos_set_owner, name='pos_set_owner'),
     path('pos/<int:cart_id>/suggest_owner/', pos_suggest_owner, name='pos_suggest_owner'),
+    path('pos/<int:cart_id>/clear_owner/', pos_clear_owner, name='pos_clear_owner'),
 
     path('pos/<int:cart_id>/set_code/', pos_set_code, name='pos_set_code'),
 

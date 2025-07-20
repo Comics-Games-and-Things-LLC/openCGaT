@@ -676,6 +676,17 @@ def pos_set_owner(request, partner_slug, cart_id):
     return HttpResponse(status=400)
 
 
+def pos_clear_owner(request, partner_slug, cart_id):
+    partner = get_partner_or_401(request, partner_slug)
+    cart = Cart.objects.get(id=cart_id)
+    if cart.status == Cart.COMPLETED:
+        return HttpResponse(status=400)
+    cart.owner = None
+    cart.email = None
+    cart.save()
+    return HttpResponse(status=200)
+
+
 def pos_set_code(request, partner_slug, cart_id):
     partner = get_partner_or_401(request, partner_slug)
     cart = Cart.objects.get(id=cart_id)
