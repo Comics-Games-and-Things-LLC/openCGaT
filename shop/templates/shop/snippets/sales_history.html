@@ -6,6 +6,7 @@
                 <th scope="col">ID</th>
                 <th scope="col">User</th>
                 <th scope="col">Date</th>
+                <th scope="col">Paid?</th>
                 <th scope="col">Price per unit</th>
                 <th scope="col">Quantity</th>
                 <th scope="col">Subtotal</th>
@@ -34,6 +35,7 @@
                             {{ line.cart.date_submitted }}
                         </a>
                     </td>
+                    <td>{% if line.cart.is_paid %} Paid {% endif %}</td>
                     <td>{{ line.price_per_unit_at_submit }}</td>
                     <td>{{ line.quantity }}</td>
 
