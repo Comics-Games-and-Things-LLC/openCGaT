@@ -16,7 +16,7 @@ class Command(BaseCommand):
         partner = Partner.objects.get(name__icontains="Valhalla")
 
         for i in range(1, 217):
-            sku = f"AMYWP3{str(i).rjust(3, "0")}"
+            sku = f"AMYWP3{str(i).rjust(3, '0')}"
             print(sku)
             try:
                 if Product.objects.filter(publisher_sku=sku).exists():
