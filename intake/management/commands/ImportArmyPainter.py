@@ -2,6 +2,7 @@ import time
 
 from django.core.management.base import BaseCommand
 
+from images.models import Image
 from intake.distributors.acd_armypainter import query_for_info
 from intake.models import *
 from shop.models import Publisher, InventoryItem
@@ -26,6 +27,19 @@ class Command(BaseCommand):
                     info = query_for_info(sku, debug=False)
                     if Product.objects.filter(name=info['Name']).exists():
                         product = Product.objects.get(name=info['Name'])
+                        if info['SKU']:
+                            product.publisher_sku = info['SKU']
+                        if info["Release Date"]:
+                            product.release_date = info["Release Date"]
+                        if info["Picture Source"]:
+                            image = Image.create_from_external_url(info["Picture Source"])
+                            product.primary_image = image
+                            product.attached_images.add(image)
+                        if info["Publisher"]:
+                            if Publisher.objects.filter(name=info["Publisher"]).exists():
+                                product.publisher = Publisher.objects.filter(name=info["Publisher"]).first()
+                        if info["MSRP"]:
+                            product.msrp = Money(info["MSRP"], "USD")
                     else:
                         product = Product.create_from_dist_info(info)
             except Exception as e:
@@ -38,6 +52,9 @@ class Command(BaseCommand):
             product.listed_on_release = True
             product.purchasable_on_release = True
             product.save()
+            if not product.msrp:
+                print("Do not have MSRP set")
+                continue
             price = product.get_price_from_rule(partner)
 
             item, created = InventoryItem.objects.get_or_create(partner=partner,
