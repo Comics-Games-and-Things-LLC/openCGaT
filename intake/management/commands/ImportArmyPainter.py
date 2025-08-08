@@ -25,7 +25,8 @@ class Command(BaseCommand):
                     time.sleep(1)
                     info = query_for_info(sku, debug=False)
                     product = Product.create_from_dist_info(info)
-            except Exception:
+            except Exception as e:
+                print(e)
                 continue
             product.publisher = publisher
             product.categories.add(category)
