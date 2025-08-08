@@ -18,12 +18,15 @@ class Command(BaseCommand):
         for i in range(1, 217):
             sku = f"AMYWP3{str(i).rjust(3, "0")}"
             print(sku)
-            if Product.objects.filter(publisher_sku=sku).exists():
-                product = Product.objects.get(publisher_sku=sku)
-            else:
-                time.sleep(1)
-                info = query_for_info(sku, debug=False)
-                product = Product.create_from_dist_info(info)
+            try:
+                if Product.objects.filter(publisher_sku=sku).exists():
+                    product = Product.objects.get(publisher_sku=sku)
+                else:
+                    time.sleep(1)
+                    info = query_for_info(sku, debug=False)
+                    product = Product.create_from_dist_info(info)
+            except Exception:
+                continue
             product.publisher = publisher
             product.categories.add(category)
             product.page_is_draft = False
