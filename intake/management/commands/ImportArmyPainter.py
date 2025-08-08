@@ -24,7 +24,10 @@ class Command(BaseCommand):
                 else:
                     time.sleep(1)
                     info = query_for_info(sku, debug=False)
-                    product = Product.create_from_dist_info(info)
+                    if Product.objects.filter(name=info['Name']).exists():
+                        product = Product.objects.filter(name=info['Name'])
+                    else:
+                        product = Product.create_from_dist_info(info)
             except Exception as e:
                 print(e)
                 continue
