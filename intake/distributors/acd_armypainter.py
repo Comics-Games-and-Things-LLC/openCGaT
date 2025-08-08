@@ -3,7 +3,6 @@ import json
 import traceback
 from decimal import ROUND_DOWN
 
-import pandas
 import requests
 from bs4 import BeautifulSoup
 
@@ -11,10 +10,6 @@ from intake.models import *
 
 dist_name = "ACD_ARMY_PAINTER"
 npi = .47
-
-
-
-
 
 
 def query_for_info(sku, get_full=False, debug=False):
@@ -54,6 +49,11 @@ def query_for_info(sku, get_full=False, debug=False):
         for field in item_details["customFields"]:
             item_details[field["name"]] = field["value"]
 
+        release_date = None
+        release_date_text = item_details.get("release_date")
+        if release_date_text:
+            release_date = datetime.strptime(release_date_text, "%Y%M%d").date
+
         default_image = item_details["defaultImage"]
         image_url = None
         if default_image:
@@ -66,7 +66,7 @@ def query_for_info(sku, get_full=False, debug=False):
             "SKU": item_details["sku"],
             "Description": fix_text(item_details["description"]),
             "Picture Source": image_url,
-            "Release Date": item_details.get("release_date"),
+            "Release Date": release_date,
             "Publisher": item_details["manufacturer_code"],  # TODO: translate into a category
         }
     except Exception as e:
