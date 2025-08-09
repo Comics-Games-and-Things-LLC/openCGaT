@@ -21,7 +21,7 @@ class Command(BaseCommand):
             print(sku)
             try:
                 time.sleep(1)
-                info = query_for_info(sku, debug=True)
+                info = query_for_info(sku, debug=False)
             except Exception as e:
                 print(e)
                 continue
