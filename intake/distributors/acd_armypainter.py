@@ -52,7 +52,7 @@ def query_for_info(sku, get_full=False, debug=False):
         release_date = None
         release_date_text = item_details.get("release_date")
         if release_date_text:
-            release_date = datetime.strptime(release_date_text, "%Y%M%d").date
+            release_date = datetime.strptime(release_date_text, "%Y%M%d").date()
 
         default_image = item_details["defaultImage"]
         image_url = None
