@@ -20,31 +20,29 @@ class Command(BaseCommand):
             sku = f"AMYWP3{str(i).rjust(3, '0')}"
             print(sku)
             try:
-                if Product.objects.filter(publisher_sku=sku).exists():
-                    product = Product.objects.get(publisher_sku=sku)
-                else:
-                    time.sleep(1)
-                    info = query_for_info(sku, debug=False)
-                    if Product.objects.filter(name=info['Name']).exists():
-                        product = Product.objects.get(name=info['Name'])
-                        if info['SKU']:
-                            product.publisher_sku = info['SKU']
-                        if info["Release Date"]:
-                            product.release_date = info["Release Date"]
-                        if info["Picture Source"]:
-                            image = Image.create_from_external_url(info["Picture Source"])
-                            product.primary_image = image
-                            product.attached_images.add(image)
-                        if info["Publisher"]:
-                            if Publisher.objects.filter(name=info["Publisher"]).exists():
-                                product.publisher = Publisher.objects.filter(name=info["Publisher"]).first()
-                        if info["MSRP"]:
-                            product.msrp = Money(info["MSRP"], "USD")
-                    else:
-                        product = Product.create_from_dist_info(info)
+                time.sleep(1)
+                info = query_for_info(sku, debug=True)
             except Exception as e:
                 print(e)
                 continue
+            if Product.objects.filter(name=info['Name']).exists():
+                product = Product.objects.get(name=info['Name'])
+                if info['SKU']:
+                    product.publisher_sku = info['SKU']
+                if info["Release Date"]:
+                    product.release_date = info["Release Date"]
+                if info["Picture Source"]:
+                    image = Image.create_from_external_url(info["Picture Source"])
+                    product.primary_image = image
+                    product.attached_images.add(image)
+                if info["Publisher"]:
+                    if Publisher.objects.filter(name=info["Publisher"]).exists():
+                        product.publisher = Publisher.objects.filter(name=info["Publisher"]).first()
+                if info["MSRP"]:
+                    product.msrp = Money(info["MSRP"], "USD")
+            else:
+                product = Product.create_from_dist_info(info)
+
             product.publisher = publisher
             product.categories.add(category)
             product.page_is_draft = False
