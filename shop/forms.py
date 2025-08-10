@@ -47,6 +47,7 @@ class AddProductForm(forms.ModelForm):
                   'visible_on_preorder_secondary', 'purchasable_on_preorder_secondary', 'listed_on_preorder_secondary',
                   'in_store_early_release_date',
                   'description',
+                  'private_notes',
                   'publisher',
                   'barcode', 'needs_barcode_printed',
                   'publisher_sku', 'publisher_short_sku',
@@ -75,6 +76,7 @@ class AddProductForm(forms.ModelForm):
             self.fields.pop('all_retail')
         self.fields['name'].widget.attrs['class'] = 'w-full'
         self.fields['description'].widget.attrs['class'] = 'w-full'
+        self.fields['private_notes'].widget.attrs['class'] = 'w-full'
 
 
 class RelatedProductsForm(forms.ModelForm):

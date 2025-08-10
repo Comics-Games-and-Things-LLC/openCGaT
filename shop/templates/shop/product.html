@@ -414,6 +414,12 @@
                 <p> {{ product.description|richtext }} </p>
             </div>
             {% if partner %}
+                {% if product.private_notes %}
+                    <div class="row mb-3 p-0.5">
+                        <h3>Private Notes:</h3>
+                    </div>
+                    <p> {{ product.private_notes|richtext }} </p>
+                {% endif %}
                 {% include 'shop/snippets/sales_history.html' %}
             {% endif %}
         </div>
