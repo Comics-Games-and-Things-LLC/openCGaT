@@ -5,16 +5,7 @@
 
 {% block title %}{% if manage %} Manage Products {% else %} Shop {% endif %}{% endblock %}
 {% block card %}
-    {% with entry as product %}
-        {% with all_items=product|get_items_for_partner:partner_slug %}
-            {% with filtered_items=product|items_set_with_custom_manager %}
-                {% include 'shop/snippets/item_list_entry.html' with first=1 item=filtered_items|first %}
-                {% for item in filtered_items|skip_first %}
-                    {% include 'shop/snippets/item_list_entry.html' %}
-                {% endfor %}
-            {% endwith %}
-        {% endwith %}
-    {% endwith %}
+    {% include 'shop/snippets/item_list_entry.html' with first=1 item=entry %}
 {% endblock card %}
 
 {% block alternate %}

@@ -5,7 +5,6 @@ from math import floor
 from allauth.account.models import EmailAddress
 from django import template
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q
 
 from checkout.models import Cart
@@ -170,11 +169,11 @@ def mto_items(items):
 
 
 @register.filter()
-def get_items_for_partner(product, partner_slug, partner=None):
+def get_items_for_partner(item, partner_slug):
     if partner_slug:
-        return Item.objects.filter(partner__slug=partner_slug, product=product)
+        return Item.objects.filter(partner__slug=partner_slug, product=item.product)
     else:
-        return Item.objects.filter(product=product)
+        return Item.objects.filter(product=item.product)
 
 
 @register.filter()

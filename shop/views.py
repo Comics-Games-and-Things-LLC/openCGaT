@@ -2,19 +2,15 @@ import datetime
 
 from allauth.account.models import EmailAddress
 from allauth.account.utils import send_email_confirmation
-from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q, F
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from djmoney.money import Money
-from polymorphic.managers import PolymorphicManager
 
 from checkout.models import Cart
 from digitalitems.models import DigitalItem
@@ -71,196 +67,33 @@ def product_list(request, partner_slug=None):
     drafts_only = False
     missing_image = False
     collection = None
+    items = None
     if form.is_valid():
-        restock_alert_only = form.cleaned_data.get('restock_alert_only')
-        if form.cleaned_data.get('in_stock_only'):
-            in_stock_only = True
-        if form.cleaned_data.get('available_for_order_only'):
-            available_for_order_only = True
-        if form.cleaned_data.get('allocated_only'):
-            allocated_only = True
-        if form.cleaned_data.get('out_of_stock_only'):
-            out_of_stock_only = True
-        if form.cleaned_data.get('sold_out_only'):
-            sold_out_only = True
-        if form.cleaned_data.get('templates'):
-            only_templates = True
-        if form.cleaned_data.get('featured_products_only'):
-            featured_products_only = True
-        if form.cleaned_data.get('price_minimum'):
-            price_low = form.cleaned_data.get('price_minimum')
-        if form.cleaned_data.get('price_maximum'):
-            price_high = form.cleaned_data.get('price_maximum')
-        if form.cleaned_data.get('product_type'):
-            selected_product_types = form.cleaned_data.get('product_type')
-        if form.cleaned_data.get('publisher'):
-            publisher = form.cleaned_data.get('publisher')
-        if form.cleaned_data.get('game'):
-            game = form.cleaned_data.get('game')
-        if form.cleaned_data.get('faction'):
-            faction = form.cleaned_data.get('faction')
-        distributor = form.cleaned_data.get('distributor')
-        if form.cleaned_data.get('search'):
-            search_query = form.cleaned_data.get('search')
-        if partner_slug:
-            # Partner is only populated if viewed from a management url
-            partner = get_partner_or_401(request, partner_slug)
-        else:
-            partner_slug = request.GET.get('partner', default='')
-        if form.cleaned_data.get('categories'):
-            for category in form.cleaned_data.get('categories'):
-                categories_to_include += category.get_descendants(
-                    include_self=True)
-        drafts_only = form.cleaned_data.get('drafts_only')
-        missing_image = form.cleaned_data.get('missing_image')
-        collection = form.cleaned_data.get('collection')
-    else:
-        if partner_slug:
-            partner = get_partner_or_401(request, partner_slug)
-
-    if site_partner:
-        partner_slug = site_partner.slug
-
-    displayed_items = Item.objects.none()
-    all_items = Item.objects.apply_generic_filters(partner_slug=partner_slug,
-                                                   price_low=price_low, price_high=price_high,
-                                                   featured=featured_products_only)
-    if not manage:
-        all_items = all_items.filter_listed()
-    for product_type in selected_product_types:
-        if product_type == Item.DIGITAL:  # Digital
-            displayed_items = displayed_items \
-                              | all_items.instance_of(apps.get_model('digitalitems.DigitalItem'))
-        if product_type == Item.INVENTORY:  # Inventory
-            inv_items = all_items.instance_of(InventoryItem)
-            if restock_alert_only:
-                inv_items = inv_items.filter(inventoryitem__enable_restock_alert=True,
-                                             inventoryitem__current_inventory__lte=F(
-                                                 'inventoryitem__low_inventory_alert_threshold'))
-            elif available_for_order_only:
-                inv_items = inv_items.filter(
-                    Q(inventoryitem__current_inventory__gte=1)
-                    |
-                    Q(product__release_date__gt=datetime.datetime.now(), inventoryitem__preallocated=True,
-                      inventoryitem__preallocated_inventory__gte=1)
-                    |
-                    Q(product__release_date__gt=datetime.datetime.now(), inventoryitem__allow_backorders=1,
-                      inventoryitem__allow_extra_preorders=1)
-                    |
-                    Q(product__release_date__lt=datetime.datetime.now(), inventoryitem__allow_backorders=1)
-
-                )
-            elif allocated_only:
-                inv_items = inv_items.filter(
-                    Q(inventoryitem__current_inventory__gte=1)
-                    |
-                    Q(product__release_date__gt=datetime.datetime.now(), inventoryitem__preallocated=True,
-                      inventoryitem__preallocated_inventory__gte=1)
-                )
-
-            elif in_stock_only:
-                inv_items = inv_items.filter(
-                    inventoryitem__current_inventory__gte=1)
-            elif out_of_stock_only:
-                inv_items = inv_items.filter(
-                    inventoryitem__current_inventory__lte=0, inventoryitem__allow_backorders=True)
-            elif sold_out_only:
-                inv_items = inv_items.filter(
-                    inventoryitem__current_inventory__lte=0).exclude(inventoryitem__allow_backorders=True)
-            displayed_items = displayed_items | inv_items
-        if product_type == Item.MADE_TO_ORDER:  # Made to order
-            mto_items = all_items.instance_of(MadeToOrder)
-            if in_stock_only:
-                mto_items = mto_items.filter(
-                    madetoorder__current_inventory__gte=1)
-            elif out_of_stock_only:
-                mto_items = mto_items.filter(
-                    madetoorder__current_inventory__lte=0)
-            displayed_items = displayed_items | mto_items
-
-    # this next section with the custom manager is used
-    # to ensure we can filter items to the appropriate settings on the page
-    valid_item_ids = displayed_items.values_list('id', flat=True)
-
-    # we know which items we want to display back here (`displayed_items`)
-    # but we don't want to send those to the template and do the resolution logic there,
-    # so we'll pull this to a custom manager
-    class ProductItemFilteredManager(PolymorphicManager):
-        def get_queryset(self):
-            return super().get_queryset().filter(id__in=valid_item_ids)
-
-    # that way you can just call product.item_set(manager='filtered_items') and get the filtered items!
-    # this only works in the product list view.
-    Item.filtered_items = ProductItemFilteredManager()
-
-    displayed_products = Product.objects.filter(item__in=displayed_items).prefetch_related('item_set')
-
-    if partner:
-        # This partner filter is for if the partner is viewing from the management url
-        partner = get_partner_or_401(request, partner_slug)
-        if not (  # Do not add extra products when filtering stock
-                in_stock_only or out_of_stock_only or sold_out_only or restock_alert_only):
-            if len(selected_product_types) == max_product_types or len(selected_product_types) == 0:
-                # If viewing all products, show products with no items (and thus no item type)
-                incomplete_products = Product.objects.filter(
-                    item=None, partner=partner)
-                displayed_products = displayed_products | incomplete_products
-            if partner.retail_partner:
-                # Show the all retail list so the user can add new products from it.
-                all_retail_list = Product.objects.filter(all_retail=True)
-                displayed_products = displayed_products | all_retail_list
-        if drafts_only:
-            # Templates are drafts so we have to exclude them as well.
-            displayed_products = displayed_products.filter(page_is_draft=True, page_is_template=False)
-        # Partners can view all products regardless of view release dates.
-    else:
-        displayed_products = displayed_products.filter_listed(manage)
-
-    if only_templates:
-        displayed_products = displayed_products.filter(page_is_template=True)
-    else:
-        displayed_products = displayed_products.filter(page_is_template=False)
-
-    if search_query:
-        displayed_products = displayed_products.filter(
-            Q(name__search=SearchQuery(search_query, search_type='websearch'))
-            | Q(barcode=search_query)
-            | Q(publisher_short_sku=search_query)
-            | Q(publisher_sku=search_query)
-            | Q(description__search=SearchQuery(search_query, search_type='websearch'))
+        categories_to_include = []
+        for category in form.cleaned_data.get('categories'):
+            categories_to_include += category.get_descendants(
+                include_self=True)
+        items = item_list_filter(
+            managing_partner=partner,
+            search_query=form.cleaned_data.get('search'),
+            in_stock_only=form.cleaned_data.get('in_stock_only'),
+            out_of_stock_only=form.cleaned_data.get('out_of_stock_only'),
+            sold_out_only=form.cleaned_data.get('sold_out_only'),
+            restock_alert_only=form.cleaned_data.get('restock_alert_only'),
+            featured_products_only=form.cleaned_data.get('featured_products_only'),
+            price_low=form.cleaned_data.get('price_minimum'),
+            price_high=form.cleaned_data.get('price_maximum'),
+            publisher=form.cleaned_data.get('publisher'),
+            game=form.cleaned_data.get('game'),
+            faction=form.cleaned_data.get('faction'),
+            distributor=form.cleaned_data.get('distributor'),
+            drafts_only=form.cleaned_data.get('drafts_only'),
+            missing_image=form.cleaned_data.get('missing_image'),
+            categories_to_include=categories_to_include,
+            order_by=form.cleaned_data.get('order_by'),
         )
-
-    if len(categories_to_include) != 0:
-        displayed_products = displayed_products.filter(
-            categories__in=categories_to_include)
-    if publisher:
-        displayed_products = displayed_products.filter(publisher=publisher)
-    if game:
-        displayed_products = displayed_products.filter(games=game)
-    if faction:
-        displayed_products = displayed_products.filter(factions=faction)
-    if distributor:
-        displayed_products = displayed_products.filter(publisher__available_through_distributors=distributor)
-
-    if missing_image:
-        displayed_products = displayed_products.filter(primary_image__isnull=True)
-
-    if collection:
-        displayed_products = displayed_products.filter(in_collection=collection)
-
-    displayed_products = displayed_products.distinct()
-
-    order_by = request.GET.get('order_by', default="-release_date")
-    reverse_sort = True if order_by[:1] == '-' else False
-
-    def invert_order_string(order_str):
-        return order_str[1:] if order_str.startswith('-') else '-' + order_str
-
-    secondary_sort_string = '-name'
-    secondary_order_string = invert_order_string(secondary_sort_string) if reverse_sort else secondary_sort_string
-
-    new_product_list = displayed_products.distinct().order_by(
-        order_by, secondary_order_string)
+    else:
+        items = item_list_filter()
 
     # Handle pageination
 
@@ -273,7 +106,7 @@ def product_list(request, partner_slug=None):
         if page_number is None or page_number <= 1:
             page_number = 1
 
-    paginator = Paginator(new_product_list, page_size)
+    paginator = Paginator(items, page_size)
     if page_number > paginator.num_pages:
         page_number = 1
     page_obj = paginator.get_page(page_number)

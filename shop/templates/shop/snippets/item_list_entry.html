@@ -7,22 +7,22 @@
 <div class="">
     <div class="lg:max-h-64 flex flex-col lg:flex-row gap-4 lg:gap-6">
         <div class="w-full lg:w-64 h-64 flex-shrink-0">
-            <a href="product/{{ product.slug }}/"
+            <a href="product/{{ item.product.slug }}/"
                style="text-decoration: none; color: inherit;">
-                {% if product.primary_image and first %}
+                {% if item.product.primary_image and first %}
                     <img class='w-full h-full object-cover rounded-t-md lg:rounded-t-none {% if filtered_items|length > 1 %}lg:rounded-br-md{% endif %}'
-                         src="{{ product.primary_image.image_url }}"
-                         alt="{{ product.primary_image.alt_text }}">
+                         src="{{ item.product.primary_image.image_url }}"
+                         alt="{{ item.product.primary_image.alt_text }}">
                 {% endif %}
             </a>
         </div>
         <div class="flex-grow lg:grid lg:grid-cols-2 lg:grid-rows-2-first-min lg:py-3 px-3 lg:px-0 ">
             <div class="flex flex-row col-span-2 items-center justify-between">
-                <a href="product/{{ product.slug }}/"
+                <a href="product/{{ item.product.slug }}/"
                    class="unstyled no-underline hover:no-underline text-black hover:text-black">
                     <h1 class="text-2xl lg:text-xl 2xl:text-2xl font-bold">
                         {% if first %}
-                            {{ product.name }}
+                            {{ item.product.name }}
                         {% endif %}
                     </h1>
                 </a>
@@ -30,30 +30,11 @@
                     <span class="text-gray-300">
                         {% include 'shop/snippets/visibility_reminders.html' %}
                     </span>
-                    <span class=" {% if all_items|length > 1 %}text-gray-300{% else %}text-gray-500{% endif %}">
-                        {% for itemIcon in all_items %}
-                            {% if itemIcon|is_inventory_item %}
-                                <i title="Physical item" class="fas fa-box {% if itemIcon == item %}text-gray-600
-                                    {% else %}
-                                    {% if all_items|length > filtered_items|length %} order-first" title="This item has additional item types available. Enter the product page to view.{% endif %}{% endif %}"></i>
-                            {% endif %}
-                            {% if itemIcon|is_download_item %}
-                                <i title="Digital item" class="fas fa-download {% if itemIcon == item %}text-gray-600
-                                    {% else %}
-                                    {% if all_items|length > filtered_items|length %} order-first" title="This item has additional item types available. Enter the product page to view.{% endif %}{% endif %}"></i>
-                            {% endif %}
-                            {% if itemIcon|is_mto_item %}
-                                <i title="Made-to-order item" class="fas fa-hammer {% if itemIcon == item %}text-gray-600
-                                    {% else %}
-                                    {% if all_items|length > filtered_items|length %} order-first" title="This item has additional item types available. Enter the product page to view.{% endif %}{% endif %}"></i>
-                            {% endif %}
-                        {% endfor %}
-                    </span>
                 </span>
             </div>
             {% if first %}
                 <div class="prose overflow-hidden first-child-line-clamp-3 all-other-children-hidden">
-                    {{ product.description|richtext }}
+                    {{ item.product.description|richtext }}
                 </div>
             {% else %}
                 <div></div>
@@ -64,13 +45,13 @@
                     {% if item.get_inventory > 0 %}
                         <p class="text-gray-400"><span class="text-gray-500 font-bold">{{ item.get_inventory }}</span>
                             Available
-                            {% if product.is_preorder %}
+                            {% if item.product.is_preorder %}
                                 for <span class="font-bold text-primary-700">Preorder</span>
                             {% endif %}
                         </p>
                     {% else %}
                         {% if item.allow_backorders %}
-                            {% if product.is_preorder %}
+                            {% if item.product.is_preorder %}
                                 <p class="font-bold text-primary-700">Preorderable</p>
                             {% else %}
                                 <p class="font-bold text-yellow-700">Backorder</p>
@@ -83,76 +64,60 @@
                         {{ item.low_inventory_alert_threshold }} Threshold
                     </p>
                 {% endif %}
-                {% if product.msrp %}
+                {% if item.product.msrp %}
                     <p class="text-gray-400">
-                        MSRP {{ product.msrp }}
+                        MSRP {{ item.product.msrp }}
                     </p>
                 {% endif %}
-                {% if partner and product.publisher_sku %}
+                {% if partner and item.product.publisher_sku %}
                     <p class="text-gray-400">
                         SKU:
                         <span class="font-bold text-primary-700"
                               onclick="CopyToClipboard(this)"> 
-                            {{ product.publisher_sku }} 
+                            {{ item.product.publisher_sku }} 
                         </span>
                     </p>
                 {% endif %}
-                {% if partner and product.publisher_short_sku %}
+                {% if partner and item.product.publisher_short_sku %}
                     <p class="text-gray-400">
                         Short SKU:
                         <span class="font-bold text-primary-700"
                               onclick="CopyToClipboard(this)"> 
-                            {{ product.publisher_short_sku }} 
+                            {{ item.product.publisher_short_sku }} 
                         </span>
                     </p>
                 {% endif %}
-                {% if partner and product.barcode %}
+                {% if partner and item.product.barcode %}
                     <p class="text-gray-400">
                         Barcode:
                         <span class="font-bold text-primary-700"
                               onclick="CopyToClipboard(this)"> 
-                            {{ product.barcode }} 
+                            {{ item.product.barcode }} 
                         </span>
                     </p>
                 {% endif %}
-                {% if product.in_store_pickup_only and not item|is_download_item %}
+                {% if item.product.in_store_pickup_only and not item|is_download_item %}
                     <p class="text-gray-400">
                         In-store pickup only
                     </p>
                 {% endif %}
-                {% if product.release_date %}
-                    {% if item.product.is_preorder and item.product.in_store_early_release_date %}
+                {% if item.product.release_date %}
+                    {% if item.item.product.is_preorder and item.item.product.in_store_early_release_date %}
                         <p class="font-bold text-primary-700">
-                            In-Store Early Release {{ item.product.in_store_early_release_date }}
+                            In-Store Early Release {{ item.item.product.in_store_early_release_date }}
                         </p>
                     {% endif %}
                     <p class="text-gray-400">
-                        Released on <span class="font-bold text-gray-500">{{ product.release_date }}</span>
+                        Released on <span class="font-bold text-gray-500">{{ item.product.release_date }}</span>
                     </p>
                 {% endif %}
             </div>
         </div>
         <div class="w-full lg:w-72 flex flex-col gap-2 py-3 bg-gray-100 p-4 flex-shrink-0 rounded-b-md lg:rounded-b-none text-3xl font-semibold">
-            {% if item|is_inventory_item %}
-                <p>
-                    <!-- <i class="fas fa-box"></i> -->
-                    {% include 'shop/snippets/discounted_price.html' with item=all_items|inventory_items|cheapest_item_in_stock %}
-                </p>
-            {% elif item|is_download_item %}
-                <p>
-                    <!-- <i class="fas fa-download"></i> -->
-                    {% include 'shop/snippets/discounted_price.html' with item=all_items|download_items|cheapest_item %}
-                </p>
-            {% elif item|is_mto_item %}
-                <p>
-                    <!-- <i class="fas fa-hammer"></i> -->
-                    {% include 'shop/snippets/discounted_price.html' with item=all_items|mto_items|cheapest_item %}
-                </p>
-            {% elif item %}
-                <p>
-                <!-- <i class="fas fa-hammer"></i> -->
+            <p>
+                <!-- <i class="fas fa-box"></i> -->
                 {% include 'shop/snippets/discounted_price.html' %}
-            {% endif %}
+            </p>
             {% if not item|purchased:user %}
                 {% if item.external_url %}
                     <a href="{{ item.external_url }}">
@@ -170,7 +135,7 @@
                 {% endif %}
             {% else %}
                 {% if item|is_download_item %}
-                    <a href="product/{{ product.slug }}/"
+                    <a href="product/{{ item.product.slug }}/"
                        class="unstyled no-underline hover:no-underline text-black hover:text-black">
                         <h1 class="inline-flex items-center justify-center px-6 py-3 border
                             border-transparent text-xl font-medium rounded-md shadow-sm text-white focus:outline-none
