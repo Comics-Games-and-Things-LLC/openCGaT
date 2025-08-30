@@ -166,12 +166,12 @@ class Product(PolymorphicModel):
                                     'link'])
 
     private_notes = RichTextField(blank=True, null=True,
-                                features=[
-                                    'h2', 'h3', 'h4',
-                                    'bold', 'italic',
-                                    'ol', 'ul',
-                                    'hr',
-                                    'link'])
+                                  features=[
+                                      'h2', 'h3', 'h4',
+                                      'bold', 'italic',
+                                      'ol', 'ul',
+                                      'hr',
+                                      'link'])
 
     msrp = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True)
     map = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True)
@@ -616,6 +616,8 @@ class InventoryItem(Item):
     enable_restock_alert = models.BooleanField(default=False)
     low_inventory_alert_threshold = models.IntegerField(default=0)
 
+    last_stocked_time = models.DateTimeField(null=True, blank=True)
+
     def save(self, *args, **kwargs):
         reason = kwargs.pop('change_reason', "Manual edit or Other")
         skip_log = kwargs.pop('skip_log', False)  # must pop kwargs before passing to regular constructor
@@ -647,6 +649,8 @@ class InventoryItem(Item):
                 if ii.inv_log.filter(line=line).exists():
                     return False  # If we already have a log of updating the inventory, quit
                     # This is how we prevent double submits affecting inventory twice.
+            if quantity >= 1:
+                ii.last_stocked_time = timezone.now()
 
             ii.current_inventory += quantity
             if ii.current_inventory <= 0:

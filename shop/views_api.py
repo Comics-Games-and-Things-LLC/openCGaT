@@ -2,6 +2,7 @@ from django.contrib.postgres.search import SearchQuery
 from django.db.models import F, Q
 from moneyed import Money
 
+from shop.forms import FiltersForm
 from shop.models import Item
 
 
@@ -87,17 +88,30 @@ def item_list_filter(managing_partner=None,
     def invert_order_string(order_str):
         return order_str[1:] if order_str.startswith('-') else '-' + order_str
 
-    order_str=order_by
-    if order_str.startswith('-'):
-        order_str = order_str[1:]
-    if order_str not in ['name', 'release_date', 'price']:
-        raise ValueError("Unsupported sort method")
-    else:
-        if order_str == 'name':
-            order_by = 'product__name'
-        elif order_str == 'release_date':
-            order_by = 'product__release_date'
+    # Take the reverse off temporarily, re-apply at the end
+    if order_by.startswith('-'):
+        order_by = order_by[1:]
 
+    if order_by not in [option[0] for option in FiltersForm.SORT_OPTIONS]:  # get keys from tuple
+        raise ValueError("Unsupported sort method")
+
+    # For the last stocked sort, exclude items without this property set.
+    if order_by == FiltersForm.SORT_LAST_STOCKED.lstrip("-"):
+        displayed_items = displayed_items \
+            .exclude(inventoryitem__last_stocked_time__isnull=True) \
+            .exclude(inventoryitem__isnull=True)
+
+    # Map these values to the actual fields
+    if order_by == FiltersForm.SORT_ALPHABETICAL.lstrip("-"):
+        order_by = 'product__name'
+    elif order_by == FiltersForm.SORT_RELEASE_DATE.lstrip("-"):
+        order_by = 'product__release_date'
+    elif order_by == FiltersForm.SORT_LAST_STOCKED.lstrip("-"):
+        order_by = 'inventoryitem__last_stocked_time'
+
+    print(order_by)
+
+    # re-apply reverse
     if reverse_sort:
         order_by = '-' + order_by
 

@@ -122,12 +122,15 @@ class FiltersForm(forms.Form):
     SORT_RELEASE_DATE = "-release_date"
     SORT_PRICE = "price"
     SORT_ALPHABETICAL = "name"
+    SORT_LAST_STOCKED = "-last_stocked_time"
 
     SORT_OPTIONS = (
         (SORT_RELEASE_DATE, "Release Date, New-Old"),
         (invert_order_string(SORT_RELEASE_DATE), "Release Date, Old-New"),
         (SORT_ALPHABETICAL, "Name, A-Z"),
         (invert_order_string(SORT_ALPHABETICAL), "Name, Z-A"),
+        (SORT_LAST_STOCKED, "Recent Arrivals, New-Old"),
+        (invert_order_string(SORT_LAST_STOCKED), "Recent Arrivals, Old-New"),
         # (SORT_PRICE, "Price")
     )
 
