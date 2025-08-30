@@ -81,9 +81,9 @@ class AddProductForm(forms.ModelForm):
 
 class RelatedProductsForm(forms.ModelForm):
     replaced_by = forms.ModelChoiceField(Product.objects.filter(all_retail=True).order_by('name'),
-                                         required=False)
+                                         required=False, widget=NameWidget)
     contains_product = forms.ModelChoiceField(Product.objects.filter(all_retail=True).order_by('name'),
-                                              required=False)
+                                              required=False, widget=NameWidget)
 
     class Meta:
         model = Product
