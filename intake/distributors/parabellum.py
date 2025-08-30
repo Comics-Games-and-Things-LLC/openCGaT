@@ -45,9 +45,13 @@ def import_records():
     tloak, _ = Game.objects.get_or_create(name="Conquest: The Last Argument of Kings")
     fb, _ = Game.objects.get_or_create(name="Conquest: First Blood")
 
-    file = pandas.ExcelFile('./intake/inventories/Para_Bellum_Order_Form_as_of_January_1_2023.xlsx')
-    dataframe = pandas.read_excel(file, header=10, sheet_name='Conquest Products')
-    log_file = open("reports/valhalla_inventory_price_adjustments.txt", "a")
+    file = pandas.ExcelFile('./intake/inventories/UPDATE Conquest Order Form -August 28, 2025.xlsx')
+    row_from_excel_with_accurate_headers = 10
+    dataframe = pandas.read_excel(file, header=row_from_excel_with_accurate_headers - 1,
+                                  sheet_name='WHOLESALE Order Form')
+    product_name_column = "Product Name -NEW 2000 point Armies (net pricing)"
+
+    log_file = open(f"reports/valhalla_inventory_price_adjustments_conquest_{datetime.today()}.txt", "a")
     log(log_file, "\n\nUpdating Para Bellum Prices \n")
 
     # Header is row 10 to skip bundles. Those rows also don't have MSRPS, just Net US.
@@ -69,7 +73,7 @@ def import_records():
             except Exception:
                 weight = None
 
-            name = "Conquest: " + row.get('Product Name - "Start Here" Collection')
+            name = "Conquest: " + row.get(product_name_column)
             if '(Command' in name:
                 name = name.split('(')[0].strip()
             barcode = row.get('Barcode')
@@ -111,13 +115,14 @@ def import_records():
                         product.barcode = barcode
                         product.all_retail = True
                 except Product.DoesNotExist:
-                    product, created = Product.objects.get_or_create(
-                        barcode=barcode,
-                        defaults={'all_retail': True,
-                                  'release_date': datetime.today(),
-                                  'description': description,
-                                  'name': name}
-                    )
+                    continue  # Do not make new products right now
+                    # product, created = Product.objects.get_or_create(
+                    #     barcode=barcode,
+                    #     defaults={'all_retail': True,
+                    #               'release_date': datetime.today(),
+                    #               'description': description,
+                    #               'name': name}
+                    # )
                 # product.name = name
                 product.weight = weight
                 product.publisher = publisher
