@@ -1,3 +1,5 @@
+import datetime
+
 from django.core.validators import URLValidator
 from django.db import models
 from modelcluster.fields import ParentalKey
@@ -38,6 +40,11 @@ class HomePage(Page):
                                          .exclude(inventoryitem__last_stocked_time__isnull=True) \
                                          .exclude(inventoryitem__isnull=True) \
                                          .order_by('-inventoryitem__last_stocked_time')[0:5]
+
+        context['featured_new_releases'] = featured_items \
+                                      .exclude(product__release_date__gt=datetime.date.today()) \
+                                      .exclude(inventoryitem__current_inventory=0)[0:5]
+
         context['featured_items'] = featured_items[0:5]
 
         return context

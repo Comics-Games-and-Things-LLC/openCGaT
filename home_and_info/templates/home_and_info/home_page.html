@@ -83,6 +83,20 @@
         <div class="row">
             <div class="col my-auto">
                 <h1 class="text-white bg-gray-700 text-center" style="text-shadow: 2px 2px black;">
+                    Featured New Releases</h1>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row h-100">
+                {% include 'snippets/product_small_cards.html' with featured_items=featured_new_releases %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col my-auto">
+                <h1 class="text-white bg-gray-700 text-center" style="text-shadow: 2px 2px black;">
                     Featured Products</h1>
             </div>
         </div>
