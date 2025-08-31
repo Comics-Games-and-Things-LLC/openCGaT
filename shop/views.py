@@ -10,7 +10,6 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from djmoney.money import Money
 
 from checkout.models import Cart
 from digitalitems.models import DigitalItem
@@ -44,30 +43,10 @@ def product_list(request, partner_slug=None):
     manual_form_fields = []
     if len(request.GET) != 0:
         form = FiltersForm(request.GET, initial=initial_data, manage=manage)
-
-    price_low, price_high = Money(0, 'USD'), Money(float('inf'), 'USD')
-    selected_product_types = ["1", "2", "3"]
-    max_product_types = len(selected_product_types)
-    search_query = ""
     partner = None
-    categories_to_include = []
-    filter_partner = None
-    in_stock_only = False
-    available_for_order_only = False
-    allocated_only = False
-    out_of_stock_only = False
-    sold_out_only = False
-    featured_products_only = None
-    restock_alert_only = False
-    only_templates = False
-    publisher = None
-    game = None
-    faction = None
-    distributor = None
-    drafts_only = False
-    missing_image = False
+    if partner_slug:
+        partner = get_partner_or_401(request, partner_slug)
     collection = None
-    items = None
     if form.is_valid():
         categories_to_include = []
         for category in form.cleaned_data.get('categories'):
