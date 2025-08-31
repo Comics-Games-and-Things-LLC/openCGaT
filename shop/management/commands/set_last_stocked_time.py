@@ -15,11 +15,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         for item in tqdm(InventoryItem.objects.all()):
-            if not item.inv_log.exists():
-                continue
-            last_log_entry = item.inv_log.latest('timestamp')
-            if last_log_entry.change_quantity > 0:
-                item.last_stocked_time = last_log_entry.timestamp
+            intake_log = item.inv_log.filter(change_quantity__gt=0)
+            if intake_log.exists():
+                item.last_stocked_time = intake_log.latest('timestamp').timestamp
             else:
                 item.last_stocked_time = None
             item.save()
