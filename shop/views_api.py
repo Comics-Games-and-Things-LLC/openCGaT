@@ -25,8 +25,10 @@ def item_list_filter(managing_partner=None,
                      distributor=None,
                      drafts_only=False,
                      missing_image=False,
-                     order_by="-release_date",
+                     order_by=None,
                      ):
+    if order_by is None or order_by == "":
+        order_by = "-release_date"
     if price_low is None:
         price_low = Money(0, 'USD')
     if price_high is None:
