@@ -14,9 +14,12 @@ class Command(BaseCommand):
         # parser.add_argument("--all", type=bool)
 
     def handle(self, *args, **options):
-        for item in tqdm(InventoryItem.objects.filter(last_stocked_time__isnull=True)):
+        for item in tqdm(InventoryItem.objects.all()):
             if not item.inv_log.exists():
                 continue
             last_log_entry = item.inv_log.latest('timestamp')
-            item.last_stocked_time = last_log_entry.timestamp
+            if last_log_entry.change_quantity > 0:
+                item.last_stocked_time = last_log_entry.timestamp
+            else:
+                item.last_stocked_time = None
             item.save()
