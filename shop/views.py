@@ -74,6 +74,14 @@ def product_list(request, partner_slug=None):
     else:
         items = item_list_filter()
 
+    if items.count() == 1:
+        if partner_slug:
+            return HttpResponseRedirect(
+                reverse("manage_product", kwargs={'product_slug': items[0].product.slug,
+                                                  'partner_slug': partner_slug}))
+        return HttpResponseRedirect(
+            reverse("product_detail", kwargs={'product_slug': items[0].product.slug}))
+
     # Handle pageination
 
     page_number = 1
