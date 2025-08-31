@@ -1,13 +1,9 @@
-from datetime import datetime
-
-from django.db import models
 from django.core.validators import URLValidator
-
+from django.db import models
 from modelcluster.fields import ParentalKey
 from wagtail.admin.panels import InlinePanel, FieldPanel
-
-from wagtail.models import Page, Orderable
 from wagtail.fields import RichTextField
+from wagtail.models import Page, Orderable
 from wagtail.search import index
 
 # Create your models here.
@@ -22,13 +18,13 @@ class HomePage(Page):
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        featured_items = Item.objects.filter(featured=True).order_by('-product__release_date')
 
         visible_products = Product.objects.filter_listed()
-        featured_items = featured_items.filter(product__in=visible_products)
+        visible_items = Item.objects.filter(product__in=visible_products)
+
         if hasattr(request, 'site') and hasattr(request.site, 'partner'):
             partner = request.site.partner
-            featured_items = featured_items.filter(partner=partner)
+            visible_items = visible_items.filter(partner=partner)
             context['carousel_items'] = self.carousel_items.filter(partner=partner)
             context['feature_columns'] = self.feature_columns.filter(partner=partner)
 
@@ -36,6 +32,12 @@ class HomePage(Page):
             context['carousel_items'] = self.carousel_items.filter(partner_only=False)
             context['feature_columns'] = self.feature_columns.filter(partner__isnull=True)
 
+        featured_items = visible_items.filter(featured=True).order_by('-product__release_date')
+
+        context['recent_arrivals'] = visible_items \
+                                         .exclude(inventoryitem__last_stocked_time__isnull=True) \
+                                         .exclude(inventoryitem__isnull=True) \
+                                         .order_by('-inventoryitem__last_stocked_time')[0:5]
         context['featured_items'] = featured_items[0:5]
 
         return context

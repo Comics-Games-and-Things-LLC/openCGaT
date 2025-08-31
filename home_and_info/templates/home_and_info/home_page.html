@@ -64,6 +64,21 @@
     <!-- Marketing messaging and featurettes
     ================================================== -->
     <!-- Wrap the rest of the page in another container to center all the content. -->
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col my-auto">
+                <h1 class="text-white bg-gray-700 text-center" style="text-shadow: 2px 2px black;">
+                    Recent Arrivals</h1>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="row h-100">
+                {% include 'snippets/product_small_cards.html' with featured_items=recent_arrivals %}
+            </div>
+        </div>
+    </div>
+
     <div class="container-fluid">
         <div class="row">
             <div class="col my-auto">
@@ -77,6 +92,7 @@
             </div>
         </div>
     </div>
+
     <div class="container-fluid my-auto" style="height: 100px;">
         <div class="row h-100 align-items-center">
             <div class="col h-75">
