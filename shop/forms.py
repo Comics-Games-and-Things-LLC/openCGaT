@@ -131,7 +131,8 @@ class FiltersForm(forms.Form):
         (invert_order_string(SORT_ALPHABETICAL), "Name, Z-A"),
         (SORT_LAST_STOCKED, "Recent Arrivals, New-Old"),
         (invert_order_string(SORT_LAST_STOCKED), "Recent Arrivals, Old-New"),
-        # (SORT_PRICE, "Price")
+        (SORT_PRICE, "Price, Low-High"),
+        (invert_order_string(SORT_PRICE), "Price, High-Low"),
     )
 
     order_by = forms.ChoiceField(
