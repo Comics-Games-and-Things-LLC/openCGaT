@@ -25,6 +25,7 @@ def item_list_filter(managing_partner=None,
                      distributor=None,
                      drafts_only=False,
                      missing_image=False,
+                     collection=None,
                      order_by=None,
                      ):
     if order_by is None or order_by == "":
@@ -72,6 +73,10 @@ def item_list_filter(managing_partner=None,
 
     if missing_image:
         displayed_items = displayed_items.filter(product__primary_image__isnull=True)
+
+    if collection:
+        displayed_items = displayed_items.filter(product__in_collection=collection)
+
 
     displayed_items = displayed_items.distinct()
 

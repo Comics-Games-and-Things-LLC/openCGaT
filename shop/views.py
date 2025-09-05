@@ -48,6 +48,7 @@ def product_list(request, partner_slug=None):
         partner = get_partner_or_401(request, partner_slug)
     collection = None
     if form.is_valid():
+        collection = form.cleaned_data.get('collection', None)
         categories_to_include = []
         for category in form.cleaned_data.get('categories'):
             categories_to_include += category.get_descendants(
@@ -69,6 +70,7 @@ def product_list(request, partner_slug=None):
             drafts_only=form.cleaned_data.get('drafts_only'),
             missing_image=form.cleaned_data.get('missing_image'),
             categories_to_include=categories_to_include,
+            collection=collection,
             order_by=form.cleaned_data.get('order_by'),
         )
     else:
