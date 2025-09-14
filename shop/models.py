@@ -2,7 +2,6 @@ import json
 from datetime import datetime
 from decimal import Decimal, ROUND_UP
 
-from b2sdk.exception import FileNotPresent
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.core.mail import EmailMessage
@@ -823,7 +822,7 @@ class ProductImage(models.Model):
             image.image_src.save(self.image.name, self.image.file)
             image.save()
             success = True
-        except FileNotPresent:
+        except Exception:
             image.delete()
             success = False
         return image, success
