@@ -25,6 +25,8 @@ admin.site.register(CardCondition)
 admin.site.register(Item, ItemAdmin)
 admin.site.register(InventoryItem, ItemAdmin)
 admin.site.register(MadeToOrder, ItemAdmin)
+admin.site.register(CustomChargeItem, ItemAdmin)
+
 # admin.site.register(ComicItem, ItemAdmin)
 # admin.site.register(CardItem, ItemAdmin)
 admin.site.register(UsedItem, ItemAdmin)
