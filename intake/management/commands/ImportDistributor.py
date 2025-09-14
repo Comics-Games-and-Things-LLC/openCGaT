@@ -42,5 +42,7 @@ class Command(BaseCommand):
             parabellum.import_records()
         elif name == asmodee.dist_name:
             asmodee.import_records()
+        elif name == steamforged.dist_name:
+            steamforged.import_records()
         else:
             print("Import not set up for that distributor")
