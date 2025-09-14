@@ -260,3 +260,7 @@ class BulkEditItemsForm(FiltersForm):
     allow_backorders_update = forms.BooleanField(required=False)
     enable_restock_alert = forms.BooleanField(required=False)
     low_inventory_alert_threshold = forms.IntegerField(required=False)
+
+
+class ProductsForm(FiltersForm):
+    products_with_no_items_only = forms.BooleanField(required=False)

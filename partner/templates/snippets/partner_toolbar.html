@@ -58,23 +58,28 @@
                     </nav>
                 {% endif %}
                 <nav class="nav-item">
-                    <a class="nav-link" href="{% url 'referrals_index' partner_slug=partner|slugify %}">
+                    <a class="nav-link" href="{% url 'referrals_index' partner_slug=partner.slug %}">
                         Referrals and Discounts
                     </a>
                 </nav>
                 <nav class="nav-item">
-                    <a class="nav-link" href="{% url 'create_custom_charge' partner_slug=partner|slugify %}">
+                    <a class="nav-link" href="{% url 'create_custom_charge' partner_slug=partner.slug %}">
                         Create Custom Charge
                     </a>
                 </nav>
                 {% if partner.retail_partner %}
                     <nav class="nav-item">
-                        <a class="nav-link" href="{% url 'inv_report_home' partner_slug=partner|slugify %}">
+                        <a class="nav-link" href="{% url 'inv_report_home' partner_slug=partner.slug %}">
                             Inventory report
                         </a>
                     </nav>
                 {% endif %}
-
+                <nav class="nav-item">
+                    <a class="nav-link"
+                       href="{% url 'manage_product_list' partner_slug=partner.slug %}?products_with_no_items_only=on">
+                        Products with no items
+                    </a>
+                </nav>
             </div>
         </nav>
     </div>

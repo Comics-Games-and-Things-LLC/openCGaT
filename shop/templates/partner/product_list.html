@@ -1,0 +1,49 @@
+{% extends 'filtered_list_view.html' %}
+{% load wagtailcore_tags %}
+{% load templatehelpers %}
+{% load static %}
+
+{% block title %}Product List{% endblock %}
+{% block content_header %}
+    List of products (including without items) since the regular search is now just items.
+{% endblock %}
+{% block list %}
+    <table class="table">
+        <tr>
+            <th>Product</th>
+        </tr>
+        {% for product in page %}
+            <tr>
+                <td>
+                    {% if product.primary_image %}
+                        <a href="{{ product.primary_image.image_url }}">
+                            <i class="fas fa-image"></i>
+                        </a>
+                    {% endif %}
+                    {% if product.slug %}
+                        <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=product.slug %}">
+                            {{ product.name }}
+                        </a>
+                    {% else %}
+                        "{{ product.name }}" which has no slug
+
+                    {% endif %}
+                    {% if not product.visible %}
+                        <i class="fas fa-eye-slash"></i>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}
+
+{% block alternate %}
+    <p class="p-6">
+        {% if form.is_valid %}
+            No products are available that match your search criteria.
+        {% else %}
+            Please filter the form to a subset of products.
+        {% endif %}
+    </p>
+{% endblock %}

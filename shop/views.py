@@ -4,8 +4,10 @@ from allauth.account.models import EmailAddress
 from allauth.account.utils import send_email_confirmation
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -19,7 +21,7 @@ from intake.models import DistItem, Distributor
 from partner.models import get_partner, get_partner_or_401
 from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
-    CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm
+    CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm, ProductsForm
 from .models import Product, Item, InventoryItem, MadeToOrder
 from .serializers import ItemSerializer, ManageItemSerializer
 from .views_api import item_list_filter
@@ -112,6 +114,128 @@ def product_list(request, partner_slug=None):
     if partner:
         context['partner'] = partner
     return TemplateResponse(request, "shop/index.html", context=context)
+
+
+def manage_product_list(request, partner_slug):
+    """
+    Used to get the list of products (including without items) since the regular search is now just items.
+    :param request:
+    :param partner_slug:
+    :return:
+    """
+    page_size = 20
+
+    initial_data = {'page_size': page_size}
+    manage = True
+    form = ProductsForm(initial=initial_data, manage=manage)
+    if len(request.GET) != 0:
+        form = ProductsForm(request.GET, initial=initial_data, manage=manage)
+    partner = get_partner_or_401(request, partner_slug)
+    search_query = ""
+    categories_to_include = []
+    only_templates = False
+    publisher = None
+    game = None
+    faction = None
+    distributor = None
+    drafts_only = False
+    missing_image = False
+    collection = None
+    products_with_no_items_only = False
+
+    if form.is_valid():
+        only_templates = form.cleaned_data.get('templates')
+        publisher = form.cleaned_data.get('publisher')
+        game = form.cleaned_data.get('game')
+        faction = form.cleaned_data.get('faction')
+        distributor = form.cleaned_data.get('distributor')
+        search_query = form.cleaned_data.get('search')
+        for category in form.cleaned_data.get('categories'):
+            categories_to_include += category.get_descendants(
+                include_self=True)
+
+        products_with_no_items_only = form.cleaned_data.get('products_with_no_items_only')
+        drafts_only = form.cleaned_data.get('drafts_only')
+        missing_image = form.cleaned_data.get('missing_image')
+        collection = form.cleaned_data.get('collection')
+
+    displayed_products = Product.objects.filter()
+
+    if products_with_no_items_only:
+        displayed_products = Product.objects.filter(item=None)
+
+    if only_templates:
+        displayed_products = displayed_products.filter(page_is_template=True)
+    else:
+        displayed_products = displayed_products.filter(page_is_template=False)
+
+    if search_query:
+        displayed_products = displayed_products.filter(
+            Q(name__search=SearchQuery(search_query, search_type='websearch'))
+            | Q(barcode=search_query)
+            | Q(publisher_short_sku=search_query)
+            | Q(publisher_sku=search_query)
+            | Q(description__search=SearchQuery(search_query, search_type='websearch'))
+        )
+
+    if len(categories_to_include) != 0:
+        displayed_products = displayed_products.filter(
+            categories__in=categories_to_include)
+    if publisher:
+        displayed_products = displayed_products.filter(publisher=publisher)
+    if game:
+        displayed_products = displayed_products.filter(games=game)
+    if faction:
+        displayed_products = displayed_products.filter(factions=faction)
+    if distributor:
+        displayed_products = displayed_products.filter(publisher__available_through_distributors=distributor)
+
+    if drafts_only:
+        displayed_products = displayed_products.filter(page_is_draft=True)
+
+    if missing_image:
+        displayed_products = displayed_products.filter(primary_image__isnull=True)
+
+    if collection:
+        displayed_products = displayed_products.filter(in_collection=collection)
+
+    displayed_products = displayed_products.distinct()
+
+    order_by = request.GET.get('order_by', default="-release_date")
+    reverse_sort = True if order_by[:1] == '-' else False
+
+    def invert_order_string(order_str):
+        return order_str[1:] if order_str.startswith('-') else '-' + order_str
+
+    secondary_sort_string = '-name'
+    secondary_order_string = invert_order_string(secondary_sort_string) if reverse_sort else secondary_sort_string
+
+    new_product_list = displayed_products.distinct().order_by(
+        order_by, secondary_order_string)
+
+    page_number = 1
+    if form.is_valid():
+        page_size = form.cleaned_data['page_size']
+        if page_size is None or page_size <= 1:
+            page_size = 20
+        page_number = form.cleaned_data['page_number']
+        if page_number is None or page_number <= 1:
+            page_number = 1
+
+    paginator = Paginator(new_product_list, page_size)
+    if page_number > paginator.num_pages:
+        page_number = 1
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page': page_obj,
+        'filters_form': form,
+        'page_number': int(page_number),
+        'partner': partner,
+        'manage': manage,
+        'collection': collection,
+    }
+    return TemplateResponse(request, "partner/product_list.html", context=context)
 
 
 def get_int_from_request(request, name, default=0):
