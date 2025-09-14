@@ -78,6 +78,8 @@ def product_list(request, partner_slug=None):
     else:
         items = item_list_filter()
 
+    items = items.exclude(customchargeitem__isnull=False)
+
     if items.count() == 1:
         if partner_slug:
             return HttpResponseRedirect(
