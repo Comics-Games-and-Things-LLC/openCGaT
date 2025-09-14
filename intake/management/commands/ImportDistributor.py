@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from intake.distributors import parabellum, wyrd, games_workshop, gw_paints, vallejo, asmodee
+from intake.distributors import parabellum, wyrd, games_workshop, gw_paints, vallejo, asmodee, steamforged
 from intake.models import *
 
 
@@ -22,13 +22,16 @@ class Command(BaseCommand):
             vallejo.import_records()
             exit()
         dists = Distributor.objects.filter(dist_name__search=search)
-        dist = None
         if dists.count() == 1:
             dist = dists.first()
             print(dist)
-        else:
+        elif dists.count() > 1:
             print("Please choose a distributor:")
             print(dists)
+            return
+        else:
+            print("Please choose a distributor:")
+            print(Distributor.objects.all())
             return
         name = dist.dist_name
         if name == wyrd.dist_name:
