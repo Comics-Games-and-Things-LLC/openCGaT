@@ -39,6 +39,8 @@ def import_records():
             weight = row.get('Product Dims - Weight Lbs')
             name = row.get(product_name_column)
             barcode = row.get('Barcode')
+            if "." in barcode:
+                barcode = barcode.split('.')[0]
             msrp = Money(row.get('Retail Price USD'), currency='USD')
             mapp = msrp * .8
             if barcode and barcode.strip() != '' and name and name.strip() != '':
