@@ -22,7 +22,7 @@ from partner.models import get_partner, get_partner_or_401
 from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm, ProductsForm
-from .models import Product, Item, InventoryItem, MadeToOrder
+from .models import Product, Item, InventoryItem, MadeToOrder, CustomChargeItem
 from .serializers import ItemSerializer, ManageItemSerializer
 from .views_api import item_list_filter
 
@@ -264,10 +264,12 @@ def product_details(request, product_slug, partner_slug=None):
     inv_items = InventoryItem.objects.filter(product=product)
     download_items = DigitalItem.objects.filter(product=product)
     mto_items = MadeToOrder.objects.filter(product=product)
+    custom_items = None
     if partner:
         inv_items = inv_items.filter(partner=partner)
         download_items = download_items.filter(partner=partner)
         mto_items = mto_items.filter(partner=partner)
+        custom_items = CustomChargeItem.objects.filter(product=product, partner=partner)
 
     download_item = download_items.first()
 
@@ -276,6 +278,7 @@ def product_details(request, product_slug, partner_slug=None):
         'inv_items': inv_items,
         'download_item': download_item,
         'mto_items': mto_items,
+        'custom_items': custom_items,
     }
     if manage:
         context["partner"] = partner

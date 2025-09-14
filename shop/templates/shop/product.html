@@ -349,6 +349,20 @@
                             </a>
                         </li>
                     {% endif %}
+                    {% if custom_items %}
+                        <li class="nav-item">
+                            <a class="nav-link item-type-tab text-white bg-primary-800
+                            {% if inv_items or partner.retail_partner or download_item or partner.digital_partner or mto_items or partner.enable_mto %}
+                            {% else %}
+                                active
+                            {% endif %}"
+                               id="custom-tab"
+                               data-toggle="tab" href="#custom" role="tab" aria-controls="custom"
+                               {% if inv_items %}{% else %}aria-selected="true"{% endif %}>
+                                Custom Charges
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
                 <div class="tab-content" id="item-tab-content">
                 {% if inv_items or partner.retail_partner %}
@@ -393,6 +407,17 @@
                                 Add Made to Order </a>
                         {% endif %}
                         {% include 'shop/snippets/mto_items.html' %}
+                    </div>
+                {% endif %}
+                {% if custom_items %}
+                    <div class="p-2 tab-pane fade
+                            {% if inv_items or partner.retail_partner or download_item or partner.digital_partner or mto_items or partner.enable_mto %}
+                            {% else %}
+                                show active
+                            {% endif %}"
+                         id="custom"
+                         role="tabpanel" aria-labelledby="custom-tab">
+                        {% include 'shop/snippets/custom_items.html' %}
                     </div>
                 {% endif %}
             {% else %}

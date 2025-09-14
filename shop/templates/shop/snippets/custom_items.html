@@ -1,0 +1,70 @@
+<div class="col-12 col-md-9 col-xl-8 py-md-3 pl-md-5">
+    <div class="row mb-3">
+
+        <table class="table">
+
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">User</th>
+                <th scope="col">Date</th>
+                <th scope="col">Paid?</th>
+                <th scope="col">Price per unit</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Subtotal</th>
+                <th scope="col">Location</th>
+                <th scope="col">Status</th>
+            </tr>
+            {% for item in custom_items %}
+                <tr>
+                    <td colspan="9">
+                        <b>Custom Charge Item {{ item }}</b>
+                    </td>
+                </tr>
+
+                {% for line in item.checkoutline_set.all %}
+                    <tr>
+                        <td>
+                            {% if line.cart.id %}
+                                <a href="{% url 'partner_order_details' partner_slug=partner.slug cart_id=line.cart.id %}">
+                                    {{ line.cart.id }}
+                                </a>
+                            {% else %}
+                                Unable to get cart ID
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if line.cart.owner %}
+                                <a href="{% url 'partner_customer_details' partner_slug=partner.slug user_id=line.cart.owner.id %}">
+                                    {{ line.cart.owner.username }} ({{ line.cart.owner.email }})
+                                </a>
+                            {% else %}
+                                {{ line.cart.email }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ line.cart.date_submitted }}
+                        </td>
+                        <td>{% if line.cart.is_paid %} Paid {% endif %}</td>
+                        <td>{{ line.price_per_unit_at_submit }}</td>
+                        <td>{{ line.quantity }}</td>
+
+                        <td>{{ line.get_subtotal }}</td>
+
+                        <td>
+                            {% if line.cart.at_pos %}
+                                POS
+                            {% else %}
+                                {% if line.cart.delivery_method == line.cart.SHIP_ALL %}
+                                    Ship
+                                {% else %}
+                                    Pickup
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ line.status_text }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </table>
+    </div>
+</div>
