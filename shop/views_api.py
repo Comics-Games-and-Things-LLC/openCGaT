@@ -116,7 +116,7 @@ def item_list_filter(managing_partner=None,
     elif order_by == FiltersForm.SORT_LAST_STOCKED.lstrip("-"):
         order_by = 'inventoryitem__last_stocked_time'
 
-    print(order_by)
+    # print(order_by)
 
     # re-apply reverse
     if reverse_sort:
