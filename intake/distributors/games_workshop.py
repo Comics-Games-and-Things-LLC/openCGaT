@@ -180,11 +180,12 @@ def import_records():
     # reset existing trade ranges:
     TradeRange.objects.filter(distributor=distributor).delete()
 
-    trade_range_name = ""
+    trade_range_name = "US Price Adjustment File - 09.08.xlsx"
     inventories_path = './intake/inventories/'
-    for file in os.listdir(inventories_path):
-        if "Trade Range" in file or "USA PRICE RISE" in file:
-            trade_range_name = file
+    if trade_range_name is None:
+        for file in os.listdir(inventories_path):
+            if "Trade Range" in file or "USA PRICE RISE" in file:
+                trade_range_name = file
     if trade_range_name is None:
         print("Please have a file with 'Trade Range' or 'USA Price Rise' in the inventories folder")
         exit()
