@@ -5,9 +5,11 @@ from partner.models import Partner
 from shop.models import InventoryItem
 
 
-def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=False):
+def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=False, price_adjustment_csv=None):
     if f is None:
         f = open("reports/valhalla_inventory_price_adjustments.txt", "a")
+    if price_adjustment_csv is None:
+        price_adjustment_csv = open("reports/valhalla_inventory_price_adjustments.csv", "a")
 
     partner = Partner.objects.get(name__icontains="Valhalla")
 
@@ -23,9 +25,10 @@ def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=
         if price != item.price and item.current_inventory > 0:
             # If we are only adjusting the default price, and the price change is greater than 1 cent,
             #   only adjust the default price and not the current price.
-            if only_adjust_default_price and (item.price.amount - price.amount) > Decimal(0.01):
+            if only_adjust_default_price: #  and (item.price.amount - price.amount) > Decimal(0.01):
                 log(f, "Default price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
                                                                                             item.product.barcode))
+                price_adjustment_csv.write(f"{item.product.name},{item.product.barcode},{item.current_inventory}\n")
             else:
                 log(f, "Price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
                                                                                     item.product.barcode))

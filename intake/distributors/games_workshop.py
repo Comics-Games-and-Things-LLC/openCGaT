@@ -9,7 +9,8 @@ from game_info.models import Game
 from intake.distributors.common import create_valhalla_item
 from intake.distributors.utility import create_subfactions, create_factions, log
 from intake.models import *
-from shop.models import Product, Publisher
+from openCGaT.management_util import email_report
+from shop.models import Product, Publisher, InventoryItem
 
 HORUS_HERESY = "Warhammer: The Horus Heresy"
 
@@ -190,23 +191,31 @@ def import_records():
         print("Please have a file with 'Trade Range' or 'USA Price Rise' in the inventories folder")
         exit()
     file = pandas.ExcelFile(os.path.join(inventories_path, trade_range_name))
-    dataframe = pandas.read_excel(file, header=0, sheet_name='USA', converters={'Product': str, 'Barcode': str})
+    # dataframe = pandas.read_excel(file, header=0, sheet_name='USA', converters={'Product': str, 'Barcode': str})
+    dataframe = pandas.read_excel(file, header=3, sheet_name='USD Pricelist',
+                                  converters={'Product': str, 'Barcode': str, 'Product Code': str})
 
     records = dataframe.to_dict(orient='records')
-    created_products_list = open(f"reports/created_products_{datetime.now()}.txt", "a")
-    f = open("reports/products_with_price_adjustments.txt", "a")
+    created_products_list = open(f"reports/created_products_{datetime.now()}.txt", "w")
+
+    checked_short_codes = []
+
+    price_adjustment_csv = open(f"reports/valhalla_inventory_price_adjustments_gw_{datetime.now()}.csv", "w")
+
+    f = open(f"reports/gw_price_adjustments_{datetime.now()}.txt", "a")
     log(f, "Creating products and adjusting prices for games workshop")
     for row in records:
         # print(row)
         try:
-            product_code = row.get('Product')
+            product_code = row.get('Product', row.get("Product Code"))
             short_code = row.get('Short Code', row.get("SS Code"))
+            checked_short_codes.append(short_code)
             name = row.get('Description')
             barcode = row.get('Barcode')
-            msrp = Money(row.get('US/$ Retail', row.get("USD-NEW MSRP")), currency='USD', decimal_places=2)
+            msrp = Money(row.get('US/$ Retail', row.get("New US Retail Price")), currency='USD', decimal_places=2)
             maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01'), rounding=ROUND_UP),
                             currency='USD', decimal_places=2)
-            dist_price = Money(row.get('US/$ Trade', row.get("US-NEW TRADE Price")), currency='USD')
+            dist_price = Money(row.get('US/$ Trade', row.get("New US Trade Price")), currency='USD')
             games, factions, categories = get_product_information_from_product_code(product_code)
             range_code = row.get("Module")
             trade_range = None
@@ -214,7 +223,9 @@ def import_records():
                 trade_range, _ = TradeRange.objects.get_or_create(code=range_code, distributor=distributor,
                                                                   defaults={'name': range_code})
 
-            if barcode and barcode.strip() != '' and name and name.strip() != '':
+            if name and name.strip() != '' and (
+                    (barcode and barcode.strip() != '') or (short_code and short_code.strip() != '')
+            ):
                 DistItem.objects.filter(distributor=distributor, dist_barcode=barcode).delete()
                 item, created = DistItem.objects.get_or_create(
                     distributor=distributor,
@@ -233,9 +244,13 @@ def import_records():
                 item.save()
 
                 created = False
-                if Product.objects.filter(barcode=barcode).exists():
-                    product = Product.objects.get(barcode=barcode)
+                products = []
+                if barcode and Product.objects.filter(barcode=barcode).exists():
+                    products = [Product.objects.get(barcode=barcode)]
+                elif Product.objects.filter(publisher_short_sku=short_code).exists():
+                    products = Product.objects.filter(publisher_short_sku=short_code)
                 else:
+                    continue  # Don't create products right now
                     # Create the new product
                     created = True
 
@@ -267,31 +282,55 @@ def import_records():
                         if old_product:
                             old_product.replaced_by = product
                             old_product.save()
+                    products = [product]
 
-                if product.publisher_short_sku is None:
-                    product.publisher_short_sku = short_code
-                    if not created:
-                        print(f"Set short code on {product.name} to {short_code}")
+                for product in products:
+                    if product.publisher_short_sku is None:
+                        product.publisher_short_sku = short_code
+                        if not created:
+                            print(f"Set short code on {product.name} to {short_code}")
 
-                # GW products in the trade range should always be all retail, reset it if we forgot.
-                product.all_retail = True
-                product.publisher = publisher
-                product.msrp = msrp
-                product.map = maprice
+                    # GW products in the trade range should always be all retail, reset it if we forgot.
+                    product.all_retail = True
+                    product.publisher = publisher
+                    product.msrp = msrp
+                    product.map = maprice
+                    product.page_is_draft = False
 
-                # Set these if they are blank but don't override any existing ones.
-                if not product.games.exists():
-                    product.games.set(games)
-                if not product.factions.exists():
-                    product.factions.set(factions)
+                    # Set these if they are blank but don't override any existing ones.
+                    if not product.games.exists():
+                        product.games.set(games)
+                    if not product.factions.exists():
+                        product.factions.set(factions)
 
-                product.save()
+                    product.save()
 
-                create_valhalla_item(product, f, only_adjust_default_price=True)
+                    create_valhalla_item(product, f=f, only_adjust_default_price=True,
+                                         price_adjustment_csv=price_adjustment_csv)
 
         except Exception as e:
             traceback.print_exc()
             print("Not full line, can't get values or other error")
+            exit(1)
+
+    # hidden_products_log = hide_products(checked_short_codes, publisher)
+    f.flush()
+    price_adjustment_csv.flush()
+
+    email_report("GW Price Adjustments", [f.name, price_adjustment_csv.name])
+
+
+def hide_products(checked_short_codes, publisher):
+    hobby_products, _ = Category.objects.get_or_create(name="Hobby Products")
+    hidden_products_log = open(f"reports/hidden_products_{datetime.now()}.txt", "w")
+    for product in Product.objects.filter(publisher=publisher).exclude(publisher_short_sku__in=checked_short_codes,
+                                                                       page_is_draft=True, categories=hobby_products):
+        count = InventoryItem.objects.filter(product=product).aggregate(sum=Sum("current_inventory"))['sum'] or 0
+        if count > 0:
+            log(hidden_products_log, f"Hid {product.name}, which we had {count}")
+            product.page_is_draft = True
+            product.save()
+    return hidden_products_log
 
 
 def get_product_information_from_product_code(product_code):
