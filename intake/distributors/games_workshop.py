@@ -181,7 +181,8 @@ def import_records():
     # reset existing trade ranges:
     TradeRange.objects.filter(distributor=distributor).delete()
 
-    trade_range_name = "US Price Adjustment File - 09.08.xlsx"
+    trade_range_name = None
+    # trade_range_name = "US Price Adjustment File - 09.08.xlsx"
     inventories_path = './intake/inventories/'
     if trade_range_name is None:
         for file in os.listdir(inventories_path):
@@ -191,9 +192,9 @@ def import_records():
         print("Please have a file with 'Trade Range' or 'USA Price Rise' in the inventories folder")
         exit()
     file = pandas.ExcelFile(os.path.join(inventories_path, trade_range_name))
-    # dataframe = pandas.read_excel(file, header=0, sheet_name='USA', converters={'Product': str, 'Barcode': str})
-    dataframe = pandas.read_excel(file, header=3, sheet_name='USD Pricelist',
-                                  converters={'Product': str, 'Barcode': str, 'Product Code': str})
+    dataframe = pandas.read_excel(file, header=0, sheet_name='USA', converters={'Product': str, 'Barcode': str})
+    # dataframe = pandas.read_excel(file, header=3, sheet_name='USD Pricelist',
+    #                               converters={'Product': str, 'Barcode': str, 'Product Code': str})
 
     records = dataframe.to_dict(orient='records')
     created_products_list = open(f"reports/created_products_{datetime.now()}.txt", "w")
@@ -313,18 +314,20 @@ def import_records():
             print("Not full line, can't get values or other error")
             exit(1)
 
-    # hidden_products_log = hide_products(checked_short_codes, publisher)
+    hidden_products_log = hide_products(checked_short_codes, publisher)
     f.flush()
     price_adjustment_csv.flush()
+    hidden_products_log.flush()
 
-    email_report("GW Price Adjustments", [f.name, price_adjustment_csv.name])
+    email_report("GW Price Adjustments", [f.name, price_adjustment_csv.name, hidden_products_log.name], )
 
 
 def hide_products(checked_short_codes, publisher):
     hobby_products, _ = Category.objects.get_or_create(name="Hobby Products")
     hidden_products_log = open(f"reports/hidden_products_{datetime.now()}.txt", "w")
-    for product in Product.objects.filter(publisher=publisher).exclude(publisher_short_sku__in=checked_short_codes,
-                                                                       page_is_draft=True, categories=hobby_products):
+    for product in Product.objects.filter(publisher=publisher) \
+            .exclude(publisher_short_sku__in=checked_short_codes).exclude(page_is_draft=True) \
+            .exclude(categories=hobby_products):
         count = InventoryItem.objects.filter(product=product).aggregate(sum=Sum("current_inventory"))['sum'] or 0
         if count > 0:
             log(hidden_products_log, f"Hid {product.name}, which we had {count}")
