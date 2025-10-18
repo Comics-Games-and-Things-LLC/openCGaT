@@ -79,6 +79,20 @@
         </div>
     </div>
 
+    <div class="container-fluid my-auto" style="height: 100px;">
+        <div class="row h-100 align-items-center">
+            <div class="col h-75">
+                <div class="btn-group float-right">
+                    <a type="button" class="btn btn-primary my-auto"
+                       href="/shop/?order_by=-last_stocked_time&in_stock_only=on">
+                        More Recent Arrivals
+                    </a>
+                    <a type="button" class="btn btn-secondary my-auto" href="/shop/">View All Products</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container-fluid">
         <div class="row">
             <div class="col my-auto">
@@ -89,6 +103,20 @@
         <div class="container-fluid">
             <div class="row h-100">
                 {% include 'snippets/product_small_cards.html' with featured_items=featured_new_releases %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid my-auto" style="height: 100px;">
+        <div class="row h-100 align-items-center">
+            <div class="col h-75">
+                <div class="btn-group float-right">
+                    <a type="button" class="btn btn-primary my-auto"
+                       href="/shop/?order_by=-featured_products_only=on&in_stock_only=on">
+                        More Featured In-Stock Products
+                    </a>
+                    <a type="button" class="btn btn-secondary my-auto" href="/shop/">View All Products</a>
+                </div>
             </div>
         </div>
     </div>
