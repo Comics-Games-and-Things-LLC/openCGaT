@@ -409,7 +409,7 @@
                         {% include 'shop/snippets/mto_items.html' %}
                     </div>
                 {% endif %}
-                {% if custom_items %}
+                {% if custom_items and partner %}
                     <div class="p-2 tab-pane fade
                             {% if inv_items or partner.retail_partner or download_item or partner.digital_partner or mto_items or partner.enable_mto %}
                             {% else %}
