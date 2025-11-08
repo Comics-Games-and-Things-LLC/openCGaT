@@ -1,5 +1,4 @@
-FROM hdgigante/python-opencv:4.11.0-alpine
-#  ^ Python 3.13
+FROM python:3.13-bookworm
 
 COPY requirements.txt /app/requirements.txt
 
