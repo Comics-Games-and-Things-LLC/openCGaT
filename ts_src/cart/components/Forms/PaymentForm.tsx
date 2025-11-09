@@ -1,7 +1,7 @@
 //@flow
 
 import * as React from "react";
-import {useEffect} from "react";
+import {useEffect, useRef, useState} from "react";
 
 // @ts-ignore
 import Button from "../components/Button/Button.jsx";
@@ -32,9 +32,23 @@ interface IPaymentFormProps {
     cart: ICart
 }
 
+export const round_up_change = (balance: string): string => {
+    let balance_num = Number(balance)
+
+    if (balance_num > 0) {
+        return balance
+    }
+    let cents = balance_num * 100
+    let cents_roundup5 = Math.floor(cents / 5) * 5
+
+    return `${(cents_roundup5 / 100).toFixed(2)} (rounded from ${balance})`
+}
+
 const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPaymentFormProps): JSX.Element => {
 
     const id_payment_amount = 'id_payment_amount'
+
+    const [change_str, setChangeStr]  = useState("")
 
     useEffect(() => {
             if (document.getElementById(id_payment_amount) && props.cart) {
@@ -45,7 +59,13 @@ const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPayment
                 } else {
                     remaining_balance = Number(props.cart.estimated_total).toFixed(2)
                 }
-                payment_amount.value = remaining_balance
+                if (Number(remaining_balance) >= 0) {
+                    payment_amount.value = remaining_balance
+                    setChangeStr("")
+                } else {
+                    payment_amount.value = "0.00"
+                    setChangeStr("Change: " + round_up_change(remaining_balance))
+                }
             }
         },
         [props.cart]
@@ -66,6 +86,7 @@ const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPayment
                     )}
                     <input type={"number"} step='0.01' id={id_payment_amount}>
                     </input>
+                    <div>{change_str}</div>
                     {!props.cashOnly ?
                         <Button
                             color="white"

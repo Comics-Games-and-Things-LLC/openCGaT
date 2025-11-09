@@ -6,6 +6,7 @@ import {ICart, IRowProps} from "../interfaces";
 import {useAppDispatch} from "../store";
 import getCookie from "./get_cookie";
 import {setPOSDiscountCode, updateCart} from "../reducers/cartSlice";
+import {round_up_change} from "./Forms/PaymentForm";
 
 export interface ICartBodyProps {
     cart: ICart;
@@ -34,10 +35,11 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
         num_empty_cols++;
     }
 
-    const remaining_balance = props.cart.final_total ?
+    let remaining_balance = props.cart.final_total ?
         Number(props.cart.final_total) - Number(props.cart.total_paid) : Number(props.cart.estimated_total);
 
-    const balance_string = "$" + (remaining_balance.toFixed(2))
+
+    const balance_string = "$" + (round_up_change(remaining_balance.toFixed(2)))
     const balance_label = remaining_balance >= 0 ? "Balance" : "Change";
 
     const has_final_total = props.cart.final_total != null
