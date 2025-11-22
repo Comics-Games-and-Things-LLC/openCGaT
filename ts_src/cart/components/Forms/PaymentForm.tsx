@@ -35,7 +35,7 @@ interface IPaymentFormProps {
 export const round_up_change = (balance: string): string => {
     let balance_num = Number(balance)
 
-    if (balance_num > 0) {
+    if (balance_num >= 0) {
         return balance
     }
     let cents = balance_num * 100
