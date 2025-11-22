@@ -41,7 +41,7 @@ def get_invoice_lines(pdf_path, po):
     could_not_process_lines = []
 
     columns = ["Line", "QTY/UM", "MFG / ITEM NO. and DESCRIPTION", "RETAIL PRICE", "FIRST COST", "FINAL COST",
-               "EXT BEFORE DISCOUNT", ]
+               "EXT BEFORE DISCOUNT", ""]  # Sometimes there's an extra blank column
 
     line_index = 0
     for table in tables:
@@ -61,16 +61,14 @@ def get_invoice_lines(pdf_path, po):
                 continue
             line_index += 1
             if "HTM/WEB" in line[2] and "Thank You For The Order!!!" in line[2]:
-                continue  # This is a thank you line we can ignore.
-
-
+                continue  # This is a 'thank you' line we can ignore.
 
             # At this point we now have a valid line
             line_info = InvoiceLineInfo(line)
-
-            try: # Turn line into a dictionary for nice output
+            try:  # Turn line into a dictionary for nice output
                 line = {columns[i]: line[i] for i in range(len(line))}
-            except Exception:
+            except Exception as e:
+                print(f"Could not parse line {line_number}: {line}: error: {e}")
                 continue
 
             if line_info.qty_of_type == "0":
