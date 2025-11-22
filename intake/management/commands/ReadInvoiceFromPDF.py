@@ -32,7 +32,7 @@ class Command(BaseCommand):
             return
         if dist == hobbytyme.get_dist_object():
             po, could_not_process_lines = hobbytyme.read_pdf_invoice(options['invoice_file'])
-        if dist == kingsley.get_dist_object():
+        elif dist == kingsley.get_dist_object():
             po, could_not_process_lines = kingsley.read_pdf_invoice(options['invoice_file'])
         else:
             print("Not a supported distributor")
