@@ -41,7 +41,8 @@ def get_invoice_lines(pdf_path, po):
     could_not_process_lines = []
 
     columns = ["Line", "QTY/UM", "MFG / ITEM NO. and DESCRIPTION", "RETAIL PRICE", "FIRST COST", "FINAL COST",
-               "EXT BEFORE DISCOUNT", ""]  # Sometimes there's an extra blank column
+               "EXT BEFORE DISCOUNT",
+               "Other Discount"]  # Sometimes there's an extra blank column with a * indicating discount
 
     line_index = 0
     for table in tables:
@@ -67,6 +68,8 @@ def get_invoice_lines(pdf_path, po):
             line_info = InvoiceLineInfo(line)
             try:  # Turn line into a dictionary for nice output
                 line = {columns[i]: line[i] for i in range(len(line))}
+                if "Other Discount" not in line.keys():
+                    line["Other Discount"] = "" # Populate this value by default if needed
             except Exception as e:
                 print(f"Could not parse line {line_number}: {line}: error: {e}")
                 continue
