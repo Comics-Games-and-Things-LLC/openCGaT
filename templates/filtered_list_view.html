@@ -205,9 +205,8 @@
                                 {% list_append manual_form_fields "available_for_order_only" as manual_form_fields %}
                                 {% list_append manual_form_fields "allocated_only" as manual_form_fields %}
                             {% endif %}
-                            <!-- partner field -->
                             {% if filters_form.partner %}
-                                {% include "shop/snippets/filter-dropdown.html" with field=filters_form.partner %}
+                                <!-- Do not render the partner field because there's only one partner now -->
                                 {% list_append manual_form_fields "partner" as manual_form_fields %}
                             {% endif %}
                             {% if filters_form.publisher %}
