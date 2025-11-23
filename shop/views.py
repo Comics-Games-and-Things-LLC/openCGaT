@@ -76,6 +76,8 @@ def product_list(request, partner_slug=None):
             order_by=form.cleaned_data.get('order_by'),
             price_not_default=form.cleaned_data.get('price_not_default'),
             has_in_store_only_price=form.cleaned_data.get('has_in_store_only_price'),
+            min_qty=form.cleaned_data.get('min_qty'),
+            max_qty=form.cleaned_data.get('max_qty'),
         )
     else:
         items = item_list_filter()
@@ -832,6 +834,8 @@ def bulk_edit(request, partner_slug):
             order_by=form.cleaned_data.get('order_by'),
             price_not_default=form.cleaned_data.get('price_not_default'),
             has_in_store_only_price=form.cleaned_data.get('has_in_store_only_price'),
+            min_qty=form.cleaned_data.get('min_qty'),
+            max_qty=form.cleaned_data.get('max_qty'),
         )
         # Update items if action tells us to.
         action = form.cleaned_data.get('action_to_take')

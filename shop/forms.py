@@ -176,6 +176,8 @@ class FiltersForm(forms.Form):
 
     price_not_default = forms.BooleanField(required=False)
     has_in_store_only_price = forms.BooleanField(required=False)
+    min_qty = forms.IntegerField(required=False, widget=widgets.NumberInput())
+    max_qty = forms.IntegerField(required=False, widget=widgets.NumberInput())
 
     def __init__(self, *args, **kwargs):
         manage = kwargs.pop('manage')
@@ -215,6 +217,8 @@ class FiltersForm(forms.Form):
             self.fields.pop('missing_image')
             self.fields.pop('price_not_default')
             self.fields.pop('has_in_store_only_price')
+            self.fields.pop('min_qty')
+            self.fields.pop('max_qty')
 
 
 class AddMTOItemForm(forms.ModelForm):

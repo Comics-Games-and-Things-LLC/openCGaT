@@ -29,6 +29,8 @@ def item_list_filter(managing_partner=None,
                      order_by=None,
                      price_not_default=None,
                      has_in_store_only_price=None,
+                     min_qty=None,
+                     max_qty=None,
                      ):
     if order_by is None or order_by == "":
         order_by = "-release_date"
@@ -56,6 +58,13 @@ def item_list_filter(managing_partner=None,
     elif sold_out_only:
         displayed_items = displayed_items.filter(
             inventoryitem__current_inventory__lte=0).exclude(inventoryitem__allow_backorders=True)
+
+    if min_qty:
+        displayed_items = displayed_items.filter(
+            inventoryitem__current_inventory__gte=min_qty)
+    if max_qty:
+        displayed_items = displayed_items.filter(
+            inventoryitem__current_inventory__lte=max_qty)
 
     # Don't apply these filters unless there is a value, otherwise we'll be doing a search for blanks.
     if len(categories_to_include) != 0:
