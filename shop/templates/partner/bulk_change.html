@@ -38,8 +38,12 @@
                 </td>
                 <td>
                     ${{ item.price }}
+                    {% if item.in_store_only_price %}
+                        <br>
+                        In Store: {{ item.in_store_only_price }}
+                    {% endif %}
                 </td>
-            <td>
+                <td>
                     {{ item.sold_count }}
                 </td>
                 <td>

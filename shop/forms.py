@@ -252,15 +252,20 @@ class BulkEditItemsForm(FiltersForm):
     UPDATE_PRICES = "Update Prices"
     UPDATE_BACKORDERS = "Update Backorderability"
     ENABLE_ALERT = "Enable Restock Alert"
+    SET_IN_STORE_PRICE = "Set In-Store Price"
+    CLEAR_IN_STORE_PRICE = "Clear In-Store Price"
 
     ACTION_OPTIONS = (
         (NO_ACTION, NO_ACTION),
         (UPDATE_PRICES, UPDATE_PRICES),
         (UPDATE_BACKORDERS, UPDATE_BACKORDERS),
         (ENABLE_ALERT, ENABLE_ALERT),
+        (SET_IN_STORE_PRICE, SET_IN_STORE_PRICE),
+        (CLEAR_IN_STORE_PRICE, CLEAR_IN_STORE_PRICE),
     )
 
     action_to_take = forms.ChoiceField(choices=ACTION_OPTIONS)
+    price = MoneyField(required=False)
     price_multiplier = forms.DecimalField(required=False)
     base_on_msrp = forms.BooleanField(required=False)
     allow_backorders_update = forms.BooleanField(required=False)

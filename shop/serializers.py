@@ -39,6 +39,7 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'type', 'product', 'price', 'default_price', 'partner', 'inventory',
             'backorders_enabled', 'is_preorder', 'button_status', 'is_pay_what_you_want',
+            'in_store_only_price',
             'enable_restock_alert', 'low_inventory_alert_threshold',
         )
 

@@ -835,13 +835,20 @@ def bulk_edit(request, partner_slug):
         )
         # Update items if action tells us to.
         action = form.cleaned_data.get('action_to_take')
+        price_override = form.cleaned_data.get('price')
+        multiplier = form.cleaned_data.get('price_multiplier', 1)  # Default to 1 if no value
+        base_on_msrp = form.cleaned_data.get('base_on_msrp', False)
         if action == BulkEditItemsForm.UPDATE_PRICES:
-            multiplier = form.cleaned_data.get('price_multiplier', 1)  # Default to 1 if no value
             for item in items:
-                if form.cleaned_data.get('base_on_msrp') and item.product.msrp:
-                    item.price = item.product.msrp * multiplier
-                else:
-                    item.price = item.default_price * multiplier
+                item.price = get_new_price(item, base_on_msrp, multiplier, price_override)
+                item.save()
+        if action == BulkEditItemsForm.SET_IN_STORE_PRICE:
+            for item in items:
+                item.in_store_only_price = get_new_price(item, base_on_msrp, multiplier, price_override)
+                item.save()
+        if action == BulkEditItemsForm.CLEAR_IN_STORE_PRICE:
+            for item in items:
+                item.in_store_only_price = None
                 item.save()
         if action == BulkEditItemsForm.UPDATE_BACKORDERS:
             for item in items.instance_of(InventoryItem):  # type: InventoryItem
@@ -882,3 +889,13 @@ def bulk_edit(request, partner_slug):
         'valid_filter': form.is_valid()
     }
     return TemplateResponse(request, "partner/bulk_change.html", context=context)
+
+
+def get_new_price(item, base_on_msrp, multiplier, price_override):
+    if price_override:
+        new_price = price_override
+    elif base_on_msrp and item.product.msrp:
+        new_price = item.product.msrp * multiplier
+    else:
+        new_price = item.default_price * multiplier
+    return new_price
