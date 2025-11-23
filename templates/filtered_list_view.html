@@ -229,6 +229,10 @@
                                 {{ filters_form.categories }}
                                 {% list_append manual_form_fields "categories" as manual_form_fields %}
                             {% endif %}
+                            {% if filters_form.collection %}
+                                {% include "shop/snippets/filter-dropdown.html" with field=filters_form.collection %}
+                                {% list_append manual_form_fields "collection" as manual_form_fields %}
+                            {% endif %}
 
                         </div>
                         <!-- remaining fields that we didn't render manually -->
