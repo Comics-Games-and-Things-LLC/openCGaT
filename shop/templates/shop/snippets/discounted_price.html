@@ -1,8 +1,4 @@
-{% load templatehelpers %}
-
-{% with price=item|get_discount_price:user %}
-    {% if price != item.default_price %}
-        <span class="line-through">{{ item.default_price }}</span>
-    {% endif %}
-    <span>{{ price }}</span>
-{% endwith %}
+{% if item.price != item.default_price %}
+    <span class="line-through">{{ item.default_price }}</span>
+{% endif %}
+<span>{{ item.price }}</span>

@@ -1415,12 +1415,17 @@ class CheckoutLine(models.Model):
                     if self.discount_code_message:
                         self.discount_code_message = None
                         self.save()
-                if self.cart.owner and not self.cart.is_submitted:
-                    return self.item.get_discount_price(self.cart.owner)
-                else:
-                    return self.item.price
+                return self.get_item_price()
             else:
                 return Money(0, "USD")  # If item isn't present that's a big issue.
+
+    def get_item_price(self) -> Money:
+        """
+        Get the price of the item (before calculating any discounts)
+        Do not use except for in get_price
+        :return:
+        """
+        return self.item.price
 
     def get_proportional_tax(self):
         if self.cart.final_tax:

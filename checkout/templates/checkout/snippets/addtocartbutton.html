@@ -8,19 +8,15 @@
                     {% if item.pay_what_you_want %}
                         Pay what you want above {{ item.price }}:
                     {% else %}
-                        {% with price=item|get_discount_price:user %}
-                            {% if product.msrp %}
-                                {% if item.price != product.msrp %}
-                                    <span class="line-through"> MSRP {{ product.msrp }}</span>
-                                {% endif %}
+                        {% if product.msrp %}
+                            {% if item.price != product.msrp %}
+                                <span class="line-through"> MSRP {{ product.msrp }}</span>
                             {% endif %}
-                            {% if price != item.default_price %}
-                                <span class="line-through"> Regularly {{ item.default_price }}</span>
-                            {% endif %}
-
-                            <span>{{ price }}</span>
-
-                        {% endwith %}
+                        {% endif %}
+                        {% if item.price != item.default_price %}
+                            <span class="line-through"> Regularly {{ item.default_price }}</span>
+                        {% endif %}
+                        <span>{{ item.price }}</span>
                     {% endif %}
                 </label>
 

@@ -564,13 +564,6 @@ class Item(RepresentationMixin, PolymorphicModel):
         if isinstance(self, CustomChargeItem):
             return "Custom"
 
-    def get_discount_price(self, user):
-        if not self.enable_discounts:
-            return self.price
-
-        min_price = self.price
-        return min_price
-
     BUTTON_STYLE_GOOD = 3
     BUTTON_STYLE_BACKORDER = 2
     BUTTON_STYLE_SOLD_OUT = 1

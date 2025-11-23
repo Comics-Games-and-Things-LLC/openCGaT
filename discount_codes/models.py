@@ -111,7 +111,7 @@ class DiscountCode(models.Model):
             if line.discount_code_message != prev_message:
                 print("Clearing discount code message")
                 line.save()
-            old_price = line.item.price
+            old_price = line.get_item_price()
             if line.price_per_unit_override:
                 old_price = line.price_per_unit_override
             new_price = old_price * ((100 - discount.discount_percentage) / Decimal(100))

@@ -141,11 +141,6 @@ def customer_for_transaction(transaction):
     return None, None
 
 
-@register.filter()
-def get_discount_price(item, user):
-    return item.get_discount_price(user)
-
-
 # this is used in the product list view, see that code in shop/views.py
 # for more information about what this filter does
 @register.filter()
