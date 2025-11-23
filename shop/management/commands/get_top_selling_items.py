@@ -1,10 +1,12 @@
 import csv
+import datetime
 
 from django.core.management.base import BaseCommand
 from django.db.models import Sum
 from tqdm import tqdm
 
 from checkout.models import Cart
+from openCGaT.management_util import email_report
 from partner.models import Partner
 from shop.models import Product
 
@@ -22,7 +24,7 @@ class Command(BaseCommand):
 
         partner = Partner.objects.get(name__icontains="Valhalla")
 
-        result_file = open(f"reports/sales_by_item.csv", "w", encoding="utf-8")
+        result_file = open(f"reports/sales_by_item_{datetime.datetime.today()}.csv", "w", encoding="utf-8")
         results_writer = csv.DictWriter(result_file,
                                         ["Publisher", "Game", "Product",
                                          "Sold (Total)", "Sold After Release",
@@ -63,4 +65,5 @@ class Command(BaseCommand):
             results_writer.writerow(data)
 
         result_file.close()
+        email_report("Sales By Item", [result_file.name])
         print("Done")
