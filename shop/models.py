@@ -513,6 +513,7 @@ class Item(RepresentationMixin, PolymorphicModel):
     default_price = MoneyField(max_digits=19, decimal_places=2)  # This is used when setting sale prices.
     price = MoneyField(max_digits=19, decimal_places=2, default_currency='USD')
     enable_discounts = models.BooleanField(default=True)
+    in_store_only_price = MoneyField(max_digits=19, decimal_places=2, default_currency='USD', blank=True, null=True)
 
     main_image = models.ForeignKey('ProductImage', on_delete=models.SET_NULL, blank=True, null=True)
     image_gallery = models.ManyToManyField('ProductImage', blank=True, related_name='item_images')

@@ -1425,6 +1425,8 @@ class CheckoutLine(models.Model):
         Do not use except for in get_price
         :return:
         """
+        if self.cart.at_pos and self.item.in_store_only_price:
+            return self.item.in_store_only_price
         return self.item.price
 
     def get_proportional_tax(self):

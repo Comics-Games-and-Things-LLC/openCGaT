@@ -95,7 +95,8 @@ class AddInventoryItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
         fields = ['current_inventory', 'preallocated_inventory', 'allow_backorders',
-                  'price', 'default_price', 'featured', 'preallocated', 'allow_extra_preorders',
+                  'price', 'default_price', 'in_store_only_price',
+                  'featured', 'preallocated', 'allow_extra_preorders',
                   'enable_restock_alert', 'low_inventory_alert_threshold',
                   ]
 
