@@ -27,6 +27,8 @@ def item_list_filter(managing_partner=None,
                      missing_image=False,
                      collection=None,
                      order_by=None,
+                     price_not_default=None,
+                     has_in_store_only_price=None,
                      ):
     if order_by is None or order_by == "":
         order_by = "-release_date"
@@ -77,6 +79,11 @@ def item_list_filter(managing_partner=None,
     if collection:
         displayed_items = displayed_items.filter(product__in_collection=collection)
 
+    if price_not_default:
+        displayed_items = displayed_items.exclude(price=F('default_price'))
+
+    if has_in_store_only_price:
+        displayed_items = displayed_items.exclude(in_store_only_price__isnull=True)
 
     displayed_items = displayed_items.distinct()
 

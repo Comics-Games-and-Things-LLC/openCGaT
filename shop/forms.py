@@ -174,6 +174,9 @@ class FiltersForm(forms.Form):
     drafts_only = forms.BooleanField(required=False)
     missing_image = forms.BooleanField(required=False)
 
+    price_not_default = forms.BooleanField(required=False)
+    has_in_store_only_price = forms.BooleanField(required=False)
+
     def __init__(self, *args, **kwargs):
         manage = kwargs.pop('manage')
         super(FiltersForm, self).__init__(*args, **kwargs)
@@ -210,6 +213,8 @@ class FiltersForm(forms.Form):
             self.fields.pop('templates')
             self.fields.pop('drafts_only')
             self.fields.pop('missing_image')
+            self.fields.pop('price_not_default')
+            self.fields.pop('has_in_store_only_price')
 
 
 class AddMTOItemForm(forms.ModelForm):

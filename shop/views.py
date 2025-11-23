@@ -74,6 +74,8 @@ def product_list(request, partner_slug=None):
             categories_to_include=categories_to_include,
             collection=collection,
             order_by=form.cleaned_data.get('order_by'),
+            price_not_default=form.cleaned_data.get('price_not_default'),
+            has_in_store_only_price=form.cleaned_data.get('has_in_store_only_price'),
         )
     else:
         items = item_list_filter()
@@ -828,6 +830,8 @@ def bulk_edit(request, partner_slug):
             missing_image=form.cleaned_data.get('missing_image'),
             categories_to_include=categories_to_include,
             order_by=form.cleaned_data.get('order_by'),
+            price_not_default=form.cleaned_data.get('price_not_default'),
+            has_in_store_only_price=form.cleaned_data.get('has_in_store_only_price'),
         )
         # Update items if action tells us to.
         action = form.cleaned_data.get('action_to_take')
