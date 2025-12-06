@@ -2,12 +2,13 @@ import * as React from "react";
 import {useCallback, useEffect, useRef, useState} from "react";
 import ReceiptPrinterEncoder from '@point-of-sale/receipt-printer-encoder';
 import WebUSBReceiptPrinter from '@point-of-sale/webusb-receipt-printer';
-import WebSerialReceiptPrinter from '@point-of-sale/webserial-receipt-printer';
+import WebSerialReceiptPrinter from './WebSerialReceiptPrinter/WebSerialReceiptPrinter';
 import WebBluetoothReceiptPrinter from '@point-of-sale/webbluetooth-receipt-printer';
 
 interface IConnectResult {
-    productId: string;
-    vendorId: string;
+    productId?: string;
+    vendorId?: string;
+    type?: string;
 }
 
 interface IReceiptPrinter {
@@ -65,35 +66,42 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
     }
 
     const tryReconnect = async () => {
-        const productId = localStorage.getItem('productId');
-        const vendorId = localStorage.getItem('vendorId');
+        const lastConnection = JSON.parse(localStorage.getItem('lastConnection'));
 
-        if (productId && vendorId) {
-            await connectHandler({productId: productId, vendorId: vendorId})
+        if (!lastConnection || !lastConnection.type) {
+            return
         }
+
+        await connectHandler(lastConnection)
     }
 
     const connectHandler = async (reconnect: IConnectResult | null) => {
         let tempPrinter;
-        if (driver === 'usb') {
+        let tempDriver = driver
+        console.log(JSON.stringify(reconnect))
+        if (reconnect && reconnect.type) {
+            setDriver(reconnect.type)
+            tempDriver = reconnect.type
+        }
+
+        if (tempDriver === 'usb') {
             tempPrinter = new WebUSBReceiptPrinter()
         }
 
-        if (driver === 'serial') {
+        if (tempDriver === 'serial') {
             tempPrinter = new WebSerialReceiptPrinter({
-                baudRate: baudRate,
+                baudRate: Number(baudRate),
             })
         }
 
-        if (driver === 'bluetooth') {
+        if (tempDriver === 'bluetooth') {
             tempPrinter = new WebBluetoothReceiptPrinter()
         }
-        console.log('Connecting with driver:', driver);
+        console.log('Connecting with driver:', tempDriver);
         receiptPrinterRef.current = tempPrinter; // Store in ref immediately
 
         tempPrinter.addEventListener('connected', (connectResult: IConnectResult) => {
-                localStorage.setItem("productId", connectResult.productId);
-                localStorage.setItem("vendorId", connectResult.vendorId);
+                localStorage.setItem("lastConnection", JSON.stringify(connectResult));
                 setIsConnected(true);
                 console.log(`Connected Successfully to ${JSON.stringify(connectResult)}`)
             }
@@ -103,7 +111,6 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
 
         } else {
             console.log(`Attempting to reconnect to ${JSON.stringify(reconnect)}`)
-
             tempPrinter.reconnect(reconnect)
         }
         document.removeEventListener("rPrint", rPrint);
