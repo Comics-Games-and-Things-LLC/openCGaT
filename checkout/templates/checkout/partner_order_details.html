@@ -3,7 +3,7 @@
 
 {% block title %}Order {{ past_cart.id }}{% endblock %}
 {% block extrastyle %}
-
+    <script src="https://cdn.jsdelivr.net/npm/@point-of-sale/receipt-printer-encoder/dist/receipt-printer-encoder.umd.js"></script>
 {% endblock %}
 {% block content %}
     <div>
@@ -112,7 +112,13 @@
         {% if past_cart.invoice_been_printed %}
             <i class="fa fa-solid fa-check"></i>
         {% endif %}
+        <span>
+        <a class="btn btn-secondary"
+           onclick="print_pick_slip()">
+            Print Pick Slip
+        </a>
         <script>
+
             function print_slip() {
                 var printWindow = window.open("{% url 'partner_order_printout' partner_slug=partner.slug cart_id=past_cart.id %}",
                     'Print', 'left=200, top=200, width=950, height=500, toolbar=0, resizable=0');
@@ -129,6 +135,29 @@
                     }
                 }, true);
                 return false;
+            }
+
+            function print_pick_slip() {
+                let encoder = new ReceiptPrinterEncoder()
+                const firstColumnWidth = Math.round(encoder.columns * 0.1);
+                const secondColumnWidth = Math.round(encoder.columns * 0.9);
+                encoder
+                    .align('center').size(2, 2).line(`Order {{ past_cart.id }}`)
+                    .size(1, 1).line('{{ past_cart.delivery_method }}').align('left')
+                    .rule()
+                encoder.table(
+                    [
+                        {width: firstColumnWidth, marginRight: 1, align: "right"},
+                        {width: secondColumnWidth, align: "left"},
+                    ],
+                    [
+                        {% for line in cart.lines.all %}
+                            ["{{ line.quantity }}", "{{ line.item.product.name }}"],
+                        {% endfor %}
+                    ]
+                );
+                encoder.rule()
+                document.dispatchEvent(new CustomEvent("rPrint", {detail: {encoder: encoder}}))
             }
         </script>
 
