@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import ReceiptPrinterEncoder from '@point-of-sale/receipt-printer-encoder';
 import WebUSBReceiptPrinter from '@point-of-sale/webusb-receipt-printer';
 import WebSerialReceiptPrinter from '@point-of-sale/webserial-receipt-printer';
@@ -29,7 +29,7 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
     const [isConnected, setIsConnected] = useState(false);
     const [canConnect, setCanConnect] = useState(false);
     const [printerModels, setPrinterModels] = useState([]);
-    const [receiptPrinter, setReceiptPrinter] = useState<IReceiptPrinter | null>();
+    const receiptPrinterRef = useRef<IReceiptPrinter | null>(null);
 
 
     const openForm = () => setIsFormOpen(true);
@@ -64,6 +64,15 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
         connectHandler(null)
     }
 
+    const tryReconnect = async () => {
+        const productId = localStorage.getItem('productId');
+        const vendorId = localStorage.getItem('vendorId');
+
+        if (productId && vendorId) {
+            await connectHandler({productId: productId, vendorId: vendorId})
+        }
+    }
+
     const connectHandler = async (reconnect: IConnectResult | null) => {
         let tempPrinter;
         if (driver === 'usb') {
@@ -80,7 +89,7 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
             tempPrinter = new WebBluetoothReceiptPrinter()
         }
         console.log('Connecting with driver:', driver);
-        setReceiptPrinter(tempPrinter);
+        receiptPrinterRef.current = tempPrinter; // Store in ref immediately
 
         tempPrinter.addEventListener('connected', (connectResult: IConnectResult) => {
                 localStorage.setItem("productId", connectResult.productId);
@@ -97,21 +106,43 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
 
             tempPrinter.reconnect(reconnect)
         }
-
+        document.removeEventListener("rPrint", rPrint);
+        document.addEventListener("rPrint", rPrint);
     };
 
     const disconnect = () => {
-        receiptPrinter.disconnect();
+        receiptPrinterRef.current.disconnect();
 
         console.log('Disconnecting');
         setIsConnected(false);
     };
 
-    const print = () => {
-        // Implementation for print logic
+    const rPrint = useCallback((event: Event) => {
+        if (!(event instanceof CustomEvent)) {
+            console.log("Was not passed an custom event")
+            return
+        }
+        let encoder = event.detail?.encoder
+        if (!encoder) {
+            console.log("Was not passed an encoder")
+            return
+        }
+        encoder
+            .newline()
+            .newline()
+            .newline()
+            .newline()
+            .cut()
+        if (!receiptPrinterRef.current) {
+            console.log("Printer object not initialized")
+            return
+        } else {
+            receiptPrinterRef.current.print(encoder.encode())
+        }
+    }, [])
+
+    const testPrint = () => {
         let encoder = new ReceiptPrinterEncoder();
-
-
         if (encoder) {
             encoder.line('How many lines do we need to feed before we cut?')
                 .line('8 ----------------------------')
@@ -123,15 +154,9 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
                 .line('2 ----------------------------')
                 .line('1 ----------------------------')
                 .line('0 Last line, cut below! ------')
-                .newline()
-                .newline()
-                .newline()
-                .newline()
-                .cut()
-            receiptPrinter.print(encoder.encode());
-        }
-        console.log('Printing');
 
+            receiptPrinterRef.current.print(encoder.encode());
+        }
     };
 
     useEffect(() => {
@@ -151,12 +176,7 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
             setPrinterModel(savedPrinterModel);
         }
 
-        const productId = localStorage.getItem('productId');
-        const vendorId = localStorage.getItem('vendorId');
-
-        if (productId && vendorId) {
-            connectHandler({productId: productId, vendorId: vendorId})
-        }
+        tryReconnect()
 
 
     }, []);
@@ -256,7 +276,7 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
 
                     <button
                         className="btn btn-primary print"
-                        onClick={print}
+                        onClick={testPrint}
                         disabled={!isConnected}
                         style={{display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto'}}
                     >
@@ -273,7 +293,7 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
                             <path fill="#1976d2"
                                   d="M9.509,33C8.33,33,7.008,34.492,7,36.493c-0.004,1.042,0.351,2.035,0.973,2.725 c0.264,0.291,0.81,0.78,1.514,0.782c0.002,0,0.003,0,0.004,0c1.178,0,2.501-1.492,2.509-3.493c0.007-2.003-1.307-3.504-2.487-3.507 C9.511,33,9.51,33,9.509,33z"></path>
                         </svg>
-                        Print
+                        Test
                     </button>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 //@flow
 
 import * as React from "react";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useState} from "react";
 
 // @ts-ignore
 import Button from "../components/Button/Button.jsx";
@@ -17,6 +17,7 @@ import Text from "../components/Text/Text.jsx";
 import TestPaymentMethods from "./TestPaymentMethods.jsx";
 
 import {ICart} from "../../interfaces";
+import POSPrintButton from "../POSPrint";
 
 interface IPaymentFormProps {
     onClickCollectCardPayments: () => void;
@@ -48,7 +49,7 @@ const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPayment
 
     const id_payment_amount = 'id_payment_amount'
 
-    const [change_str, setChangeStr]  = useState("")
+    const [change_str, setChangeStr] = useState("")
 
     useEffect(() => {
             if (document.getElementById(id_payment_amount) && props.cart) {
@@ -141,6 +142,7 @@ const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPayment
                             </Text>
                         </Group>
                     </Button>
+                    <POSPrintButton cart={props.cart}></POSPrintButton>
                 </Group>
             </Group>
         </Section>
