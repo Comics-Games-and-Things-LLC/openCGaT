@@ -151,7 +151,7 @@
                         {width: secondColumnWidth, align: "left"},
                     ],
                     [
-                        {% for line in cart.lines.all %}
+                        {% for line in past_cart.lines.all %}
                             ["{{ line.quantity }}", "{{ line.item.product.name }}"],
                         {% endfor %}
                     ]
