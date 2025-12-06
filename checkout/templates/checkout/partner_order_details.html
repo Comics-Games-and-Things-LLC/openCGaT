@@ -145,7 +145,12 @@
                 encoder
                     .align('center').size(2, 2).line(`Order {{ past_cart.id }}`)
                     .size(1, 1).line('{{ past_cart.delivery_method }}').align('left')
-                    .rule()
+                {% if past_cart.owner %}
+                    encoder.align('center').line('{{ past_cart.owner.email }}').align('left')
+                {% elif past_cart.email %}
+                    encoder.align('center').line('{{ past_cart.email }}').align('left')
+                {% endif %}
+                encoder.rule()
                 encoder.table(
                     [
                         {width: firstColumnWidth, marginRight: 1, align: "right"},
