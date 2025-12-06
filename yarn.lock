@@ -1570,6 +1570,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@canvas/image-data@npm:^1.0.0":
+  version: 1.1.0
+  resolution: "@canvas/image-data@npm:1.1.0"
+  checksum: 995364cafc9d7d0ab10fc2838b8828859a6769b2b9c0cdf3e8f5544eff4468b17e90d6fd07b39a225e11d6e2107b1343c890e1ad1c5f1fb67af1c7ac6641ee9f
+  languageName: node
+  linkType: hard
+
 "@chevrotain/types@npm:^9.1.0":
   version: 9.1.0
   resolution: "@chevrotain/types@npm:9.1.0"
@@ -2292,6 +2299,12 @@ __metadata:
     "@emotion/react": ^11.11.1
     "@emotion/styled": ^11.11.0
     "@mui/material": ^5.14.11
+    "@point-of-sale/webbluetooth-receipt-printer": ^2.0.0
+    "@point-of-sale/webserial-receipt-printer": ^2.0.0
+    "@point-of-sale/webusb-receipt-printer": ^2.0.0
+    "@types/w3c-web-serial": ^1.0.8
+    "@types/w3c-web-usb": ^1.0.13
+    "@types/web-bluetooth": ^0.0.21
     "@yarnpkg/core": ^3.2.0
     "@yarnpkg/plugin-workspace-tools": ~3.1.1
     nodemon: ^2.0.7
@@ -2337,6 +2350,10 @@ __metadata:
     "@fortawesome/react-fontawesome": ^0.1.11
     "@mui/material": ^5.14.11
     "@paypal/react-paypal-js": ^7.8.1
+    "@point-of-sale/receipt-printer-encoder": ^3.0.3
+    "@point-of-sale/webbluetooth-receipt-printer": ^2.0.0
+    "@point-of-sale/webserial-receipt-printer": ^2.0.0
+    "@point-of-sale/webusb-receipt-printer": ^2.0.0
     "@reduxjs/toolkit": ^1.6.0
     "@stripe/react-stripe-js": ^1.10.0
     "@stripe/stripe-js": ^1.35.0
@@ -2412,6 +2429,47 @@ __metadata:
   dependencies:
     hi-base32: ^0.5.0
   checksum: 4ed270b504973b4294b7661edbaf2fe0ef1f7ca9f91275ed86246ceb0b7dba6c885285cdea8b175450d2c117130c795fcecb0128d806e91a7acbe87a2f1a6e48
+  languageName: node
+  linkType: hard
+
+"@point-of-sale/codepage-encoder@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@point-of-sale/codepage-encoder@npm:3.0.0"
+  checksum: bbfdf84f47c3455b675b071b887d3123b80603b0213a548f4f97775c7461a7ad3582eae1197aa2b606e6ca7a8166afadb903f9c67c3f5a445d2ab3071563ec2f
+  languageName: node
+  linkType: hard
+
+"@point-of-sale/receipt-printer-encoder@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "@point-of-sale/receipt-printer-encoder@npm:3.0.3"
+  dependencies:
+    "@canvas/image-data": ^1.0.0
+    "@point-of-sale/codepage-encoder": ^3.0.0
+    canvas-dither: ^1.0.1
+    canvas-flatten: ^1.0.1
+    resize-image-data: ^0.3.1
+  checksum: 9baf2067b86440a73f85784f85b90aa156ae9395f2677f3e14f6d7817d88a9ad6e28615eb082cab891ff8690625ae8a5333db2b6df7272a09f4532962eedf9f2
+  languageName: node
+  linkType: hard
+
+"@point-of-sale/webbluetooth-receipt-printer@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@point-of-sale/webbluetooth-receipt-printer@npm:2.0.0"
+  checksum: dfddaf0a766da8754de5847ad9c5c659836b8c7592b9350651f3ff91ee37f2390400ac0f5ab1a2b2ba37e14c1d66d55b92d490e88f202e72280f39ef80712c04
+  languageName: node
+  linkType: hard
+
+"@point-of-sale/webserial-receipt-printer@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@point-of-sale/webserial-receipt-printer@npm:2.0.0"
+  checksum: dfcbab7a1fe5ab6364a6ddc8980bb9bc9ef56bb70d93d15d6ee7dca8300ded604791cff50fb4a64034c72f4072a53aacc6c09a4bfe310eda06b4c57f3fcce7b5
+  languageName: node
+  linkType: hard
+
+"@point-of-sale/webusb-receipt-printer@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@point-of-sale/webusb-receipt-printer@npm:2.0.0"
+  checksum: 319deaa81dac59c89e49093a89016d7d32fa7e6f8e95fb733441495fbc0ebba1809d3992774d07af3c84cdd46321a70c50b2166c4d6391726a946c020f51451f
   languageName: node
   linkType: hard
 
@@ -3178,10 +3236,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/w3c-web-serial@npm:^1.0.8":
+  version: 1.0.8
+  resolution: "@types/w3c-web-serial@npm:1.0.8"
+  checksum: 37d8ddb43bf71a9d7dd4db3a5328ef35bbc3e9ee53b348b5a56dbd418ae6a80e6b342f18246a799d8b1e3a722d9635e7961feb19e1fd8ebb0e8229161eb77ea3
+  languageName: node
+  linkType: hard
+
+"@types/w3c-web-usb@npm:^1.0.13":
+  version: 1.0.13
+  resolution: "@types/w3c-web-usb@npm:1.0.13"
+  checksum: 5a33d8cc2a766d7162e0153fabef100e4cff6bbd1ef1f7e1ccd77d21fda6e496adb861c16df1b301aa5c731652b887ececeb1876274e9dafc75b999ce04f72ff
+  languageName: node
+  linkType: hard
+
 "@types/warning@npm:^3.0.0":
   version: 3.0.0
   resolution: "@types/warning@npm:3.0.0"
   checksum: 120dcf90600d583c68a60872200061eab9318ae15ea898581f8e9a6dc71b7941095dd81d8324e36d2a6006e5e12b6fc1cf8eda00cc514ee12bb39a912cc4e040
+  languageName: node
+  linkType: hard
+
+"@types/web-bluetooth@npm:^0.0.21":
+  version: 0.0.21
+  resolution: "@types/web-bluetooth@npm:0.0.21"
+  checksum: 85a957d52263607d26236b1748771fdcfc0791f2c20373370e6c725410067dee6a5ec425b0e25ec85db2908dd59415079070655fd3277841cbbd3a557d1f7777
   languageName: node
   linkType: hard
 
@@ -5176,6 +5255,20 @@ __metadata:
   version: 1.0.30001629
   resolution: "caniuse-lite@npm:1.0.30001629"
   checksum: c5e646e1b309b2a70b01499e0f0fca3a54bc111212f121b32614fe925b8f24ff6c1832a4306ddadf35678fbb11a6a97f953be07ccdc96bce5b530a4f84f40c45
+  languageName: node
+  linkType: hard
+
+"canvas-dither@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "canvas-dither@npm:1.0.1"
+  checksum: 6fba6e6bc1196ae8b2ef081e446a32ebef2315a1c5742884a2a91cf22129ece637a5370f53d77f7890da74edf3ed4e46a9329f51170ea165bbab74ec1c3104ea
+  languageName: node
+  linkType: hard
+
+"canvas-flatten@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "canvas-flatten@npm:1.0.1"
+  checksum: fe43ad266aea947ac7b8806af8cb90c9fa1f84c7829a50a1780e4d37128562f3450653d65aeff01637cd228d6409fa6e92b7c900e4fb28cb495338d25710fb10
   languageName: node
   linkType: hard
 
@@ -11869,6 +11962,15 @@ __metadata:
   version: 4.1.5
   resolution: "reselect@npm:4.1.5"
   checksum: 54c13c1e795b2ea70cba8384138aebe78adda00cbea303cc94b64da0a70d74c896cc9a03115ae38b8bff990e7a60dcd6452ab68cbec01b0b38c1afda70714cf0
+  languageName: node
+  linkType: hard
+
+"resize-image-data@npm:^0.3.1":
+  version: 0.3.1
+  resolution: "resize-image-data@npm:0.3.1"
+  dependencies:
+    "@canvas/image-data": ^1.0.0
+  checksum: 7d2e4a650a5a3ff4903a421976fe7f04fe72e0aaaa30eca790f0ca46c000ec617cbf3de1db6b8944a65b9f3832d548ee33a483ecf7ca8845ad7d128f33d9ee60
   languageName: node
   linkType: hard
 

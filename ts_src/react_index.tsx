@@ -5,6 +5,7 @@ import {Provider} from "react-redux";
 import store from "./cart/store";
 
 import CartWidget from "./cart/components/CartWidget";
+import PrinterWidget from "./cart/components/PrinterWidget";
 import CartFull from "./cart/components/CartFull";
 import POS from "./cart/components/POS";
 import AddToCartButton from "./cart/components/AddToCartButton";
@@ -37,6 +38,7 @@ const componentsUsingRedux = {
     POS,
     AddToCartButton,
     CheckoutUI,
+    PrinterWidget,
 };
 
 Object.assign(window, {

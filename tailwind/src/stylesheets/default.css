@@ -171,3 +171,17 @@ a:not(.unstyled):active {
     vertical-align: middle;
 }
 
+.printer_controls {
+    position: fixed;
+    bottom: 23px;
+    right: 28px;
+    width: 400px;
+}
+
+.printer_controls_content{
+    display: none;
+    position: fixed;
+    bottom: 23px;
+    right: 28px;
+    background-color: #f1f1f1;
+}

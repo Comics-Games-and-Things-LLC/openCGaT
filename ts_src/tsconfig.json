@@ -15,6 +15,7 @@
   },
   "include": [
     "react_index.tsx",
-    "components/ui_constants.ts"
+    "components/ui_constants.ts",
+    "index.d.ts",
   ]
 }

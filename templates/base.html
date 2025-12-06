@@ -339,6 +339,9 @@
         </span>
     </div>
 </footer>
+{% if partner %}
+    {% react_render component="PrinterWidget" identifier="printer_widget" %}
+{% endif %}
 
 {% block body_js %}
 {% endblock %}
