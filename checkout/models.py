@@ -1432,7 +1432,7 @@ class CheckoutLine(models.Model):
     def get_proportional_tax(self):
         if self.cart.final_tax:
             final_tax = self.cart.final_tax.amount
-            if self.cart.final_total.amount - final_tax < 0:
+            if self.cart.final_total.amount - final_tax <= 0:
                 return Money(0, 'USD')
             proportion = self.get_subtotal().amount / (self.cart.final_total.amount - final_tax)
             return Money(final_tax * proportion, "USD")
