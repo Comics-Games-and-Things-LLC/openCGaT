@@ -254,6 +254,7 @@ class CreateCustomChargeForm(forms.ModelForm):
 class BulkEditItemsForm(FiltersForm):
     NO_ACTION = "No Action"
     UPDATE_PRICES = "Update Prices"
+    UPDATE_MSRP = "Update MSRP"
     UPDATE_BACKORDERS = "Update Backorderability"
     ENABLE_ALERT = "Enable Restock Alert"
     SET_IN_STORE_PRICE = "Set In-Store Price"
@@ -262,6 +263,7 @@ class BulkEditItemsForm(FiltersForm):
     ACTION_OPTIONS = (
         (NO_ACTION, NO_ACTION),
         (UPDATE_PRICES, UPDATE_PRICES),
+        (UPDATE_MSRP, UPDATE_MSRP),
         (UPDATE_BACKORDERS, UPDATE_BACKORDERS),
         (ENABLE_ALERT, ENABLE_ALERT),
         (SET_IN_STORE_PRICE, SET_IN_STORE_PRICE),

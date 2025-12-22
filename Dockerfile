@@ -8,7 +8,7 @@ RUN set -ex \
 
 
 COPY . /app
-WORKDIR /app
+WORKDIR /appg
 
 RUN python manage.py collectstatic --no-input
 
