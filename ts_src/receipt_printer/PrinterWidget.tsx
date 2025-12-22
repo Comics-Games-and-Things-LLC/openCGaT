@@ -1,9 +1,6 @@
 import * as React from "react";
 import {useCallback, useEffect, useRef, useState} from "react";
 import ReceiptPrinterEncoder from '@point-of-sale/receipt-printer-encoder';
-import WebUSBReceiptPrinter from '@point-of-sale/webusb-receipt-printer';
-import WebSerialReceiptPrinter from './WebSerialReceiptPrinter/WebSerialReceiptPrinter';
-import WebBluetoothReceiptPrinter from '@point-of-sale/webbluetooth-receipt-printer';
 
 interface IConnectResult {
     productId?: string;
@@ -11,16 +8,10 @@ interface IConnectResult {
     type?: string;
 }
 
-interface IReceiptPrinter {
-    connect(): Promise<void>;
-
-    disconnect(): Promise<void>;
-
-    reconnect(port: IConnectResult): Promise<void>;
-
-    print(data: Uint8Array): Promise<void>;
+interface PrinterServiceWorkerMessage {
+    type: string;
+    data?: any;
 }
-
 
 const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -30,8 +21,9 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
     const [isConnected, setIsConnected] = useState(false);
     const [canConnect, setCanConnect] = useState(false);
     const [printerModels, setPrinterModels] = useState([]);
-    const receiptPrinterRef = useRef<IReceiptPrinter | null>(null);
-
+    const [connectionInfo, setConnectionInfo] = useState<IConnectResult | null>(null);
+    const workerRef = useRef<SharedWorker | null>(null);
+    const portRef = useRef<MessagePort | null>(null);
 
     const openForm = () => setIsFormOpen(true);
     const closeForm = () => setIsFormOpen(false);
@@ -61,92 +53,111 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
         localStorage.setItem('printerModel', newModel);
     };
 
+    const initializeWorker = () => {
+        try {
+            const worker = new SharedWorker(new URL('/static/js/PrinterSharedWorker.js', new URL(window.location.href).origin));
+            workerRef.current = worker;
+            portRef.current = worker.port;
+
+            worker.port.onmessage = handleWorkerMessage;
+            worker.port.start(); // Required for SharedWorker ports
+
+            console.log('Printer SharedWorker initialized');
+        } catch (error) {
+            console.error('Failed to initialize shared worker:', error);
+        }
+    };
+
+    const sendMessageToWorker = (message: PrinterServiceWorkerMessage) => {
+        console.log("Sending message", message)
+        if (portRef.current) {
+            portRef.current.postMessage(message);
+        } else {
+            console.error("No port ref to send message through")
+        }
+    };
+
+    const handleWorkerMessage = (event: MessageEvent) => {
+        const {type, data} = event.data;
+
+        switch (type) {
+            case 'PRINTER_CONNECTED':
+                setIsConnected(true);
+                setConnectionInfo(data);
+                console.log(`Connected Successfully to ${JSON.stringify(data)}`);
+                break;
+            case 'PRINTER_DISCONNECTED':
+                setIsConnected(false);
+                setConnectionInfo(null);
+                console.log('Printer disconnected');
+                break;
+            case 'CONNECTION_STATUS':
+                setIsConnected(data.isConnected);
+                setConnectionInfo(data.connectionInfo);
+                if (data.connectionInfo && data.connectionInfo.type) {
+                    setDriver(data.connectionInfo.type);
+                }
+                break;
+            case 'PRINTER_ERROR':
+                console.error('Printer error:', data.message);
+                break;
+            case 'PRINT_SUCCESS':
+                console.log('Print successful');
+                break;
+            case 'DEBUG':
+                console.log('Debug message from worker:', data.message);
+                break;
+        }
+    };
+
     const connect = () => {
-        connectHandler(null)
-    }
+        sendMessageToWorker({
+            type: 'CONNECT_PRINTER',
+            data: {driver, baudRate}
+        });
+    };
 
     const tryReconnect = async () => {
-        const lastConnection = JSON.parse(localStorage.getItem('lastConnection'));
-
-        if (!lastConnection || !lastConnection.type) {
-            return
+        const lastConnection = localStorage.getItem('lastConnection');
+        if (lastConnection) {
+            const connectionData = JSON.parse(lastConnection);
+            sendMessageToWorker({
+                type: 'RECONNECT_PRINTER',
+                data: connectionData
+            });
         }
-
-        await connectHandler(lastConnection)
-    }
-
-    const connectHandler = async (reconnect: IConnectResult | null) => {
-        let tempPrinter;
-        let tempDriver = driver
-        console.log(JSON.stringify(reconnect))
-        if (reconnect && reconnect.type) {
-            setDriver(reconnect.type)
-            tempDriver = reconnect.type
-        }
-
-        if (tempDriver === 'usb') {
-            tempPrinter = new WebUSBReceiptPrinter()
-        }
-
-        if (tempDriver === 'serial') {
-            tempPrinter = new WebSerialReceiptPrinter({
-                baudRate: Number(baudRate),
-            })
-        }
-
-        if (tempDriver === 'bluetooth') {
-            tempPrinter = new WebBluetoothReceiptPrinter()
-        }
-        console.log('Connecting with driver:', tempDriver);
-        receiptPrinterRef.current = tempPrinter; // Store in ref immediately
-
-        tempPrinter.addEventListener('connected', (connectResult: IConnectResult) => {
-                localStorage.setItem("lastConnection", JSON.stringify(connectResult));
-                setIsConnected(true);
-                console.log(`Connected Successfully to ${JSON.stringify(connectResult)}`)
-            }
-        )
-        if (!reconnect) {
-            tempPrinter.connect()
-
-        } else {
-            console.log(`Attempting to reconnect to ${JSON.stringify(reconnect)}`)
-            tempPrinter.reconnect(reconnect)
-        }
-        document.removeEventListener("rPrint", rPrint);
-        document.addEventListener("rPrint", rPrint);
     };
 
     const disconnect = () => {
-        receiptPrinterRef.current.disconnect();
-
-        console.log('Disconnecting');
-        setIsConnected(false);
+        sendMessageToWorker({
+            type: 'DISCONNECT_PRINTER'
+        });
     };
 
     const rPrint = useCallback((event: Event) => {
         if (!(event instanceof CustomEvent)) {
-            console.log("Was not passed an custom event")
-            return
+            console.log("Was not passed a custom event");
+            return;
         }
-        let encoder = event.detail?.encoder
+
+        let encoder = event.detail?.encoder;
         if (!encoder) {
-            console.log("Was not passed an encoder")
-            return
+            console.log("Was not passed an encoder");
+            return;
         }
+
         encoder
             .newline()
             .newline()
             .newline()
             .newline()
-            .cut()
-        if (!receiptPrinterRef.current) {
-            console.log("Printer object not initialized")
-            return
-        } else {
-            receiptPrinterRef.current.print(encoder.encode())
-        }
-    }, [])
+            .cut();
+
+        sendMessageToWorker({
+            type: 'PRINT_DATA',
+            data: encoder.encode()
+        });
+    }, []);
 
     const testPrint = () => {
         let encoder = new ReceiptPrinterEncoder();
@@ -160,15 +171,19 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
                 .line('3 ----------------------------')
                 .line('2 ----------------------------')
                 .line('1 ----------------------------')
-                .line('0 Last line, cut below! ------')
+                .line('0 Last line, cut below! ------');
 
-            receiptPrinterRef.current.print(encoder.encode());
+            sendMessageToWorker({
+                type: 'PRINT_DATA',
+                data: encoder.encode()
+            });
         }
     };
 
     useEffect(() => {
         // Load saved preferences
         const savedDriver = localStorage.getItem('driver');
+
         const savedPrinterModel = localStorage.getItem('printerModel');
 
         if (savedDriver) {
@@ -183,14 +198,32 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
             setPrinterModel(savedPrinterModel);
         }
 
-        tryReconnect()
+        // Initialize Shared Worker
+        initializeWorker();
 
+        // Set up print event listener
+        document.addEventListener("rPrint", rPrint);
 
-    }, []);
+        return () => {
+            document.removeEventListener("rPrint", rPrint);
+            // We generally don't "close" a SharedWorker port on unmount 
+            // if we want the worker to persist, but we can remove the listener.
+            if (portRef.current) {
+                portRef.current.onmessage = null;
+            }
+        };
+    }, [rPrint]);
 
     useEffect(() => {
         checkConnectionCapability();
     }, [checkConnectionCapability]);
+
+    // Store connection info in localStorage when it changes
+    useEffect(() => {
+        if (connectionInfo) {
+            localStorage.setItem('lastConnection', JSON.stringify(connectionInfo));
+        }
+    }, [connectionInfo]);
 
     return <div className="printer_controls">
         <button className="open-button btn btn-primary" onClick={openForm}>Controls</button>

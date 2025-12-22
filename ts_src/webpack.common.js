@@ -5,6 +5,8 @@ module.exports = {
     entry: {
         "react_index": "./react_index.tsx",
         "download_engine": "./digital_files/download_engine.ts",
+        "PrinterSharedWorker": "./receipt_printer/PrinterSharedWorker.ts",
+
     },
     target: "web",
     output: {

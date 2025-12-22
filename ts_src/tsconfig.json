@@ -8,8 +8,10 @@
     "preserveConstEnums": true,
     "removeComments": true,
     "sourceMap": true,
-    "lib":[
-      "dom"
+    "lib": [
+      "dom",
+      "webworker",
+      "es2017"
     ],
     "allowSyntheticDefaultImports": true
   },
