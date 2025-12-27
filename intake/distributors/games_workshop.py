@@ -3,6 +3,7 @@ import traceback
 from decimal import ROUND_UP
 
 import pandas
+import pypdf_table_extraction
 from django.utils.text import slugify
 
 from game_info.models import Game
@@ -502,3 +503,78 @@ def get_product_information_from_product_code(product_code):
     #         categories.append(citadel_paints.get_children().get_or_create(name='Contrast Paints')[0])
 
     return games, factions, categories
+
+
+def get_dist_object():
+    return Distributor.objects.get(dist_name="Games Workshop")
+
+
+def read_pdf_invoice(pdf_path):
+    po = PurchaseOrder.objects.get(po_number=pdf_path.split("/")[-1].split(".")[0], distributor=get_dist_object())
+    if not po:
+        print("Could not find purchase order for this PDF, skipping.")
+
+    tables = pypdf_table_extraction.read_pdf(pdf_path,
+                                             flavor='stream',
+                                             pages="1-end",
+                                             row_tol=10,
+                                             )
+    lines = []
+    lines_that_could_not_be_parsed = []
+    for i, table in enumerate(tables):
+        print(f"Table {i}")
+        if table.df.to_numpy()[0].tolist()[1] != 'Pack':
+            continue
+        for line in table.df.to_numpy():
+            line = line.tolist()  # Numpy array to list
+            dict_line = {}
+            dict_line["Quantity"] = line[0]
+            if "." not in dict_line["Quantity"]:
+                continue
+            print(line)
+            dict_line["Short Code"] = line[3]
+            dict_line["Description"] = line[4]
+            dict_line["MSRP"] = line[2]
+            dict_line["Cost"] = line[5]
+            lines.append(dict_line)
+
+    for i, line in enumerate(lines):
+        print(line)
+        barcode = find_barcode_from_product(line["Short Code"])
+        if barcode is None:
+            lines_that_could_not_be_parsed.append(lines)
+            print("Could not find product for this short code.")
+
+            continue
+
+        po_lines = POLine.objects.filter(po=po, barcode=barcode)
+        if not po_lines.exists():
+            lines_that_could_not_be_parsed.append(lines)
+            print("Could not find line for this product.")
+            continue
+
+        po_line = po_lines.first()
+        if not po_line.expected_quantity:
+            po_line.expected_quantity = round(float(line["Quantity"]))
+
+        if not po_line.cost_per_item:
+            po_line.cost_per_item = Money(line["Cost"], "USD")
+        if not po_line.line_number:
+            po_line.line_number = i + 1
+
+        if not po_line.msrp_on_line:
+            po_line.msrp_on_line = Money(line["MSRP"], "USD")
+
+        po_line.save()
+
+    return po, []
+
+
+def find_barcode_from_product(short_code):
+    products = Product.objects.filter(publisher_short_sku=short_code)
+    if products.count() == 1:
+        product = products.first()
+        return product.barcode
+    if not products.exists():
+        return None
+    return products.order_by("-release_date").first().barcode

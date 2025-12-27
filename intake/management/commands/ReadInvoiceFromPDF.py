@@ -3,7 +3,7 @@ import os
 
 from django.core.management.base import BaseCommand
 
-from intake.distributors import hobbytyme, kingsley
+from intake.distributors import hobbytyme, kingsley, games_workshop
 from intake.models import Distributor
 from openCGaT.management_util import email_report
 
@@ -34,6 +34,8 @@ class Command(BaseCommand):
             po, could_not_process_lines = hobbytyme.read_pdf_invoice(options['invoice_file'])
         elif dist == kingsley.get_dist_object():
             po, could_not_process_lines = kingsley.read_pdf_invoice(options['invoice_file'])
+        elif dist == games_workshop.get_dist_object():
+            po, could_not_process_lines = games_workshop.read_pdf_invoice(options['invoice_file'])
         else:
             print("Not a supported distributor")
         if could_not_process_lines:
