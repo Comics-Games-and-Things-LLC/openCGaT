@@ -6,6 +6,9 @@ from allauth.account.models import EmailAddress
 from django import template
 from django.conf import settings
 from django.db.models import Sum, Q
+from django.template import TemplateSyntaxError
+from django.template.base import kwarg_re
+from django.template.defaulttags import URLNode
 
 from checkout.models import Cart
 from digitalitems.models import DigitalItem
@@ -22,6 +25,47 @@ def relative_url(context, value, field_name):
         lambda p: p.split('=')[0] != field_name, querystring)
     encoded_querystring = '&'.join(filtered_querystring)
     url = '{}&{}'.format(url, encoded_querystring)
+    return url
+
+
+class ParamURLNode(URLNode):
+
+    def render(self, context):
+        url = super(ParamURLNode, self).render(context)
+        print(url)
+        return '{}?{}'.format(url, context['request'].GET.urlencode())
+
+
+@register.tag
+def keep_get_params_url(parser, token):
+    """
+    This is a copy of the built-in url tag, but it keeps the querystring parameters from the original URL.
+    See django.template.defaulttags.url
+    """
+    bits = token.split_contents()
+    if len(bits) < 2:
+        raise TemplateSyntaxError(
+            "'%s' takes at least one argument, a URL pattern name." % bits[0]
+        )
+    viewname = parser.compile_filter(bits[1])
+    args = []
+    kwargs = {}
+    asvar = None
+    bits = bits[2:]
+    if len(bits) >= 2 and bits[-2] == "as":
+        asvar = bits[-1]
+        bits = bits[:-2]
+
+    for bit in bits:
+        match = kwarg_re.match(bit)
+        if not match:
+            raise TemplateSyntaxError("Malformed arguments to url tag")
+        name, value = match.groups()
+        if name:
+            kwargs[name] = parser.compile_filter(value)
+        else:
+            args.append(parser.compile_filter(value))
+    url = ParamURLNode(viewname, args, kwargs, asvar)
     return url
 
 

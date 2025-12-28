@@ -6,6 +6,9 @@
 {% block title %}Bulk Product Edit{% endblock %}
 {% block content_header %}
     Use this form to find a list of items, then set an action and apply it.
+    <a href="{% keep_get_params_url 'manage_products' partner_slug=partner.slug %}">
+        Switch to Manage Products
+    </a>
 {% endblock %}
 {% block list %}
     <table class="table">

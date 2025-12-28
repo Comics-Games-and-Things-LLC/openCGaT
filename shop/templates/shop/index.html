@@ -1,13 +1,35 @@
 {% extends 'filtered_list_view.html' %}
+{% load templatehelpers %}
 {% load wagtailcore_tags %}
 {% load templatehelpers %}
 {% load static %}
 
 {% block title %}{% if manage %} Manage Products {% else %} Shop {% endif %}{% endblock %}
+{% block content_header %}
+    {% if not manage %}
+        {% with user|get_retail_partners as partners %}
+            {% if partners|length == 1 %}
+                <a href="{% keep_get_params_url 'manage_products' partner_slug=partners.0.slug %}">
+                    Manage Products
+                </a>
+            {% elif partners %}
+                <strong>Manage as:</strong>
+                {% for partner in partners %}
+                    <a href="{% keep_get_params_url 'manage_products' partner_slug=partner.slug %}">
+                        {{ partner.name }}
+                    </a>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    {% else %}
+        <a class="nav-link" href="{% keep_get_params_url 'bulk_edit' partner_slug=partner.slug %}">
+            Switch to Bulk Edit
+        </a>
+    {% endif %}
+{% endblock %}
 {% block card %}
     {% include 'shop/snippets/item_list_entry.html' with first=1 item=entry %}
 {% endblock card %}
-
 {% block alternate %}
     <p class="p-6">No products are available that match your search criteria.</p>
     {% if collection %}
