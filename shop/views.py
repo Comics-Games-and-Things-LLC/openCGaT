@@ -1,7 +1,7 @@
 import datetime
 
 from allauth.account.models import EmailAddress
-from allauth.account.utils import send_email_confirmation
+# from allauth.account.utils import send_email_confirmation
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
@@ -302,7 +302,7 @@ def product_details(request, product_slug, partner_slug=None):
             if not EmailAddress.objects.filter(
                     user=request.user, verified=True
             ).exists():
-                send_email_confirmation(request, request.user)
+                # send_email_confirmation(request, request.user)
                 return TemplateResponse(request, "account/verified_email_required.html")
         context["di"] = download_item
         if download_item.root_downloadable:
