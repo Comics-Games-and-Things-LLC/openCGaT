@@ -333,6 +333,8 @@ def filter_form_bf_props_choice(bound_field):
 
 @register.filter()
 def get_retail_partners(user):
+    if not user.is_authenticated:
+        return None
     return user.admin_of.filter(retail_partner=True)
 
 
