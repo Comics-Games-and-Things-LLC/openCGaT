@@ -22,9 +22,20 @@
             {% endif %}
         {% endwith %}
     {% else %}
-        <a class="nav-link" href="{% keep_get_params_url 'bulk_edit' partner_slug=partner.slug %}">
-            Switch to Bulk Edit
-        </a>
+        <div class="grid-cols-2">
+            <div class="row">
+                <div class="col">
+                    <a class="nav-link" href="{% keep_get_params_url 'shop' %}">
+                        Switch to Public View
+                    </a>
+                </div>
+                <div class="col">
+                    <a class="nav-link" href="{% keep_get_params_url 'bulk_edit' partner_slug=partner.slug %}">
+                        Switch to Bulk Edit
+                    </a>
+                </div>
+            </div>
+        </div>
     {% endif %}
 {% endblock %}
 {% block card %}
