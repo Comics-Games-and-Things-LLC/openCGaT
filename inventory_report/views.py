@@ -68,6 +68,7 @@ def add(request, partner_slug, report_id, location_id=None, barcode=None):
             line = InventoryReportLine.objects.create(report=report, location=location, barcode=barcode)
             data['success'] = True
             data['line_id'] = line.id
+            data['count'] = line.number_at_time_of_scan
 
     return JsonResponse(data=data)
 

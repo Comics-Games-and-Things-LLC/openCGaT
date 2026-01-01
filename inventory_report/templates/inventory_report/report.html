@@ -35,6 +35,7 @@
             <th>Barcode</th>
             <th>Success</th>
             <th>Product</th>
+            <th>Count</th>
             <th>Inventory</th>
             <th>Delete</th>
         </tr>
@@ -44,6 +45,8 @@
             <th>Timestamp</th>
             <th>Barcode</th>
             <th>Location</th>
+            <th>Name</th>
+            <th>Count</th>
             <th>Delete</th>
         </tr>
         {% for line in lines %}
@@ -51,6 +54,8 @@
                 <td>{{ line.timestamp }}</td>
                 <td>{{ line.barcode }}</td>
                 <td>{{ line.location }}</td>
+                <td>{{ line.name_at_time_of_scan }}</td>
+                <td>{{ line.number_at_time_of_scan }}</td>
                 <td>
 
                     <a href="
@@ -101,6 +106,11 @@
                         row.insertCell().innerText = "No Product"
                         has_error = true;
 
+                    }
+                    if (data.hasOwnProperty('count')) {
+                        row.insertCell().innerText = data.count
+                    } else {
+                        row.insertCell().innerText = ""
                     }
                     if (data.hasOwnProperty('item')) {
                         row.insertCell().innerText = `${data.item.count} in inventory`
