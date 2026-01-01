@@ -36,7 +36,7 @@
             <th>Success</th>
             <th>Product</th>
             <th>Inventory</th>
-
+            <th>Delete</th>
         </tr>
     </table>
     <table class="table">
@@ -107,7 +107,9 @@
                     } else {
                         row.insertCell().innerText = "No Inventory Item"
                         has_error = true;
-
+                    }
+                    if (data.hasOwnProperty('line_id')) {
+                        row.insertCell().innerHTML = `<a href="/partner/{{ partner.slug }}/inv_report/{{ report.id }}/delete/${data.line_id}/0">Delete</a>`
                     }
                     if (has_error) {
                         playError()

@@ -65,8 +65,9 @@ def add(request, partner_slug, report_id, location_id=None, barcode=None):
                 "count": item.current_inventory
             }
         if barcode:
-            InventoryReportLine.objects.create(report=report, location=location, barcode=barcode)
+            line = InventoryReportLine.objects.create(report=report, location=location, barcode=barcode)
             data['success'] = True
+            data['line_id'] = line.id
 
     return JsonResponse(data=data)
 
