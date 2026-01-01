@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
@@ -30,12 +31,21 @@ def report_details(request, partner_slug, report_id, location_id=None):
         lines = lines.filter(location=location)
     else:
         locations = InventoryReportLocation.objects.filter(partner=partner)
+
+    page_size = int(request.GET.get('page_size', 100))
+    page_number = int(request.GET.get('page_number', 1))
+    paginator = Paginator(lines, page_size)
+    if page_number > paginator.num_pages:
+        page_number = 1
+    page_obj = paginator.get_page(page_number)
+
     context = {
         'partner': partner,
         'location': location,
         'locations': locations,
         'report': report,
-        'lines': lines
+        'page': page_obj,
+        'page_number': page_number,
     }
     return render(request, "inventory_report/report.html", context)
 

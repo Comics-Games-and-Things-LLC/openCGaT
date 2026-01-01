@@ -40,6 +40,8 @@
             <th>Delete</th>
         </tr>
     </table>
+    {% include 'snippets/page_numbers.html' %}
+
     <table class="table">
         <tr>
             <th>Timestamp</th>
@@ -49,7 +51,7 @@
             <th>Count</th>
             <th>Delete</th>
         </tr>
-        {% for line in lines %}
+        {% for line in page %}
             <tr>
                 <td>{{ line.timestamp }}</td>
                 <td>{{ line.barcode }}</td>
@@ -71,6 +73,7 @@
             </tr>
         {% endfor %}
     </table>
+    {% include 'snippets/page_numbers.html' %}
 
     <script>
         function HandleAdd() {
