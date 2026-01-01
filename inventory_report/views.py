@@ -49,9 +49,6 @@ def add(request, partner_slug, report_id, location_id=None, barcode=None):
 
     if location_id:
         location = InventoryReportLocation.objects.get(id=location_id)
-    if barcode:
-        InventoryReportLine.objects.create(report=report, location=location, barcode=barcode)
-        data['success'] = True
 
     potential_product = Product.objects.filter(barcode=barcode)
     if potential_product.exists():
@@ -67,6 +64,9 @@ def add(request, partner_slug, report_id, location_id=None, barcode=None):
                 "id": item.id,
                 "count": item.current_inventory
             }
+        if barcode:
+            InventoryReportLine.objects.create(report=report, location=location, barcode=barcode)
+            data['success'] = True
 
     return JsonResponse(data=data)
 
