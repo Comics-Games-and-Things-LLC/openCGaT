@@ -282,8 +282,12 @@
                 if (sCode.startsWith('420') && sCode.length === 30) {
                     // First 8 characters will be the barcode and the zip code
                     console.log("Populating tracking number")
-
-                    document.getElementById("id_tracking_number").value = sCode.substring(8)
+                    let tracking_number = sCode.substring(8);
+                    const existing_tracking_number = document.getElementById("id_tracking_number").value;
+                    if (!!existing_tracking_number) {
+                        tracking_number = existing_tracking_number + " and " + tracking_number
+                    }
+                    document.getElementById("id_tracking_number").value = tracking_number
                     document.getElementById("id_carrier").value = "USPS"
                 } else if (sCode.length === 12 && sCode.startsWith('')) {
                     console.log("Probably a box barcode")
