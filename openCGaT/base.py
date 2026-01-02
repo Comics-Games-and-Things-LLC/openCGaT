@@ -123,6 +123,7 @@ MIDDLEWARE = [
     'django.middleware.common.BrokenLinkEmailsMiddleware',
     'partner.middleware.CurrentSiteDynamicMiddleware',
     'checkout.middleware.CartMiddleware',
+    'discount_codes.middleware.ShorteningMiddleware',
     # site level redirects from wagtail
     'wagtail.contrib.redirects.middleware.RedirectMiddleware',
     'allauth.account.middleware.AccountMiddleware',

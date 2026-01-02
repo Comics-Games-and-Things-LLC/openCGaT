@@ -14,3 +14,4 @@ class CodeUsageAdmin(HasCartAdmin):
 
 
 admin.site.register(CodeUsage, CodeUsageAdmin)
+admin.site.register(URLShortener)

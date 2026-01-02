@@ -1,18 +1,46 @@
 from decimal import Decimal
 
+from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db.models import Sum, F
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
+from django.utils.http import urlencode
 from django.views.decorators.csrf import csrf_exempt
 from djmoney.money import Money
 
-from checkout.models import CheckoutLine, Cart
-from discount_codes.models import DiscountCode, CodeUsage, Referrer
+from checkout.models import Cart
+from discount_codes.models import DiscountCode, CodeUsage, Referrer, URLShortener
 from partner.models import get_partner_or_401
 
 
 # Create your views here.
+
+def short_redirect(request, code=None):
+    apply_code_page = ""
+    if code:
+        potential_codes = DiscountCode.objects.filter(code=code.lower())
+        # Attempt to get discount code and use it's redirect
+        if potential_codes.exists():
+            code_obj = potential_codes.first()
+            encoded_url = urlencode({"next": code_obj.redirect})
+            print(encoded_url)
+            apply_code_page = f"/cart/code/{code}/?" + encoded_url
+    # if code does not exist this will take you to the default page
+
+    # Can't use "reverse" here because we're using the alternate URLconf
+
+    site = request.site
+    shortner = URLShortener.objects.filter(short_site=site).first()
+    if shortner:
+        default_site = shortner.default_site
+    else:
+        default_site = Site.objects.get(id=settings.SITE_ID).domain
+
+    print(f"Redirecting to {default_site} page {apply_code_page}")
+    return HttpResponseRedirect(f"{request.scheme}://{default_site.domain}{apply_code_page}")
+
 
 @csrf_exempt
 def apply_code(request, code: str = "", cart=None):

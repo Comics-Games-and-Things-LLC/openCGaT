@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 
 from django.conf.global_settings import AUTH_USER_MODEL
+from django.contrib.sites.models import Site
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import Subquery
@@ -44,6 +45,7 @@ class DiscountCode(models.Model):
     publishers = models.ManyToManyField("shop.Publisher", blank=True)
     min_cart_for_discount = MoneyField(decimal_places=2, max_digits=19, null=True)
     in_store_only = models.BooleanField(default=False)
+    redirect = models.CharField(blank=True, null=True)
 
     def validate_code_for_cart(self, cart):
         """
@@ -85,7 +87,7 @@ class DiscountCode(models.Model):
         found_partner = False
         for discount in self.partner_discounts.filter(partner=line.item.partner):  # Try each discount from the partner
             if discount.discount_percentage == 0:
-                return False, line.item.price # Vague performance improvement, skip all these other checks if there's no discount.
+                return False, line.item.price  # Vague performance improvement, skip all these other checks if there's no discount.
             found_partner = True
             if self.min_cart_for_discount and (line.cart.get_pre_discount_subtotal() < self.min_cart_for_discount):
                 line.discount_code_message = "The code '{}' requires {} to activate".format(self,
@@ -139,7 +141,7 @@ class DiscountCode(models.Model):
             .order_by("cart__date_paid")
         )
         if self.restrict_to_publishers:
-            applicable_lines =applicable_lines.filter(item__product__publisher__in=self.publishers.all())
+            applicable_lines = applicable_lines.filter(item__product__publisher__in=self.publishers.all())
         if self.exclude_publishers:
             applicable_lines = applicable_lines.exclude(item__product__publisher__in=self.publishers.all())
 
@@ -174,3 +176,11 @@ class CodeUsage(models.Model):
 
     def __str__(self):
         return f"{self.code} was used at {self.timestamp} for cart {self.cart}"
+
+
+class URLShortener(models.Model):
+    default_site = models.ForeignKey(Site, on_delete=models.PROTECT, related_name="default_shortener")
+    short_site = models.ForeignKey(Site, on_delete=models.PROTECT, related_name="short_site", unique=True)
+
+    def __str__(self):
+        return f"{self.short_site} -> {self.default_site}"
