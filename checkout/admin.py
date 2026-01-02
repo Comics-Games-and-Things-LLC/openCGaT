@@ -12,8 +12,14 @@ class CartAdmin(admin.ModelAdmin):
 
 
 class CartLineAdmin(admin.ModelAdmin):
-    search_fields = ['cart', 'cart__owner__email', 'cart__owner__username']
+    search_fields = ['cart', 'cart__owner__email', 'cart__owner__username', 'cart__id']
     autocomplete_fields = ['item', 'cart', 'submitted_in_cart', 'paid_in_cart', 'fulfilled_in_cart']
+
+
+class HasCartAdmin(admin.ModelAdmin):
+    search_fields = ['cart', 'cart__owner__email', 'cart__owner__username', 'cart__id']
+    autocomplete_fields = ['cart']
+
 
 
 admin.site.register(Cart, CartAdmin)
