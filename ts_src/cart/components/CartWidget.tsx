@@ -16,7 +16,6 @@ const CartWidget: React.FunctionComponent<ICart> = (props: ICart): JSX.Element =
     const setPopoverOpen = (state: boolean) => dispatch(_setPopoverOpen(state));
     const toggle = () => setPopoverOpen(!popoverOpen);
     const target = useRef(null);
-    let content = <p>items in your cart will appear here</p>
 
     // HACKY, I'm so sorry
     document.getElementById('dropdown01').onclick = () => {
