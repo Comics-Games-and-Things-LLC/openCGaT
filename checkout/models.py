@@ -119,8 +119,8 @@ class Cart(RepresentationMixin, models.Model):
         "UPS", "USPS", "FEDEX", "DHL"
     )
     CARRIER_CHOICES = (
-        (UPS, UPS),
         (USPS, USPS),
+        (UPS, UPS),
         (FEDEX, FEDEX),
         (DHL, DHL),
     )
