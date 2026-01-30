@@ -8,7 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Prefetch, OuterRef, Subquery, F, Sum, Max
+from django.db.models import Prefetch, OuterRef, Subquery, F, Sum, Max, Exists
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
@@ -1046,10 +1046,11 @@ def tasks(request, partner_slug):
         cart__at_pos=False,
     ).order_by('item__product__name').prefetch_related('item', 'item__product', 'cart')
 
-    all_item_ready_carts = (Cart.submitted.exclude(status__in=[Cart.COMPLETED, Cart.CANCELLED],
-                                                   )
-                            .filter(lines__ready=True)
-                            .exclude(lines__ready=False).distinct()
+    not_ready_lines = CheckoutLine.objects.filter(cart=OuterRef("pk"), ready=False, cancelled=False)
+
+    all_item_ready_carts = (Cart.submitted.exclude(status__in=[Cart.COMPLETED, Cart.CANCELLED])
+                            # Carts composed only of lines that are either ready or cancelled, and none that are neither
+                            .exclude(Exists(not_ready_lines))
                             .annotate(latest_release_date=Max('lines__item__product__release_date')
                                       ).order_by('latest_release_date')
                             )
