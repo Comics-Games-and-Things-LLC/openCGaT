@@ -1,6 +1,6 @@
 import * as React from "react";
 import CartList from "./CartList";
-import {createNewPOSCart, updatePOSFull} from "../reducers/cartSlice";
+import {createNewPOSCart, updatePOSFull, markCartComplete} from "../reducers/cartSlice";
 import {RootState, useAppDispatch} from "../store";
 import {useSelector} from "react-redux";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -22,6 +22,10 @@ const CartSelector: React.FunctionComponent<ICartLists> = (props: ICartLists): J
     const createNewCart = () => {
         dispatch(createNewPOSCart());
     }
+    const completeAndCreateNew = () => {
+        dispatch(markCartComplete());
+        dispatch(createNewPOSCart());
+    }
 
     const refresh = () => {
         dispatch(updatePOSFull());
@@ -31,6 +35,7 @@ const CartSelector: React.FunctionComponent<ICartLists> = (props: ICartLists): J
         <div className="col">
             <h2>Carts</h2>
             <a className='btn btn-success' onClick={createNewCart}>New Cart</a>
+            <a className='btn btn-primary' onClick={completeAndCreateNew}>Complete and New Cart</a>
             <a className='btn btn-secondary' onClick={refresh}>
                 <FontAwesomeIcon icon={faSync}/>
             </a>

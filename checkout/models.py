@@ -480,6 +480,8 @@ Final state:
             for line in self.lines.all():
                 line.complete()
             self.save()
+            return True
+        return False
 
     def pay_amount(self, amount, cash=False, timestamp=None):
         success = False

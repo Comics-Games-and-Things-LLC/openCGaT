@@ -722,7 +722,7 @@ def pos_pay_cash(request, partner_slug, cart_id):
     partner = get_partner_or_401(request, partner_slug)
     cart = Cart.objects.get(id=cart_id)
     if cart.payment_partner != partner:
-        return HttpResponse(403)
+        return HttpResponse(status=403)
 
     if cart.status != cart.SUBMITTED:
         cart.submit()
@@ -737,6 +737,15 @@ def pos_pay_cash(request, partner_slug, cart_id):
         return HttpResponse(status=200)
     else:
         return HttpResponse(status=400)
+
+def pos_mark_complete(request, partner_slug, cart_id):
+    partner = get_partner_or_401(request, partner_slug)
+    cart = Cart.objects.get(id=cart_id)
+    if cart.pickup_partner != partner:
+        return HttpResponse(status=403)
+    if cart.mark_completed():
+        return HttpResponse(status=200)
+    return HttpResponse(status=400)
 
 
 def pos_create_stripe_payment(request, partner_slug, cart_id):
