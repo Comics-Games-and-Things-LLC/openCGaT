@@ -17,6 +17,19 @@
                     button.classList.add('btn-success')
                 });
         }
+
+        function mark_ready_and_print(line_id, target_url, print_url) {
+            console.log(target_url)
+            fetch(target_url)
+                .then(response => {
+                    var button = document.getElementById("line_" + line_id)
+                    button.disabled = true;
+                    button.innerText = "Set!"
+                    button.classList.remove('btn-primary')
+                    button.classList.add('btn-success')
+                    PrintImageFromUrl(print_url)
+                });
+        }
     </script>
     {% if lines_to_pick %}
         <h2>Items to pick</h2>
@@ -37,6 +50,12 @@
                                 id="line_{{ line.id }}"
                                 onclick="mark_line_ready({{ line.id }},'{% url 'partner_ready_line' cart_id=line.cart.id line_id=line.id partner_slug=partner.slug %}')">
                             Ready
+                        </button>
+                        {% include 'intake/snippets/line_label_button.html' with checkoutline_id=line.id %}
+                        <button class="btn btn-secondary"
+                                id="line_ready_{{ line.id }}"
+                                onclick="mark_ready_and_print({{ line.id }},'{% url 'partner_ready_line' cart_id=line.cart.id line_id=line.id partner_slug=partner.slug %}', '{% url 'get_order_image' partner_slug=partner.slug checkoutline_id=line.id %}')">
+                            Print and Ready
                         </button>
                     </td>
                     <td>
