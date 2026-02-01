@@ -542,14 +542,14 @@ def read_pdf_invoice(pdf_path):
         print(line)
         barcode = find_barcode_from_product(line["Short Code"])
         if barcode is None:
-            lines_that_could_not_be_parsed.append(lines)
+            lines_that_could_not_be_parsed.append(line)
             print("Could not find product for this short code.")
 
             continue
 
         po_lines = POLine.objects.filter(po=po, barcode=barcode)
         if not po_lines.exists():
-            lines_that_could_not_be_parsed.append(lines)
+            lines_that_could_not_be_parsed.append(line)
             print("Could not find line for this product.")
             continue
 
@@ -557,13 +557,19 @@ def read_pdf_invoice(pdf_path):
         if not po_line.expected_quantity:
             po_line.expected_quantity = round(float(line["Quantity"]))
 
-        if not po_line.cost_per_item:
-            po_line.cost_per_item = Money(line["Cost"], "USD")
-        if not po_line.line_number:
-            po_line.line_number = i + 1
+        try:
+            if not po_line.cost_per_item:
+                po_line.cost_per_item = Money(line["Cost"], "USD")
+            if not po_line.msrp_on_line:
+                po_line.msrp_on_line = Money(line["MSRP"], "USD")
 
-        if not po_line.msrp_on_line:
-            po_line.msrp_on_line = Money(line["MSRP"], "USD")
+        except Exception as e:
+            lines_that_could_not_be_parsed.append(line)
+            print(f"Error parsing line: {e}")
+            continue
+
+        if not po_line.line_number:
+            po_line.line_number = i + 1  # offset by one
 
         po_line.save()
 
