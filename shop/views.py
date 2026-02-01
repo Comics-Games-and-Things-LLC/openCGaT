@@ -849,6 +849,7 @@ def bulk_edit(request, partner_slug):
         if action == BulkEditItemsForm.UPDATE_MSRP:
             for item in items:
                 item.product.msrp = price_override
+                item.product.save()
                 item.save()
         if action == BulkEditItemsForm.SET_IN_STORE_PRICE:
             for item in items:
