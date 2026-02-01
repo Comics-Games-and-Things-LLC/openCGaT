@@ -532,10 +532,15 @@ def read_pdf_invoice(pdf_path):
             if "." not in dict_line["Quantity"]:
                 continue
             print(line)
-            dict_line["Short Code"] = line[3]
-            dict_line["Description"] = line[4]
             dict_line["MSRP"] = line[2]
+            dict_line["Short Code"] = line[3]
+
+            dict_line["Description"] = line[4]
             dict_line["Cost"] = line[5]
+            if not line[4]: # Sometimes an extra blank line is present.
+                dict_line["Description"] = line[5]
+                dict_line["Cost"] = line[6]
+
             lines.append(dict_line)
 
     for i, line in enumerate(lines):
