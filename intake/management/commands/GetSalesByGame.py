@@ -114,7 +114,7 @@ def get_sales_by_thing(thing=GAME, **options):
                         collected_on_game_events += collected_on_line
                     else:
                         collected_on_game += collected_on_line
-                        if line.cart.final_ship and line.cart.final_ship.amount == 0:
+                        if (line.cart.final_ship is None) or line.cart.final_ship.amount == 0:
                             collected_locally += collected_on_line
                 else:
                     log(f, "{} no longer has an item".format(line))
