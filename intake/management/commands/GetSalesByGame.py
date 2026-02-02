@@ -62,8 +62,11 @@ def get_sales_by_thing(thing=GAME, **options):
     else:
         object_to_iterate_on = Game.objects.all().order_by('name')
 
-    for thing_instance in object_to_iterate_on:
-        name = thing_instance.name
+    for thing_instance in list(object_to_iterate_on) + [None]:
+        if thing_instance:
+            name = thing_instance.name
+        else:
+            name = f"No {thing}"
         if thing == CATEGORY:
             thing_instance = thing_instance.get_descendants(include_self=True)
 
