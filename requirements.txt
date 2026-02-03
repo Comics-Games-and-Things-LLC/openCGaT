@@ -1,6 +1,6 @@
 rfc3339
 gunicorn
-Django==4.2.27
+Django==4.2.28
 django-allauth==65.13.0
 django-select2==8.4.3
 django-b2
