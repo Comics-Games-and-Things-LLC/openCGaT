@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         fieldnames = ["Distributor", "PO Number", "Date Invoiced", "Date Received",
-                      "Empty", "Missing Costs", "Missing Quantities", "Total lines", "Cost does not match up"]
+                      "Empty", "Missing Costs", "Missing Quantities", "Total lines", "Cost does not match up", "Notes"]
 
         total_po_count = PurchaseOrder.objects.count()
         completed_po_count = 0
@@ -39,6 +39,7 @@ class Command(BaseCommand):
                     received_quantity=None).count()
             if po.cost_does_not_match_up:
                 row_data["Cost does not match up"] = po.cost_does_not_match_up
+            row_data["Notes"] = po.notes
             data.append(row_data)
 
         print(f"{completed_po_count}/{total_po_count} are complete")
