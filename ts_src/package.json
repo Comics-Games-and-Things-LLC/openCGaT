@@ -33,7 +33,7 @@
     "source-map-loader": "^1.1.0",
     "ts-loader": "^9.2.8",
     "typescript": "^5.2.2",
-    "webpack": "^5.94.0",
+    "webpack": "^5.104.1",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.2.1"
   },
