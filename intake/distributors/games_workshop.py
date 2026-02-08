@@ -510,38 +510,42 @@ def get_dist_object():
 
 
 def read_pdf_invoice(pdf_path):
-    po = PurchaseOrder.objects.get(po_number=pdf_path.split("/")[-1].split(".")[0], distributor=get_dist_object())
+    po_name = pdf_path.split("/")[-1].split(".")[0] # Get file name without extension
+    po_name = po_name.split("_")[1] # inv_####_date_time
+    po = PurchaseOrder.objects.get(po_number=po_name, distributor=get_dist_object())
     if not po:
         print("Could not find purchase order for this PDF, skipping.")
 
     tables = pypdf_table_extraction.read_pdf(pdf_path,
                                              flavor='stream',
                                              pages="1-end",
-                                             row_tol=10,
+                                             row_tol=4,
                                              )
     lines = []
     lines_that_could_not_be_parsed = []
     for i, table in enumerate(tables):
         print(f"Table {i}")
-        if table.df.to_numpy()[0].tolist()[1] != 'Pack':
+        if table.df.to_numpy()[0].tolist()[0] != 'Item #':
             continue
-        for line in table.df.to_numpy():
-            line = line.tolist()  # Numpy array to list
-            dict_line = {}
-            dict_line["Quantity"] = line[0]
-            if "." not in dict_line["Quantity"]:
+        df = table.df
+        # Grab the first row for the new header
+        new_header = df.iloc[0]
+        # Take the data less the header row
+        df = df[1:]
+        # Set the new header
+        df.columns = new_header
+        # Optional: Reset the index to be contiguous
+        df = df.reset_index(drop=True)
+        for line in df.to_dict(orient='records'):
+            if not line["Ship"] or line['Ship'] == '*\nQty':
                 continue
             print(line)
-            dict_line["MSRP"] = line[2]
-            dict_line["Short Code"] = line[3]
-
-            dict_line["Description"] = line[4]
-            dict_line["Cost"] = line[5]
-            if not line[4]: # Sometimes an extra blank line is present.
-                dict_line["Description"] = line[5]
-                dict_line["Cost"] = line[6]
-
-            lines.append(dict_line)
+            internal_line = {}
+            internal_line["MSRP"] = line['MSRP']
+            internal_line["Short Code"] = line['Short']
+            internal_line["Description"] = line['Description']
+            internal_line["Cost"] = line['Unit']
+            lines.append(internal_line)
 
     for i, line in enumerate(lines):
         print(line)
