@@ -6,7 +6,7 @@ from django.apps import apps
 from django.contrib.auth.models import User
 from django.core.mail import EmailMessage
 from django.db import models, transaction
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
 from django.template.defaultfilters import slugify
 from django.template.loader import get_template
 from django.utils import timezone
@@ -402,6 +402,21 @@ class Product(PolymorphicModel):
         context["x_purchased"] = purchases.aggregate(sum=Sum("received_quantity"))['sum']
         context["inventory_log"] = InventoryLog.objects.filter(
             item__in=Item.objects.filter(product=self, partner=partner)).order_by("-timestamp")
+
+        from inventory_report.models import InventoryReport
+        context["eoy_inventory"] = (
+            InventoryReport.objects
+            .filter(partner=partner)
+            .annotate(
+                eoy_count=Count(
+                    "report_lines",
+                    filter=Q(report_lines__barcode=self.barcode),
+                    distinct=True,
+                )
+            ).order_by("-date")
+        )
+        print(context["eoy_inventory"])
+
         return context
 
     def get_request_info(self, partner):

@@ -197,3 +197,24 @@
 
     </div>
 {% endif %}
+{% if eoy_inventory %}
+    <div class="row mb-3 p-0.5">
+        <h2> EOY Inventory </h2>
+        <table class="table">
+            <tr>
+                <th scope="col">Year</th>
+                <th scope="col">Count</th>
+            </tr>
+            {% for line in eoy_inventory %}
+                <tr>
+                    <td>
+                        {{ line.date }}
+                    </td>
+                    <td>
+                        {{ line.eoy_count }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endif %}
