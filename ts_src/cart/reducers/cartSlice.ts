@@ -201,6 +201,21 @@ export const markCartComplete = createAsyncThunk<// Return type of the payload c
     );
 });
 
+export const markCartCompleteAndRefresh = createAsyncThunk<// Return type of the payload creator
+    object,
+    // First argument to the payload creator
+    void,
+    // Types for ThunkAPI
+    {
+        state: RootState;
+    }>("cart/markCompleteAndRefresh", async (_, {getState, dispatch}) => {
+    const pos = getState().cart.pos;
+    return fetch(`${pos.url}/${pos.active_cart.id}/complete/`).then(() => {
+            return dispatch(updatePOSCart());
+        }
+    );
+});
+
 export const createNewPOSCart = createAsyncThunk<// Return type of the payload creator
     object,
     // First argument to the payload creator

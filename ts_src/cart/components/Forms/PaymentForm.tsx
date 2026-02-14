@@ -18,6 +18,8 @@ import TestPaymentMethods from "./TestPaymentMethods.jsx";
 
 import {ICart} from "../../interfaces";
 import POSPrintButton from "../POSPrint";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faShippingFast} from "@fortawesome/free-solid-svg-icons";
 
 interface IPaymentFormProps {
     onClickCollectCardPayments: () => void;
@@ -26,6 +28,7 @@ interface IPaymentFormProps {
     onChangeTestCardNumber: (value: string) => void
     onChangeTestPaymentMethod: (value: string) => void
     onClickSubmit: (value: string) => void
+    onClickComplete: (value: string) => void
     cashOnly?: boolean
     cancelablePayment: boolean | null
     workFlowDisabled: boolean | null
@@ -139,6 +142,19 @@ const PaymentForm: React.FunctionComponent<IPaymentFormProps> = (props: IPayment
                             <Icon icon="lock"/>
                             <Text color="blue" size={14}>
                                 Submit
+                            </Text>
+                        </Group>
+                    </Button>
+                    <Button
+                        color="white"
+                        onClick={props.onClickComplete}
+                        justifyContent="left"
+                        disabled={false}
+                    >
+                        <Group direction="row">
+                            <FontAwesomeIcon icon={faShippingFast}/>
+                            <Text color="blue" size={14}>
+                                Complete
                             </Text>
                         </Group>
                     </Button>

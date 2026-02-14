@@ -24,7 +24,7 @@ import CartForm from "./Forms/CartForm"
 
 import {ICart} from "../interfaces";
 import {RootState, useAppDispatch} from "../store";
-import {updatePOSFull, updatePOSCart} from "../reducers/cartSlice";
+import {markCartCompleteAndRefresh, updatePOSCart} from "../reducers/cartSlice";
 import {useSelector} from "react-redux";
 
 
@@ -306,6 +306,9 @@ const POSPayment: React.FunctionComponent<IPOSPaymentProps> = (props): JSX.Eleme
                     onClickSubmit={() =>
                         runWorkflow("submitCart", submitCart)
 
+                    }
+                    onClickComplete={
+                        () => dispatch(markCartCompleteAndRefresh())
                     }
                     onClickCancelPayment={cancelPendingPayment}
                     onChangeTestPaymentMethod={onChangeTestPaymentMethod}
