@@ -14,8 +14,17 @@ from shop.models import Product, InventoryItem
 
 partner = Partner.objects.get(name__icontains="Valhalla")
 
-
 def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True, year=None) -> Money:
+    '''
+    Get the first instance of this product purchased, splitting lines if necessary.
+    :param barcode:
+    :param quantity:
+    :param logfile:
+    :param cart_line:
+    :param verbose:
+    :param year: Only allocate lines before this year.
+    :return:
+    '''
     cost = Money(0, "USD")
     display_name = str(cart_line)
     if cart_line is None:
