@@ -1506,7 +1506,7 @@ class CheckoutLine(models.Model):
             if success:  # Prevent this from running again on duplicate submits.
                 self.inventory_at_time_of_submit = inventory_before_submit
                 self.back_or_pre_order = back_or_preorder
-                if self.item.product.is_preorder:
+                if self.item.product.is_before_release:
                     self.is_preorder = True
                 self.save()
 
