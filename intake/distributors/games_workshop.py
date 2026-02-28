@@ -542,6 +542,7 @@ def read_pdf_invoice(pdf_path):
             print(line)
             internal_line = {}
             internal_line["MSRP"] = line['MSRP']
+            internal_line["Quantity"] = line['Ship']
             internal_line["Short Code"] = line['Short']
             internal_line["Description"] = line['Description']
             internal_line["Cost"] = line['Unit']
