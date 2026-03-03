@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from intake.distributors import parabellum, wyrd, games_workshop, gw_paints, vallejo, asmodee, steamforged
+from intake.distributors import parabellum, wyrd, games_workshop, gw_paints, vallejo, asmodee, steamforged, warlord
 from intake.models import *
 
 
@@ -20,6 +20,9 @@ class Command(BaseCommand):
             exit()
         if search == "Vallejo":
             vallejo.import_records()
+            exit()
+        if search == "Warlord":
+            warlord.import_records()
             exit()
         dists = Distributor.objects.filter(dist_name__search=search)
         if dists.count() == 1:
