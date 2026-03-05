@@ -80,7 +80,7 @@ def product_list(request, partner_slug=None):
             max_qty=form.cleaned_data.get('max_qty'),
         )
     else:
-        items = item_list_filter()
+        items = item_list_filter(partner)
 
     items = items.exclude(customchargeitem__isnull=False)
 

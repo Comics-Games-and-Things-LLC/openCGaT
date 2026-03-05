@@ -11,7 +11,7 @@ def item_list_filter(managing_partner=None,
                      filter_partner_slug=None,
                      price_low=None,
                      price_high=None,
-                     categories_to_include=[],
+                     categories_to_include=None,
                      filter_partner=None,
                      in_stock_only=False,
                      out_of_stock_only=False,
@@ -32,6 +32,9 @@ def item_list_filter(managing_partner=None,
                      min_qty=None,
                      max_qty=None,
                      ):
+
+    if categories_to_include is None:
+        categories_to_include = []
     if order_by is None or order_by == "":
         order_by = "-release_date"
     if price_low is None:
