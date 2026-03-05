@@ -1,6 +1,6 @@
-import os
 import traceback
 from decimal import ROUND_UP
+from typing import Any
 
 import pandas
 import pypdf_table_extraction
@@ -10,6 +10,7 @@ from game_info.models import Game
 from intake.distributors.common import create_valhalla_item
 from intake.distributors.utility import create_subfactions, create_factions, log
 from intake.models import *
+from intake.models import Distributor
 from openCGaT.management_util import email_report
 from shop.models import Product, Publisher, InventoryItem
 
@@ -80,6 +81,69 @@ CHAOS_SPACE_MARINES = 'Chaos Space Marines'
 DEATHWATCH = 'Deathwatch'
 
 dist_name = "Games Workshop"
+
+
+def read_new_release_summary(inv_file: DistributorInventoryFile):
+    distributor = inv_file.distributor
+    publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+
+    file = pandas.ExcelFile(inv_file.file.read())
+    dataframe = pandas.read_excel(file, header=0, converters={'Short Sales Code': str, 'Global Pack Code': str,
+                                                              'Complete Barcode': str, 'Product Name': str,
+                                                              'Format': str,
+                                                              })
+    records = dataframe.to_dict(orient='records')
+    release_date = None
+    inv_file.line_count = 0
+    for row in records:
+        print(row)
+        msrp = Money(row.get('US/$'), currency='USD', decimal_places=2)
+        short_code = row.get('Short Sales Code')
+        name = row.get('Product Name')
+        barcode = row.get('Complete Barcode').replace('-', '')
+        maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01'), rounding=ROUND_UP),
+                        currency='USD', decimal_places=2)
+        dist_item = create_dist_item(barcode, distributor, maprice, msrp, name, short_code)
+        inv_file.items.add(dist_item)
+        inv_file.line_count += 1
+
+        games, factions, categories = get_product_information_from_product_code(row.get('Global Pack Code'))
+
+        # Check if the product already exists (shouldn't, but for testing runs)
+        if barcode and Product.objects.filter(barcode=barcode).exists():
+            product = Product.objects.get(barcode=barcode)
+        else:
+            # Try creating the product.
+            product = create_product(barcode, factions, games, name, short_code)
+        product.release_date = row.get('Release Date')
+        product.preorder_or_secondary_release_date = row.get('Order From')
+        update_product_information(factions, games, maprice, msrp, product, publisher, short_code)
+        item = create_valhalla_item(product, price=maprice)
+        print(product, product.release_date, item)
+        if release_date is None or release_date < product.release_date:
+            release_date = product.release_date
+
+
+
+    print(release_date)
+    inv_file.save()
+    return
+
+
+def create_dist_item(barcode: Any | None, distributor: Distributor, maprice: Money, msrp: Money, name: Any | None,
+                     short_code: Any | None):
+    DistItem.objects.filter(distributor=distributor, dist_barcode=barcode).delete()
+    item, created = DistItem.objects.get_or_create(
+        distributor=distributor,
+        dist_barcode=barcode,
+        dist_number=short_code,
+    )
+    item.dist_name = name
+    item.dist_barcode = barcode
+    item.msrp = msrp
+    item.map = maprice
+    item.save()
+    return item
 
 
 def import_records():
@@ -255,57 +319,10 @@ def import_records():
                     continue  # Don't create products right now
                     # Create the new product
                     created = True
-
-                    # Append year to name if there's any existing.
-                    if Product.objects.filter(slug=slugify(name)).exists():
-                        name += f" ({datetime.today().year})"
-
-                    created_products_list.write(barcode + "\n")
-                    log(f, f"Creating product for {name}")
-                    product = Product.objects.create(
-                        barcode=barcode,
-                        release_date=datetime.today(),
-                        name=name.title(),
-                    )
-
-                    product.games.set(games)
-                    product.factions.set(factions)
-
-                    if product.publisher_short_sku is None:
-                        product.publisher_short_sku = short_code
-                        print(f"Set short code on {product.name} to {short_code}")
-
-                    # Get products this product could be replacing, that aren't already replaced.
-                    old_short_code_products = Product.objects.filter(publisher_short_sku=short_code) \
-                        .exclude(barcode=barcode, replaced_by__isnull=False)
-
-                    if old_short_code_products.count() == 1:
-                        old_product = old_short_code_products.get()
-                        if old_product:
-                            old_product.replaced_by = product
-                            old_product.save()
-                    products = [product]
+                    products = [create_product(barcode, factions, games, name, short_code)]
 
                 for product in products:
-                    if product.publisher_short_sku is None:
-                        product.publisher_short_sku = short_code
-                        if not created:
-                            print(f"Set short code on {product.name} to {short_code}")
-
-                    # GW products in the trade range should always be all retail, reset it if we forgot.
-                    product.all_retail = True
-                    product.publisher = publisher
-                    product.msrp = msrp
-                    product.map = maprice
-                    product.page_is_draft = False
-
-                    # Set these if they are blank but don't override any existing ones.
-                    if not product.games.exists():
-                        product.games.set(games)
-                    if not product.factions.exists():
-                        product.factions.set(factions)
-
-                    product.save()
+                    update_product_information(factions, games, maprice, msrp, product, publisher, short_code)
 
                     create_valhalla_item(product, f=f, only_adjust_default_price=True,
                                          price_adjustment_csv=price_adjustment_csv)
@@ -321,6 +338,58 @@ def import_records():
     hidden_products_log.flush()
 
     email_report("GW Price Adjustments", [f.name, price_adjustment_csv.name, hidden_products_log.name], )
+
+
+def update_product_information(factions: list[Any], games: list[Any], maprice: Money, msrp: Money,
+                               product: Product | Any, publisher: Publisher, short_code: Any | None):
+    if product.publisher_short_sku is None:
+        product.publisher_short_sku = short_code
+
+    # GW products in the trade range should always be all retail, reset it if we forgot.
+    product.all_retail = True
+    product.publisher = publisher
+    product.msrp = msrp
+    product.map = maprice
+    product.page_is_draft = False
+
+    # Set these if they are blank but don't override any existing ones.
+    if not product.games.exists():
+        product.games.set(games)
+    if not product.factions.exists():
+        product.factions.set(factions)
+
+    product.save()
+
+
+def create_product(barcode: Any | None, factions: list[Any], games: list[Any], name: Any | None,
+                   short_code: Any | None) -> list[Product]:
+    # Append year to name if there's any existing.
+    if Product.objects.filter(slug=slugify(name)).exists():
+        name += f" ({datetime.today().year})"
+
+    product = Product.objects.create(
+        barcode=barcode,
+        release_date=datetime.today(),
+        name=name.title(),
+    )
+
+    product.games.set(games)
+    product.factions.set(factions)
+
+    if product.publisher_short_sku is None:
+        product.publisher_short_sku = short_code
+        print(f"Set short code on {product.name} to {short_code}")
+
+    # Get products this product could be replacing, that aren't already replaced.
+    old_short_code_products = Product.objects.filter(publisher_short_sku=short_code) \
+        .exclude(barcode=barcode, replaced_by__isnull=False)
+
+    if old_short_code_products.count() == 1:
+        old_product = old_short_code_products.get()
+        if old_product:
+            old_product.replaced_by = product
+            old_product.save()
+    return product
 
 
 def hide_products(checked_short_codes, publisher):
@@ -510,8 +579,8 @@ def get_dist_object():
 
 
 def read_pdf_invoice(pdf_path):
-    po_name = pdf_path.split("/")[-1].split(".")[0] # Get file name without extension
-    po_name = po_name.split("_")[1] # inv_####_date_time
+    po_name = pdf_path.split("/")[-1].split(".")[0]  # Get file name without extension
+    po_name = po_name.split("_")[1]  # inv_####_date_time
     po = PurchaseOrder.objects.get(po_number=po_name, distributor=get_dist_object())
     if not po:
         print("Could not find purchase order for this PDF, skipping.")

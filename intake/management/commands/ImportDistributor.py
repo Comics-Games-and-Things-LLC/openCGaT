@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from intake.distributors import parabellum, wyrd, games_workshop, gw_paints, vallejo, asmodee, steamforged, warlord
-from intake.models import *
+from intake.models import Distributor
 
 
 class Command(BaseCommand):

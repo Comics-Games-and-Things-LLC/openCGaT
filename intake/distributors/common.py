@@ -38,3 +38,4 @@ def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=
             item.price = price
         item.default_price = price
         item.save(skip_log=True)
+    return item

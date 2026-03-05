@@ -39,7 +39,7 @@ class AddForm(AddProductForm):
 class UploadInventoryForm(forms.ModelForm):
     class Meta:
         model = DistributorInventoryFile
-        fields = ['distributor', 'file']
+        fields = ['file']
 
 
 class PrintForm(forms.Form):

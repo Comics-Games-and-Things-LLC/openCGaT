@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from decimal import Decimal
 
@@ -411,13 +412,17 @@ class DistributorInventoryFile(models.Model):
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
     warehouse = models.ForeignKey(DistributorWarehouse, on_delete=models.CASCADE, blank=True, null=True)
     file = models.FileField(upload_to='media/', max_length=500)
+    filename = models.CharField(max_length=200)
     processing = models.BooleanField(default=False)
     update_date = models.DateTimeField(blank=True)
     processed = models.BooleanField(default=False)
+    line_count = models.IntegerField(default=0)
+    items = models.ManyToManyField(DistItem, blank=True, related_name="inventory_files")
 
     def save(self, *args, **kwargs):
         if not self.update_date:
-            self.update_date = datetime.utcnow()
+            self.update_date = datetime.now()
+        self.filename = os.path.basename(self.file.name)
         return super(DistributorInventoryFile, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -434,6 +439,11 @@ class DistributorInventoryFile(models.Model):
         else:
             availability.in_stock = False
         availability.save()
+
+    def run_import(self):
+        if self.distributor.dist_name == "Games Workshop":
+            import intake.distributors.games_workshop as games_workshop
+            games_workshop.read_new_release_summary(self)
 
 
 class PricingRule(models.Model):

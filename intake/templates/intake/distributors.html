@@ -7,25 +7,11 @@
 
 {% endblock %}
 {% block content %}
-    <h2>Upload new data</h2>
-    <form enctype="multipart/form-data" action="{% url 'distributors' partner_slug=partner|slugify %}" method="post">
-        {% csrf_token %}
-        Please upload an inventory record for the distributor: <br>
-        {# TODO: MOVE File uploads down and make them by distributor #}
-        {{ form }}
-        <input type="submit" value="Submit">
-    </form>
     <h2>Existing Data</h2>
     <div class="row">
-        {% for dist, warehouses in distributors.items %}
+        {% for dist in distributors %}
             <div class="col-md-3">
-                <h3>{{ dist }}</h3>
-                {% for warehouse, inventory in warehouses.items %}
-                    <h4>
-                        {{ warehouse }}
-                    </h4>
-                    {{ inventory }}
-                {% endfor %}
+                <h3><a href="{{dist.id}}">{{ dist }}</a></h3>
             </div>
 
         {% endfor %}

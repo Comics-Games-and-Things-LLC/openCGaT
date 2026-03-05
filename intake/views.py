@@ -16,8 +16,7 @@ from .distributors import acd
 from .forms import RefreshForm, AddForm, UploadInventoryForm, POForm, POLineForm, PricingRuleForm, PrintForm, \
     UploadPoFileForm
 from .image_generation import generate_product_sticker, generate_image_for_order
-from .models import Distributor, DistItem, PurchaseOrder, POLine, DistributorWarehouse, DistributorInventoryFile, \
-    PricingRule
+from .models import Distributor, DistItem, PurchaseOrder, POLine, PricingRule, DistributorInventoryFile
 
 
 def index(request, partner_slug):
@@ -195,42 +194,37 @@ def create_endpoint(request, partner_slug, barcode):
 @login_required
 def distributors(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
-    form = UploadInventoryForm()
-    if request.POST:
-        form = UploadInventoryForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(reverse('distributors', args={partner.slug}))
-        else:
-            print(form.errors)
     dist_data = {}
-
-    for distributor in Distributor.objects.all():
-        dist_data[distributor.dist_name] = {}
-        try:
-            for warehouse in DistributorWarehouse.objects.filter(distributor=distributor):
-                try:
-                    # See if distributor has warehouses
-                    inventory = DistributorInventoryFile.objects.filter(warehouse=warehouse,
-                                                                        distributor=distributor).latest('update_date')
-                    dist_data[distributor.dist_name][warehouse.warehouse_name] = inventory
-                except DistributorInventoryFile.DoesNotExist:
-                    dist_data[distributor.dist_name][warehouse.warehouse_name] = "No warehouse inventory uploaded"
-        except DistributorWarehouse.DoesNotExist:
-            try:
-                inventory = DistributorInventoryFile.objects.filter(distributor=distributor).latest('update_date')
-                dist_data[distributor.dist_name]['inventory'] = inventory
-
-            except DistributorInventoryFile.DoesNotExist:
-                dist_data[distributor.dist_name][''] = None
-
     context = {
         'partner': partner,
-        'form': form,
-        'distributors': dist_data,
+        'distributors': Distributor.objects.all().order_by('dist_name'),
 
     }
     return render(request, "intake/distributors.html", context)
+
+
+@login_required
+def distributor_home(request, partner_slug, distributor_id):
+    partner = get_partner_or_401(request, partner_slug)
+    form = UploadInventoryForm()
+    distributor = Distributor.objects.get(id=distributor_id)
+    if request.POST:
+        form = UploadInventoryForm(request.POST, request.FILES)
+        if form.is_valid():
+            inventory = form.save(commit=False)
+            inventory.distributor = distributor
+            inventory.save()
+            return HttpResponseRedirect(
+                reverse('distributor_home', kwargs={'partner_slug': partner.slug, 'distributor_id': distributor_id}))
+        else:
+            print(form.errors)
+    context = {
+        'partner': partner,
+        'distributor': distributor,
+        'inventories': DistributorInventoryFile.objects.filter(distributor=distributor).order_by('-update_date'),
+        'form': form,
+    }
+    return render(request, "intake/distributor_home.html", context)
 
 
 @login_required

@@ -11,6 +11,7 @@ urlpatterns = [
     path('intake/get_order_image/<checkoutline_id>/', views.get_order_image, name='get_order_image'),
 
     path('distributors/', views.distributors, name='distributors'),
+    path('distributors/<distributor_id>/', views.distributor_home, name='distributor_home'),
     path('distributors/<distributor_id>/create_product/<barcode>/', views.make_from_distributor,
          name='create_product_from_distributor'),
 

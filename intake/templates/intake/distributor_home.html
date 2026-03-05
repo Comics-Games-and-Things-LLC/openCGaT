@@ -1,0 +1,29 @@
+{% extends 'container.html' %}
+{% load static %}
+
+{% block title %}Distributors{% endblock %}
+{% block extrastyle %}
+
+
+{% endblock %}
+{% block content %}
+    <h2>Upload new data</h2>
+    <form enctype="multipart/form-data" action="." method="post">
+        {% csrf_token %}
+        Please upload an inventory record for the distributor: <br>
+        {{ form }}
+        <input type="submit" value="Submit">
+    </form>
+    <h2>Existing Data</h2>
+    {% for inventory in inventories %}
+        <div>
+            <a href="{{ inventory.file.url }}">{{ inventory.filename }} {{ inventory.timestamp }}</a>
+            {% for item in inventory.items.all %}
+                <div>
+                    {{ item.dist_number }} {{ item.dist_name }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+{% endblock %}
