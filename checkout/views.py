@@ -1,6 +1,7 @@
 import json
 from _decimal import Decimal
 from collections import Counter
+from typing import Any
 
 import stripe
 from django.conf import settings
@@ -738,6 +739,7 @@ def pos_pay_cash(request, partner_slug, cart_id):
     else:
         return HttpResponse(status=400)
 
+
 def pos_mark_complete(request, partner_slug, cart_id):
     partner = get_partner_or_401(request, partner_slug)
     cart = Cart.objects.get(id=cart_id)
@@ -1018,8 +1020,18 @@ def partner_split_line(request, cart_id, line_id, partner_slug):
 
 def all_pre_and_back_orders(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
+
+    items = annotate_items_with_open_orders(partner)
+
+    context = {'partner': partner,
+               'items': items}
+    return TemplateResponse(request, "partner/all_open_items.html", context)
+
+
+def annotate_items_with_open_orders(partner: Partner, items=None, filter=False) -> Any:
     lines = CheckoutLine.objects.filter(item__partner=partner,
                                         cart__status__in=[Cart.PAID, Cart.SUBMITTED],
+                                        inventory_at_time_of_submit__lt=F('quantity'),
                                         fulfilled=False,
                                         ready=False,
                                         cart__ready_for_pickup=False,
@@ -1033,14 +1045,18 @@ def all_pre_and_back_orders(request, partner_slug):
         .annotate(open_item_qty=Sum(F('quantity')))
         .values('open_item_qty')
     )
+    if items is None:
+        items = Item.objects.all()
+        filter = True
 
-    items = Item.objects.filter(checkoutline__in=lines).prefetch_related(
+    if filter:
+        items = items.filter(checkoutline__in=lines)
+    items = items.prefetch_related(
         Prefetch('checkoutline_set', queryset=lines, to_attr='lines')
     ).prefetch_related('product').annotate(
         open_item_qty=Subquery(open_total_subquery)).distinct().order_by('product__publisher', 'product__name')
-    context = {'partner': partner,
-               'items': items}
-    return TemplateResponse(request, "partner/all_open_items.html", context)
+
+    return items
 
 
 def tasks(request, partner_slug):
