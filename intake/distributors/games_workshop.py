@@ -100,6 +100,9 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
         msrp = Money(row.get('US/$'), currency='USD', decimal_places=2)
         short_code = row.get('Short Sales Code')
         name = row.get('Product Name')
+
+        if "(fre" in name.lower(): continue  # Ignore French products
+
         barcode = row.get('Complete Barcode').replace('-', '')
         maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01'), rounding=ROUND_UP),
                         currency='USD', decimal_places=2)
@@ -122,8 +125,6 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
         print(product, product.release_date, item)
         if release_date is None or release_date < product.release_date:
             release_date = product.release_date
-
-
 
     print(release_date)
     inv_file.save()
