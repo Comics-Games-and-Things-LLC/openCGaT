@@ -23,9 +23,9 @@
                 <td>
                     {% if line.item.product %}
                         <a href="{% url  'manage_product' partner_slug=partner.slug product_slug=line.item.product.slug %}">
-                        {{ line.item.product.name }}
+                            {{ line.item.product.name }}
+                        </a>
                     {% endif %}
-                    </a>
                 </td>
                 <td>{{ line.quantity }}</td>
                 <td>{{ line.status_text }}
