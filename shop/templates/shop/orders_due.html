@@ -1,0 +1,33 @@
+{% extends 'container.html' %}
+{% load static %}
+
+{% block title %}Backorders{% endblock %}
+
+
+{% block content %}
+    <table class="table">
+        <tr>
+            <th scope="col">Product</th>
+            <th scope="col">Due Date</th>
+            <th scope="col">Release Date</th>
+            <th scope="col">Sold</th>
+            <th scope="col">Ordered</th>
+            <th scope="col">Actions</th>
+        </tr>
+
+        {% for item in items %}
+            <tr>
+                <td>
+                    <a href="{% url  'manage_product' partner_slug=partner.slug product_slug=item.product.slug %}">
+                        {{ item.product.name }}
+                    </a>
+                </td>
+                <td> {{ item.product.order_cutoff_for_shops_date }}</td>
+                <td> {{ item.product.release_date }}</td>
+                <td> {{ item.open_item_qty }}</td>
+                <td> {{ item.requested_qty }}</td>
+                <td><!-- TODO Action buttons --></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

@@ -57,4 +57,6 @@ urlpatterns = [
     path('manage/<slug:partner_slug>/bulk/', views.bulk_edit, name='bulk_edit'),
 
     path('item/<item_id>/', views.get_item_details, name='get_item_details'),
+
+    path('manage/<slug:partner_slug>/orders_due/', views.orders_due, name='orders_due'),
 ]

@@ -7,14 +7,16 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, OuterRef, Sum, F, Subquery
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
 from checkout.models import Cart
+from checkout.views import annotate_items_with_open_orders
 from digitalitems.models import DigitalItem
+from dist_requests.models import DistRequestLine
 from images.forms import UploadImage
 from images.models import Image
 from intake.models import DistItem, Distributor
@@ -912,3 +914,23 @@ def get_new_price(item, base_on_msrp, multiplier, price_override):
     else:
         new_price = item.default_price * multiplier
     return new_price
+
+
+def orders_due(request, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+
+    future_date_items = Item.objects.filter(product__order_cutoff_for_shops_date__isnull=False,
+                                            product__order_cutoff_for_shops_date__gte=datetime.datetime.today())
+
+    future_date_items = annotate_items_with_open_orders(partner, future_date_items).order_by(
+        'product__order_cutoff_for_shops_date')
+
+    requests = DistRequestLine.objects.filter(product=OuterRef('product'), request__partner=partner).order_by(
+        "-request__date")
+    requested_qty_subquery = requests.values('product').annotate(requested_qty=Sum(F('quantity'))).values(
+        'requested_qty')
+    future_date_items = future_date_items.annotate(requested_qty=Subquery(requested_qty_subquery))
+
+    context = {'partner': partner,
+               'items': future_date_items}
+    return TemplateResponse(request, "shop/orders_due.html", context)

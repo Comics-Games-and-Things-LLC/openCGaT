@@ -152,6 +152,10 @@ class Product(PolymorphicModel):
 
     page_is_template = models.BooleanField(default=False, help_text="An unpublished page that can be easily copied")
 
+    order_cutoff_for_shops_date = models.DateField('Date the store must submit orders by',
+                                                   null=True, blank=True,
+                                                   help_text="YYYY-MM-DD or MM/DD/YYYY")
+
     # A product will be visible if page_visible is checked, if past the pre-order date and accepts pre-orders is checked
     # or after release_date. A product will be purchasable if past the pre-order date if accepts pre-orders is checked
     # or past release date otherwise.

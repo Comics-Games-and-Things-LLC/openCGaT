@@ -45,6 +45,7 @@ class AddProductForm(forms.ModelForm):
                   'release_date', 'visible_on_release', 'purchasable_on_release', 'listed_on_release',
                   'preorder_or_secondary_release_date',
                   'visible_on_preorder_secondary', 'purchasable_on_preorder_secondary', 'listed_on_preorder_secondary',
+                  'order_cutoff_for_shops_date',
                   'in_store_early_release_date',
                   'description',
                   'private_notes',
@@ -60,6 +61,7 @@ class AddProductForm(forms.ModelForm):
             'release_date': AdminDateWidget(),
             'preorder_or_secondary_release_date': AdminDateWidget(),
             'in_store_early_release_date': AdminDateWidget(),
+            'order_cutoff_for_shops_date': AdminDateWidget(),
         }
 
     def __init__(self, *args, **kwargs):
