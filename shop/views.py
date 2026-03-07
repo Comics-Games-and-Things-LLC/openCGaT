@@ -7,7 +7,8 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q, OuterRef, Sum, F, Subquery
+from django.db.models import Q, OuterRef, Sum, F, Subquery, ExpressionWrapper, DurationField
+from django.db.models.functions import TruncDate, Now
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -921,6 +922,14 @@ def orders_due(request, partner_slug):
 
     future_date_items = Item.objects.filter(product__order_cutoff_for_shops_date__isnull=False,
                                             product__order_cutoff_for_shops_date__gte=datetime.datetime.today())
+
+    future_date_items = future_date_items.annotate(
+        cutoff_delta=ExpressionWrapper(
+            F('product__order_cutoff_for_shops_date') - TruncDate(Now()),
+            output_field=DurationField(),
+        ),
+    )
+
 
     future_date_items = annotate_items_with_open_orders(partner, future_date_items).order_by(
         'product__order_cutoff_for_shops_date')
