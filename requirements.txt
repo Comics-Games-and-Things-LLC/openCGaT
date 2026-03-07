@@ -59,7 +59,7 @@ django-oscar~=3.2.4
 pytz~=2023.3
 
 python-dateutil~=2.8.2
-setuptools
+setuptools<81
 six
 
 sentry-sdk~=2.29.1
