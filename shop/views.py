@@ -944,7 +944,8 @@ def get_orders_due(partner: Partner) -> Any:
     future_date_items = annotate_items_with_open_orders(partner, future_date_items).order_by(
         'product__order_cutoff_for_shops_date')
 
-    requests = DistRequestLine.objects.filter(product=OuterRef('product'), request__partner=partner).order_by(
+    requests = DistRequestLine.objects.filter(product=OuterRef('product'), request__partner=partner,
+                                              request__is_allocation=False).order_by(
         "-request__date")
     requested_qty_subquery = requests.values('product').annotate(requested_qty=Sum(F('quantity'))).values(
         'requested_qty')

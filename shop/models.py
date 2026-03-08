@@ -426,9 +426,11 @@ class Product(PolymorphicModel):
     def get_request_info(self, partner):
         from dist_requests.models import DistRequestLine
         requests = DistRequestLine.objects.filter(product=self, request__partner=partner).order_by("-request__date")
-        context = {}
-        context["requests"] = requests
-        context["x_requested"] = requests.aggregate(sum=Sum("quantity"))['sum']
+        context = {
+            "requests": requests,
+            "x_requested": requests.filter(request__is_allocation=False).aggregate(sum=Sum("quantity"))['sum'],
+            "x_allocated": requests.filter(request__is_allocation=True).aggregate(sum=Sum("quantity"))['sum'],
+        }
         return context
 
     @staticmethod

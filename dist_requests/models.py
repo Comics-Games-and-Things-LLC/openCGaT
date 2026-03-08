@@ -14,6 +14,7 @@ class DistRequest(models.Model):
     resolved = models.BooleanField(default=False,
                                    help_text="Has this request been addressed by the distributor" \
                                              " by fulfilling or allocating to 0")
+    is_allocation = models.BooleanField(default=False, help_text="Is this a log of an allocation")
 
     class Meta:
         unique_together = (

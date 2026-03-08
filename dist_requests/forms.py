@@ -20,6 +20,7 @@ class DistRequestLineForm(forms.ModelForm):
                                          ))
     request_name = forms.CharField(max_length=300, required=False,
                                    help_text="Set if not selecting an existing request")
+    is_allocation = forms.BooleanField(help_text="Set if not selecting an existing request")
     date = forms.DateField(required=False,
                            help_text="Set if not selecting an existing request",
                            widget=AdminDateWidget)
@@ -57,6 +58,7 @@ class DistRequestLineForm(forms.ModelForm):
             self.cleaned_data['request'] = DistRequest.objects.create(request_name=self.cleaned_data['request_name'],
                                                                       distributor=self.cleaned_data['distributor'],
                                                                       date=self.cleaned_data['date'],
+                                                                      is_allocation=self.cleaned_data['is_allocation'],
                                                                       partner=partner)
         saved_instance = super(DistRequestLineForm, self).save(commit=False)
         saved_instance.request = self.cleaned_data['request']
