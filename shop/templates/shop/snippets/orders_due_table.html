@@ -24,7 +24,7 @@
             <td>
                 {{ item.product.order_cutoff_for_shops_date }}
                 <span class="{% if item.days_until_cutoff <= 1 %}very_important{% endif %}">
-                    ({{ item.days_until_cutoff}} Days)
+                    ({{ item.days_until_cutoff }} Days)
                 </span>
             </td>
             <td> {{ item.product.release_date }}</td>
@@ -32,7 +32,12 @@
             <td class="{% if item.open_item_qty > item.requested_qty %}very_important{% endif %}">
                 {{ item.requested_qty }}
             </td>
-            <td><!-- TODO Action buttons --></td>
+            <td>
+                <a href="{% url 'log_dist_request' partner_slug=partner.slug  product_slug=item.product.slug %}"
+                   class="btn btn-primary">
+                    Log Request
+                </a>
+            </td>
         </tr>
     {% endfor %}
 </table>
