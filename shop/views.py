@@ -1,4 +1,5 @@
 import datetime
+from typing import Any
 
 from allauth.account.models import EmailAddress
 # from allauth.account.utils import send_email_confirmation
@@ -8,7 +9,7 @@ from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Q, OuterRef, Sum, F, Subquery, ExpressionWrapper, DurationField
-from django.db.models.functions import TruncDate, Now
+from django.db.models.functions import TruncDate, Now, ExtractDay
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -21,7 +22,7 @@ from dist_requests.models import DistRequestLine
 from images.forms import UploadImage
 from images.models import Image
 from intake.models import DistItem, Distributor
-from partner.models import get_partner, get_partner_or_401
+from partner.models import get_partner, get_partner_or_401, Partner
 from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm, ProductsForm
@@ -920,6 +921,14 @@ def get_new_price(item, base_on_msrp, multiplier, price_override):
 def orders_due(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
 
+    future_date_items = get_orders_due(partner)
+
+    context = {'partner': partner,
+               'orders_due_items': future_date_items}
+    return TemplateResponse(request, "shop/orders_due.html", context)
+
+
+def get_orders_due(partner: Partner) -> Any:
     future_date_items = Item.objects.filter(product__order_cutoff_for_shops_date__isnull=False,
                                             product__order_cutoff_for_shops_date__gte=datetime.datetime.today())
 
@@ -928,8 +937,9 @@ def orders_due(request, partner_slug):
             F('product__order_cutoff_for_shops_date') - TruncDate(Now()),
             output_field=DurationField(),
         ),
+    ).annotate(
+        days_until_cutoff=ExtractDay('cutoff_delta')
     )
-
 
     future_date_items = annotate_items_with_open_orders(partner, future_date_items).order_by(
         'product__order_cutoff_for_shops_date')
@@ -939,7 +949,4 @@ def orders_due(request, partner_slug):
     requested_qty_subquery = requests.values('product').annotate(requested_qty=Sum(F('quantity'))).values(
         'requested_qty')
     future_date_items = future_date_items.annotate(requested_qty=Subquery(requested_qty_subquery))
-
-    context = {'partner': partner,
-               'items': future_date_items}
-    return TemplateResponse(request, "shop/orders_due.html", context)
+    return future_date_items
