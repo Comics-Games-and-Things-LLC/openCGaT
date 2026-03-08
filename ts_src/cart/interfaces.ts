@@ -27,6 +27,7 @@ export interface IItem {
     backorders_enabled: boolean;
     is_preorder: boolean;
     is_pay_what_you_want: boolean;
+    max_per_cart: number;
     inventory: number;
     button_status: IButtonStatus;
 }

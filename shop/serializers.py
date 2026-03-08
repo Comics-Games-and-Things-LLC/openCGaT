@@ -30,7 +30,7 @@ class ItemSerializer(serializers.ModelSerializer):
     is_preorder = serializers.SerializerMethodField()
     is_pay_what_you_want = serializers.SerializerMethodField()
     button_status = serializers.SerializerMethodField()
-
+    max_per_cart = serializers.SerializerMethodField()
     enable_restock_alert = serializers.SerializerMethodField()
     low_inventory_alert_threshold = serializers.SerializerMethodField()
 
@@ -39,7 +39,7 @@ class ItemSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'type', 'product', 'price', 'default_price', 'partner', 'inventory',
             'backorders_enabled', 'is_preorder', 'button_status', 'is_pay_what_you_want',
-            'in_store_only_price',
+            'in_store_only_price', 'max_per_cart',
             'enable_restock_alert', 'low_inventory_alert_threshold',
         )
 
@@ -89,6 +89,10 @@ class ItemSerializer(serializers.ModelSerializer):
         if isinstance(item, InventoryItem):
             return item.low_inventory_alert_threshold
         return None
+
+    @staticmethod
+    def get_max_per_cart(item):
+        return item.max_per_cart
 
 
 class ManageItemSerializer(ItemSerializer):

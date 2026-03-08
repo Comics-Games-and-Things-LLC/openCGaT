@@ -143,30 +143,40 @@ const AddToCartButton: React.FunctionComponent<IAddProps> = (
         );
     } else {
         const handleQuantityChange = (event: any) => {
+            const new_quantity = validate_qty_changed(event.target, parseInt(event.target.value))
             dispatch(
                 updateLine({
                     id: props.id,
-                    quantity: event.target.value,
+                    quantity: new_quantity,
                     pos: props.pos,
                 })
             );
         };
 
+        const validate_qty_changed = (target: HTMLInputElement, new_qty: number) => {
+            if (new_qty > item.max_per_cart) {
+                target.value = item.max_per_cart.toString()
+                return item.max_per_cart
+            }
+            if (new_qty < 0) {
+                return 0
+            }
+            return new_qty
+        }
         const changeQuantityBy = (delta: number) => {
             return () => {
                 const inputField = document.getElementById(
                     quantity_id
                 ) as HTMLInputElement;
-                const currentValue = parseInt(inputField.value);
-                if (currentValue + delta < 0) return;
-                if (inputField) inputField.value = currentValue + delta + "";
-                if (currentValue + delta == 0) {
+                let new_value = validate_qty_changed(inputField, parseInt(inputField.value) + delta);
+                if (inputField) inputField.value = new_value.toString();
+                if (new_value == 0) {
                     dispatch(removeFromCart({id: props.id, pos: props.pos}));
                 } else {
                     dispatch(
                         updateLine({
                             id: props.id,
-                            quantity: currentValue + delta,
+                            quantity: new_value,
                             pos: props.pos,
                         })
                     );
@@ -216,62 +226,67 @@ const AddToCartButton: React.FunctionComponent<IAddProps> = (
             );
         } else {
             return (
-                <div className="inline-flex flex-row gap-2 items-center">
-                    <button
-                        type="button"
-                        className="inline-flex items-center p-3 border-2 text-gray-500 border-gray-300 rounded-md shadow-sm bg-white hover:bg-gray-50 hover:text-gray-600 hover:border-gray-400 focus:outline-none focus:border-gray-400"
-                        onClick={changeQuantityBy(-1)}
-                        aria-label="Decrease quantity"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                <div>
+                    <div className="inline-flex flex-row gap-2 items-center">
+                        <button
+                            type="button"
+                            className="inline-flex items-center p-3 border-2 text-gray-500 border-gray-300 rounded-md shadow-sm bg-white hover:bg-gray-50 hover:text-gray-600 hover:border-gray-400 focus:outline-none focus:border-gray-400"
+                            onClick={changeQuantityBy(-1)}
+                            aria-label="Decrease quantity"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M20 12H4"
-                            />
-                        </svg>
-                    </button>
-                    <label htmlFor={quantity_id} className="sr-only">
-                        Quantity
-                    </label>
-                    <input
-                        type="text"
-                        id={quantity_id}
-                        className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full border-2 border-gray-300 rounded-md"
-                        placeholder="0"
-                        defaultValue={quantity}
-                        onBlur={handleQuantityChange}
-                    />
-                    <span className="text-base">in&nbsp;cart</span>
-                    <button
-                        type="button"
-                        className="inline-flex items-center p-3 border-2 text-gray-500 border-gray-300 rounded-md shadow-sm bg-white hover:bg-gray-50 hover:text-gray-600 hover:border-gray-400 focus:outline-none focus:border-gray-400"
-                        onClick={changeQuantityBy(1)}
-                        aria-label="Increase quantity"
-                    >
-                        <svg
-                            className="h-6 w-6"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            aria-hidden="true"
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M20 12H4"
+                                />
+                            </svg>
+                        </button>
+                        <label htmlFor={quantity_id} className="sr-only">
+                            Quantity
+                        </label>
+                        <input
+                            type="text"
+                            id={quantity_id}
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full border-2 border-gray-300 rounded-md"
+                            placeholder="0"
+                            defaultValue={quantity}
+                            onBlur={handleQuantityChange}
+                        />
+                        <span className="text-base">in&nbsp;cart</span>
+                        <button
+                            type="button"
+                            className="inline-flex items-center p-3 border-2 text-gray-500 border-gray-300 rounded-md shadow-sm bg-white hover:bg-gray-50 hover:text-gray-600 hover:border-gray-400 focus:outline-none focus:border-gray-400"
+                            onClick={changeQuantityBy(1)}
+                            aria-label="Increase quantity"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M12 4v16m8-8H4"
-                            />
-                        </svg>
-                    </button>
+                            <svg
+                                className="h-6 w-6"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M12 4v16m8-8H4"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                    {(item.max_per_cart) ?
+                        <div><br/><span>Max&nbsp;{item.max_per_cart}</span></div> : ""
+                    }
                 </div>
             );
         }
