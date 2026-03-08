@@ -75,14 +75,13 @@ def query_for_info(upc, get_full=False, debug=False):
                 continue
             if prefix not in script.string:
                 continue
-            page_data += script.string[len(prefix):-len("\\n\")]")]
-
+            page_data += script.string[len(prefix):-len("\")]")]
         readable_data = bytes(page_data, "utf-8").decode("unicode_escape")
         last_line = readable_data.splitlines()[-1]
         five_data = "[" + last_line.split("5:[")[1]
         page_json_data = json.loads(five_data)
         results = []
-        search_key(page_json_data, "products", results)
+        search_key(page_json_data, "initialProducts", results)
         item_details = results[0][0]
         if debug:
             print(json.dumps(item_details, sort_keys=True, indent=4))
