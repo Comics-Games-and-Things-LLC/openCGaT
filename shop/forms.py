@@ -275,7 +275,7 @@ class BulkEditItemsForm(FiltersForm):
         (CLEAR_IN_STORE_PRICE, CLEAR_IN_STORE_PRICE),
     )
 
-    action_to_take = forms.ChoiceField(choices=ACTION_OPTIONS)
+    action_to_take = forms.ChoiceField(choices=ACTION_OPTIONS, required=False)
     price = MoneyField(required=False)
     price_multiplier = forms.DecimalField(required=False)
     base_on_msrp = forms.BooleanField(required=False)
