@@ -224,5 +224,10 @@
             {% endfor %}
         </table>
     {% endif %}
+    <h2>Orders the store must place within the next 2 days: <a href="{% url 'orders_due' partner_slug=partner.slug %}"
+                                                               class="btn btn-secondary">View All</a>
+    </h2>
+    {% include 'shop/snippets/orders_due_table.html' %}
+
 
 {% endblock %}
