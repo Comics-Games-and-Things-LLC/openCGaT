@@ -1,18 +1,21 @@
+import datetime
+import os
 import traceback
-from decimal import ROUND_UP
+from decimal import ROUND_UP, Decimal
 from typing import Any
 
 import pandas
 import pypdf_table_extraction
+from django.db.models import Sum
 from django.utils.text import slugify
+from djmoney.money import Money
 
 from game_info.models import Game
 from intake.distributors.common import create_valhalla_item
 from intake.distributors.utility import create_subfactions, create_factions, log
-from intake.models import *
-from intake.models import Distributor
+from intake.models import Distributor, DistributorInventoryFile, TradeRange, DistItem, PurchaseOrder, POLine
 from openCGaT.management_util import email_report
-from shop.models import Product, Publisher, InventoryItem
+from shop.models import Product, Publisher, InventoryItem, Category
 
 HORUS_HERESY = "Warhammer: The Horus Heresy"
 
@@ -263,13 +266,13 @@ def import_records():
     #                               converters={'Product': str, 'Barcode': str, 'Product Code': str})
 
     records = dataframe.to_dict(orient='records')
-    created_products_list = open(f"reports/created_products_{datetime.now()}.txt", "w")
+    created_products_list = open(f"reports/created_products_{datetime.datetime.now()}.txt", "w")
 
     checked_short_codes = []
 
-    price_adjustment_csv = open(f"reports/valhalla_inventory_price_adjustments_gw_{datetime.now()}.csv", "w")
+    price_adjustment_csv = open(f"reports/valhalla_inventory_price_adjustments_gw_{datetime.datetime.now()}.csv", "w")
 
-    f = open(f"reports/gw_price_adjustments_{datetime.now()}.txt", "a")
+    f = open(f"reports/gw_price_adjustments_{datetime.datetime.now()}.txt", "a")
     log(f, "Creating products and adjusting prices for games workshop")
     for row in records:
         # print(row)
@@ -366,11 +369,11 @@ def create_product(barcode: Any | None, factions: list[Any], games: list[Any], n
                    short_code: Any | None) -> list[Product]:
     # Append year to name if there's any existing.
     if Product.objects.filter(slug=slugify(name)).exists():
-        name += f" ({datetime.today().year})"
+        name += f" ({datetime.datetime.today().year})"
 
     product = Product.objects.create(
         barcode=barcode,
-        release_date=datetime.today(),
+        release_date=datetime.datetime.today(),
         name=name.title(),
     )
 
