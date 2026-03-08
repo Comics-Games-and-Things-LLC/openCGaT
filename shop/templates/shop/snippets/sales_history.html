@@ -88,14 +88,13 @@
 
     </div>
 {% endif %}
-{% if requests %}
-    <div class="row mb-3 p-0.5">
-        <h2> Requests ({{ x_requested }} Requested) </h2>
-        <p>
-            <a href="{% url 'log_dist_request' partner_slug=partner.slug  product_slug=product.slug %}">
-                Log New Request
-            </a>
-        </p>
+<div class="row mb-3 p-0.5">
+    <h2> Requests ({{ x_requested }} Requested) </h2>
+        <a href="{% url 'log_dist_request' partner_slug=partner.slug  product_slug=product.slug %}"
+           class="btn btn-secondary">
+            Log New Request
+        </a>
+    {% if requests %}
         <table class="table">
             <tr>
                 <th scope="col">Date</th>
@@ -121,14 +120,9 @@
                 {% endif %}
             {% endfor %}
         </table>
-    </div>
-{% elif product %}
-    <div class="row mb-3 p-0.5">
-        <a href="{% url 'log_dist_request' partner_slug=partner.slug  product_slug=product.slug %}">
-            Log New Request
-        </a>
-    </div>
-{% endif %}
+        </div>
+    {% endif %}
+</div>
 {% if inventory_log %}
     <div class="row mb-3 p-0.5">
         <h2> Inventory Log </h2>
