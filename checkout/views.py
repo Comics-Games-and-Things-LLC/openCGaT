@@ -1077,6 +1077,6 @@ def tasks(request, partner_slug):
                'lines_to_pick': lines_to_pick,
                'send_ready_for_pickup_email_order_list': send_ready_for_pickup_email_order_list,
                'orders_to_ship': all_item_ready_carts.filter(delivery_method=Cart.SHIP_ALL),
-               'orders_due_items': get_orders_due(partner).filter(days_until_cutoff__lte=2),
+               'orders_due_items': get_orders_due(partner, exclude_requested=True).filter(days_until_cutoff__lte=2),
                }
     return TemplateResponse(request, "partner/tasks.html", context)

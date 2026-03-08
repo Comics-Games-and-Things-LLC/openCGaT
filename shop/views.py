@@ -928,7 +928,7 @@ def orders_due(request, partner_slug):
     return TemplateResponse(request, "shop/orders_due.html", context)
 
 
-def get_orders_due(partner: Partner) -> Any:
+def get_orders_due(partner: Partner, exclude_requested=False) -> Any:
     future_date_items = Item.objects.filter(product__order_cutoff_for_shops_date__isnull=False,
                                             product__order_cutoff_for_shops_date__gte=datetime.datetime.today())
 
@@ -950,4 +950,6 @@ def get_orders_due(partner: Partner) -> Any:
     requested_qty_subquery = requests.values('product').annotate(requested_qty=Sum(F('quantity'))).values(
         'requested_qty')
     future_date_items = future_date_items.annotate(requested_qty=Subquery(requested_qty_subquery))
+    if exclude_requested:
+        future_date_items = future_date_items.exclude(requested_qty__gte=F('open_item_qty'), requested_qty__isnull=False)
     return future_date_items
