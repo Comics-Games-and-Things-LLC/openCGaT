@@ -20,7 +20,8 @@ class DistRequestLineForm(forms.ModelForm):
                                          ))
     request_name = forms.CharField(max_length=300, required=False,
                                    help_text="Set if not selecting an existing request")
-    is_allocation = forms.BooleanField(help_text="Set if not selecting an existing request")
+    is_allocation = forms.BooleanField(required=False,
+                                       help_text="Set if not selecting an existing request")
     date = forms.DateField(required=False,
                            help_text="Set if not selecting an existing request",
                            widget=AdminDateWidget)
