@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.db.models import Sum, F, Q, Value
+from django.db.models import Sum, F, Q, Value, OuterRef, Subquery
 from djmoney.models.fields import MoneyField, CurrencyField
 from djmoney.money import Money
 
@@ -444,6 +444,15 @@ class DistributorInventoryFile(models.Model):
         if self.distributor.dist_name == "Games Workshop":
             import intake.distributors.games_workshop as games_workshop
             games_workshop.read_new_release_summary(self)
+
+    def annotate_inventory(self):
+        matching_products = Product.objects.filter(barcode=OuterRef("dist_barcode"))
+        return self.items.annotate(
+            product_id=Subquery(matching_products.values("id")[:1]),
+            product_name=Subquery(matching_products.values("name")[:1]),
+            product_msrp=Subquery(matching_products.values("msrp")[:1]),
+            product_map=Subquery(matching_products.values("map")[:1]),
+        ).order_by("product_name")
 
 
 class PricingRule(models.Model):

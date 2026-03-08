@@ -15,15 +15,29 @@
         <input type="submit" value="Submit">
     </form>
     <h2>Existing Data</h2>
-    {% for inventory in inventories %}
-        <div>
-            <a href="{{ inventory.file.url }}">{{ inventory.filename }} {{ inventory.timestamp }}</a>
-            {% for item in inventory.items.all %}
-                <div>
-                    {{ item.dist_number }} {{ item.dist_name }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endfor %}
+    <ul>
+        {% for inventory in inventories %}
+            <li>
+                <a href="{{ inventory.file.url }}">{{ inventory.filename }} {{ inventory.timestamp }}</a>
+                <ul>
+                    <li>Discord Template:
+                        {% for item in inventory.annotate_inventory.all %}
+                            <div>
+                                {{ item.product_name }} | MSRP: ${{ item.product_msrp }} | Our Price:
+                                ${{ item.product_map }}
+                            </div>
+                        {% endfor %}
+                    </li>
+                    <li>Order Form Template:
+                        {% for item in inventory.annotate_inventory.all %}
+                            <div>
+                                {{ item.dist_number }} {{ item.dist_name }} aka {{ item.product_name }}
+                            </div>
+                        {% endfor %}
+                    </li>
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
 
 {% endblock %}
