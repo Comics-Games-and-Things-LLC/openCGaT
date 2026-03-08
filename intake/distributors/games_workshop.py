@@ -123,6 +123,7 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
             product = create_product(barcode, factions, games, name, short_code)
         product.release_date = row.get('Release Date')
         product.preorder_or_secondary_release_date = row.get('Order From')
+        product.order_cutoff_for_shops_date = product.release_date - datetime.timedelta(days=18)
         update_product_information(factions, games, maprice, msrp, product, publisher, short_code)
         item = create_valhalla_item(product, price=maprice)
         print(product, product.release_date, item)
