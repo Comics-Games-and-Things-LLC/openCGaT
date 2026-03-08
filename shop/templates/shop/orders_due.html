@@ -28,14 +28,14 @@
             <tr>
                 <td class="{% if item.cutoff_delta < 1 %}very_important{% endif %}">
                     <a href="{% url  'manage_product' partner_slug=partner.slug product_slug=item.product.slug %}"
-                       class=" {% if item.cutoff_delta < 1 %}very_important{% endif %}">
+                       class="{% if item.cutoff_delta < 1 %}very_important{% endif %}">
                     {{ item.product.name }}
                     </a>
                 </td>
                 <td> {{ item.product.order_cutoff_for_shops_date }}</td>
                 <td> {{ item.product.release_date }}</td>
                 <td> {{ item.open_item_qty }}</td>
-                <td class="{% if item.open_item_qty < item.requested_qty %}very_important{% endif %}">
+                <td class="{% if item.open_item_qty > item.requested_qty %}very_important{% endif %}">
                     {{ item.requested_qty }}
                 </td>
                 <td><!-- TODO Action buttons --></td>
