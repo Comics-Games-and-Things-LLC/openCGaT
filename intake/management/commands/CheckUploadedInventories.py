@@ -1,3 +1,5 @@
+import time
+
 from django.core.management.base import BaseCommand
 
 from intake.distributors import games_workshop
@@ -10,6 +12,7 @@ class Command(BaseCommand):
             inv.run_import()
             inv.processed = True
             inv.save()
+        time.sleep(30)
 
 
 
