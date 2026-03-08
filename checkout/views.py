@@ -823,18 +823,6 @@ def pos_active_cart_endpoint(request, partner_slug, cart_id):
     return JsonResponse(get_active_cart(cart_id))
 
 
-def partner_update_quantity(request, cart_id, partner_slug, item_id, quantity):
-    partner = get_partner_or_401(request, partner_slug)
-    cart = Cart.objects.get(id=cart_id)
-    if cart.is_submitted:
-        return HttpResponse(status=400)
-    try:
-        cart.update_quantity(item_id=item_id, quantity=quantity)
-        return HttpResponse(status=200)
-    except Exception as e:
-        return HttpResponse(status=400)
-
-
 def partner_update_line(request, cart_id, partner_slug, item_id):
     partner = get_partner_or_401(request, partner_slug)
     cart = Cart.objects.get(id=cart_id)
@@ -846,6 +834,7 @@ def partner_update_line(request, cart_id, partner_slug, item_id):
             print(body)
 
             try:
+                # Skips max per line validations
                 line.quantity = body['quantity']
                 print("Updating quantity")
             except KeyError:
