@@ -61,7 +61,7 @@ class Command(BaseCommand):
                              "Subtotal": cart.get_total_subtotal(), "Shipping": cart.final_ship,
                              "Pre-Tax Total": cart.get_final_less_tax(),
                              "Sales Tax Charged": cart.final_tax, "Final Total": cart.final_total,
-                             "Amount Refunded": cart.get_refunded_amount(),
+                             "Amount Refunded": amount_refunded,
                              "Total Less Refunds": cart.final_total - amount_refunded,
                              }
                 country, postcode, potential_address, state = get_address_or_old_address(cart)

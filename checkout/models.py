@@ -847,7 +847,7 @@ Final state:
     def get_refunded_amount(self) -> Money:
         amount = Money(0, "USD")
         if self.amount_refunded:
-            amount = self.amount_refunded
+            return self.amount_refunded
         for payment in self.payments.all():
             amount += payment.get_refunded_amount()
         return amount
