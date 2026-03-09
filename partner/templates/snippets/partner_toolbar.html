@@ -7,27 +7,47 @@
             <a class="nav-link" href="{% url 'manage_products' partner_slug=partner|slugify %}">Manage Products</a>
         </nav>
         <nav class="nav-item">
-            <a class="nav-link" href="{% url 'create_new_product' partner_slug=partner|slugify %}">Create New
-                Products</a>
+            <a class="nav-link" href="{% url 'create_new_product' partner_slug=partner|slugify %}">Create
+                Product</a>
         </nav>
         {% if partner.retail_partner %}
             <nav class="nav-item">
                 <a class="nav-link" href="{% url 'partner_tasks' partner_slug=partner|slugify %}">Tasks</a>
             </nav>
             <nav class="nav-item">
-                <a class="nav-link" href="{% url 'intake_home' partner_slug=partner|slugify %}">Intake</a>
-            </nav>
-            <nav class="nav-item">
-                <a class="nav-link" href="{% url 'purchase_orders' partner_slug=partner|slugify %}">Purchase Orders</a>
-            </nav>
-            <nav class="nav-item">
-                <a class="nav-link" href="{% url 'partner_pre_and_back_orders' partner_slug=partner|slugify %}">Backorders</a>
-            </nav>
-            <nav class="nav-item">
                 <a class="nav-link" href="{% url 'pos' partner_slug=partner|slugify %}">
                     POS
                 </a>
             </nav>
+            <nav class="nav-item">
+                <a class="nav-link" href="{% url 'intake_home' partner_slug=partner|slugify %}">Intake</a>
+            </nav>
+            <nav class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true"
+                   aria-expanded="false">Ordering</a>
+                <div class="dropdown-menu">
+                    <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'orders_due' partner_slug=partner|slugify %}">
+                            Orders due
+                        </a>
+                    </nav>
+                    <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'partner_pre_and_back_orders' partner_slug=partner|slugify %}">
+                            Open items
+                        </a>
+                    </nav>
+                    <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'distributors' partner_slug=partner|slugify %}">
+                            Distributors
+                        </a>
+                    </nav>
+                    <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'purchase_orders' partner_slug=partner|slugify %}">Purchase
+                            Orders</a>
+                    </nav>
+                </div>
+            </nav>
+
         {% endif %}
         <nav class="nav-item">
             <a class="nav-link"
@@ -46,11 +66,7 @@
                aria-expanded="false">More</a>
             <div class="dropdown-menu">
                 {% if partner.retail_partner %}
-                    <nav class="nav-item">
-                        <a class="nav-link" href="{% url 'distributors' partner_slug=partner|slugify %}">
-                            Distributors
-                        </a>
-                    </nav>
+
                     <nav class="nav-item">
                         <a class="nav-link" href="{% url 'pricing_rules' partner_slug=partner|slugify %}">
                             Pricing Rules
