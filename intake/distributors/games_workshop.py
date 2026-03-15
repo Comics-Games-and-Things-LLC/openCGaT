@@ -125,10 +125,10 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
         product.order_cutoff_for_shops_date = product.release_date - datetime.timedelta(days=18)
         update_product_information(factions, games, maprice, msrp, product, publisher, short_code)  # Calls product.save
         item = create_valhalla_item(product, price=maprice)
-        item.enable_restock_alert=True
-        item.low_inventory_alert_threshold=0
-        item.allow_backorders=True
-        item.preallocated=True
+        item.enable_restock_alert = True
+        item.low_inventory_alert_threshold = 0
+        item.allow_backorders = True
+        item.preallocated = True
         item.save()
         print(product, product.release_date, item)
         if release_date is None or release_date < product.release_date:
@@ -350,14 +350,16 @@ def import_records():
 
 
 def set_product_dates_and_listed(product, release_date, preorder_date):
-    product.release_date = release_date
-    product.purchasable_on_release = True
-    product.listed_on_release = True
-    product.visible_on_release = True
-    product.preorder_or_secondary_release_date = preorder_date
-    product.purchasable_on_preorder_secondary = True
-    product.listed_on_preorder_secondary = True
-    product.visible_on_preorder_secondary = True
+    if release_date:
+        product.release_date = release_date.date()
+        product.purchasable_on_release = True
+        product.listed_on_release = True
+        product.visible_on_release = True
+    if preorder_date:
+        product.preorder_or_secondary_release_date = preorder_date.date()
+        product.purchasable_on_preorder_secondary = True
+        product.listed_on_preorder_secondary = True
+        product.visible_on_preorder_secondary = True
 
 
 def update_product_information(factions: list[Any], games: list[Any], maprice: Money, msrp: Money,
