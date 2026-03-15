@@ -121,10 +121,9 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
         else:
             # Try creating the product.
             product = create_product(barcode, factions, games, name, short_code)
-        product.release_date = row.get('Release Date')
-        product.preorder_or_secondary_release_date = row.get('Order From')
+        set_product_dates_and_listed(product, row.get('Release Date'), row.get('Order From'))
         product.order_cutoff_for_shops_date = product.release_date - datetime.timedelta(days=18)
-        update_product_information(factions, games, maprice, msrp, product, publisher, short_code)
+        update_product_information(factions, games, maprice, msrp, product, publisher, short_code)  # Calls product.save
         item = create_valhalla_item(product, price=maprice)
         print(product, product.release_date, item)
         if release_date is None or release_date < product.release_date:
@@ -343,6 +342,17 @@ def import_records():
     hidden_products_log.flush()
 
     email_report("GW Price Adjustments", [f.name, price_adjustment_csv.name, hidden_products_log.name], )
+
+
+def set_product_dates_and_listed(product, release_date, preorder_date):
+    product.release_date = release_date
+    product.purchasable_on_release = True
+    product.listed_on_release = True
+    product.visible_on_release = True
+    product.preorder_or_secondary_release_date = preorder_date
+    product.purchasable_on_preorder_secondary = True
+    product.listed_on_preorder_secondary = True
+    product.visible_on_preorder_secondary = True
 
 
 def update_product_information(factions: list[Any], games: list[Any], maprice: Money, msrp: Money,
