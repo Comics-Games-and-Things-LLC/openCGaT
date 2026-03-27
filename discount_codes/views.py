@@ -24,8 +24,9 @@ def short_redirect(request, code=None):
         # Attempt to get discount code and use it's redirect
         if potential_codes.exists():
             code_obj = potential_codes.first()
-            encoded_url = urlencode({"next": code_obj.redirect})
-            print(encoded_url)
+            encoded_url = ""
+            if code_obj.redirect:
+                encoded_url = urlencode({"next": code_obj.redirect})
             apply_code_page = f"/cart/code/{code}/?" + encoded_url
     # if code does not exist this will take you to the default page
 
