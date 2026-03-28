@@ -116,9 +116,6 @@ class ManufacturerBarcode(models.Model):
     def __str__(self):
         return self.mfc.mfc_name + " - " + self.barcode_prefix
 
-    class Meta:
-        index_together = ["mfc", "barcode_prefix"]
-
 
 class CategoryMap(models.Model):
     dist = models.ForeignKey(Distributor, on_delete=models.CASCADE, blank=True, null=True)

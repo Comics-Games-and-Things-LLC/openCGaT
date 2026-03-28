@@ -100,8 +100,4 @@ class Migration(migrations.Migration):
             name='mfc',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='intake.manufacturer'),
         ),
-        migrations.AlterIndexTogether(
-            name='manufacturerbarcode',
-            index_together={('mfc', 'barcode_prefix')},
-        ),
     ]

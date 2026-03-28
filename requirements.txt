@@ -1,42 +1,41 @@
 rfc3339
 gunicorn
-Django==4.2.29
-django-allauth==65.13.0
+Django==5.2.12
+django-allauth==65.15.0
 django-select2==8.4.3
 django-b2
-django-debug-toolbar~=4.2.0
+django-debug-toolbar~=6.2.0
 django-debug-toolbar-template-profiler
 django-polymorphic
-django-money==3.1.0
+django-money==3.6.0
 django-rest-framework
-django-react-templatetags
-django-cors-headers
-django-storages[azure]~=1.13.2
-django-recaptcha~=4.0.0
-django-phonenumber-field~=6.4.0
-azure-core~=1.29.1
+django-react-templatetags==8.0.0
+django-cors-headers==4.9.0
+django-storages[azure]~=1.14.6
+django-recaptcha~=4.1.0
+django-phonenumber-field~=8.4.0
+azure-core~=1.39.0
 django-modelcluster~=6.3
 
 azure-common==1.1.28
 boto3
 
-python-dotenv~=1.0.0
+python-dotenv~=1.2.2
 split-settings
 
 psycopg2-binary
 
-squareup
-wagtail==5.2.6
-wagtail_non_admin_draftail==0.18.2
+wagtail==7.3.1
+wagtail_non_admin_draftail==0.20.0
 whitenoise
 
-django-treewidget
+django-treewidget==0.4.4
 django-mathfilters
 
 
 stripe==5.5.0
 django-address
-django-mptt~=0.14.0
+django-mptt~=0.18.0
 
 pandas~=2.2.2
 
@@ -47,22 +46,22 @@ checkdigit~=0.5.0
 django-extensions
 pyparsing
 pydot
-py-moneyed~=2.0
-djangorestframework~=3.14.0
-Pillow~=10.4.0
-python-barcode~=0.15.1
-requests~=2.31.0
+py-moneyed~=3.0
+djangorestframework~=3.17.1
+Pillow~=12.1.1
+python-barcode~=0.16.1
+requests~=2.33.0
 xlrd~=2.0.1
-beautifulsoup4~=4.11.2
-django-treebeard
-django-oscar~=3.2.4
-pytz~=2023.3
+beautifulsoup4~=4.14.3
+django-treebeard==4.8.0
+django-oscar~=4.1
+pytz
 
-python-dateutil~=2.8.2
+python-dateutil
 setuptools<81
 six
 
-sentry-sdk~=2.29.1
-tqdm~=4.66.1
+sentry-sdk
+tqdm
 
 pypdf_table_extraction
