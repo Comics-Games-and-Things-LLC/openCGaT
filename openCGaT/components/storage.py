@@ -4,17 +4,9 @@ from openCGaT.components.ProjectPaths import ProjectPaths
 
 load_dotenv(os.path.join(ProjectPaths.BASE_DIR, '.env'))
 
-B2_ACCOUNT_ID = os.getenv('BACKBLAZE_ACCOUNT_ID')
-B2_APP_KEY_ID = os.getenv('BACKBLAZE_APP_KEY_ID')
-B2_APP_KEY = os.getenv('BACKBLAZE_APP_KEY')
-B2_BUCKET_NAME = os.getenv('B2_BUCKET_NAME')
-B2_BUCKET_ID = os.getenv('B2_BUCKET_ID')
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-#STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 WHITENOISE_MANIFEST_STRICT = False
 
 
@@ -29,8 +21,15 @@ STATICFILES_DIRS = [
 
 MEDIA_ROOT = os.path.join(ProjectPaths.BASE_DIR, 'media')
 MEDIA_URL = '/media/'
-DEFAULT_FILE_STORAGE = 'django_b2.storage.B2Storage'
 
+STORAGES ={
+    "default": {
+        "BACKEND": "images.PublicAzureStorage.PublicAzureStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 AZURE_ACCOUNT_NAME = os.getenv('AZURE_ACCOUNT_NAME')
 AZURE_ACCOUNT_KEY = os.getenv('AZURE_ACCOUNT_KEY')
