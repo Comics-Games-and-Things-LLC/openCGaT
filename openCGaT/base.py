@@ -56,7 +56,6 @@ apps_to_install = [
     'storages',
     # 'imagekit', # Didn't work, removed, at least for now
     'treewidget',
-    'django_b2',
     'address',
     'djmoney',
     'corsheaders',
