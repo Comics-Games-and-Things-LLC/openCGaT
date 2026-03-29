@@ -778,12 +778,11 @@ def add_to_users_cart(request, partner_slug, product_slug, item_id):
                 carts = Cart.open.filter(owner=user)
                 if not carts.exists():
                     error_text += f"Could not find cart for {user}. \n"
-                # If there are multiple carts, we'll just get the first. Multiple carts should be merged on user login.
-                cart = carts.first()
-                cart.add_item(item)
-
-                # Email user
-                item.notify_user_of_custom_charge(cart)
+                # If there are multiple carts, they are likely on multiple sites. Add them all to be safe.
+                for cart in carts:
+                    cart.add_item(item)
+                    # Email user
+                    item.notify_user_of_custom_charge(cart)
 
                 # Redirect to somewhere useful
             if not error_text:

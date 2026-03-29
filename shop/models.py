@@ -609,7 +609,7 @@ class Item(RepresentationMixin, PolymorphicModel):
             return
         context = {'order': cart}
         html_template = get_template('shop/email/invoice_added_to_cart.html')
-        msg = EmailMessage(subject='Item added to cart',
+        msg = EmailMessage(subject=f'Item added to your {cart.site.name} cart',
                            body=html_template.render(context),
                            from_email=None,
                            to=[user.email])
