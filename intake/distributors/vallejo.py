@@ -28,7 +28,7 @@ def import_tmm():
     category = Category.objects.get(name="Acrylic Paint")
 
     for i in list(range(101, 181)) + list(range(251, 259)):
-        sku = f"77.{str(i).rjust(3,"0")}"
+        sku = f"77.{str(i).rjust(3,'0')}"
         print(sku)
         try:
             info = acd.query_for_info(get_barcode_from_sku(sku), get_full=True)
