@@ -1,15 +1,12 @@
 import time
 import traceback
 import urllib
-from operator import truediv
-from os import MFD_ALLOW_SEALING
 
 import pandas
 from bs4 import BeautifulSoup
 from checkdigit import gs1
 
 from images.models import Image
-from intake.distributors import acd
 from intake.distributors.common import create_valhalla_item
 from intake.models import *
 from shop.models import Product, Publisher
@@ -19,10 +16,34 @@ alt_name = "Vallejo"
 
 publisher_name = dist_name
 
+
 def get_barcode_from_sku(sku):
     barcode_start = "8429551" + sku.replace('.', '')
     last_digit = gs1.calculate(barcode_start)
     return barcode_start + last_digit
+
+
+def import_tmm():
+    publisher, _ = Publisher.objects.get_or_create(name=dist_name)
+    category = Category.objects.get(name="Acrylic Paint")
+
+    for i in list(range(101, 181)) + list(range(251, 259)):
+        sku = f"77.{str(i).rjust(3,"0")}"
+        print(sku)
+        try:
+            info = acd.query_for_info(get_barcode_from_sku(sku), get_full=True)
+            if not info:
+                print("\tWe cannot find information on this product")
+                continue
+            product = Product.create_from_dist_info(info)
+            product.name = f"Vallejo {sku} {product.name}"
+            product.publisher = publisher
+            product.categories.add(category)
+            product.save()
+            create_valhalla_item(product)
+        except Exception as e:
+            print(f"\tError processing SKU {sku}: {str(e)}")
+
 
 def import_records():
     publisher, _ = Publisher.objects.get_or_create(name=dist_name)
@@ -80,7 +101,7 @@ def download_images():
     for product in products_missing_images:
         start_name_index = len("Vallejo ")
         end_name_index = start_name_index + len("XX.XXX")
-        paint_code = product.name[start_name_index : end_name_index]
+        paint_code = product.name[start_name_index: end_name_index]
         if not validate_paint_code(paint_code):
             continue
         print(paint_code)
@@ -96,18 +117,17 @@ def download_images():
 
 
 def get_image_from_website(paint_code):
-
-    paint_code_no_dot = paint_code.replace(".","")
+    paint_code_no_dot = paint_code.replace(".", "")
 
     opener = urllib.request.build_opener()
     opener.addheaders = [('User-agent', 'Mozilla/5.0')]
     urllib.request.install_opener(opener)
     # This works but requests doesn't for some reason.
     print(f"Searching for {paint_code}")
-    time.sleep(1) # Wait 1 second so we don't query them too much.
+    time.sleep(1)  # Wait 1 second so we don't query them too much.
     vallejo_file = urllib.request.urlopen(f"https://acrylicosvallejo.com/en/?s={paint_code}")
     soup = BeautifulSoup(vallejo_file.read(), features="html5lib")
-    search_result=None
+    search_result = None
     for entry in soup.find_all("article", class_="search-entry"):
         link = entry.find_next("a")['href']
         if paint_code_no_dot in link:
@@ -123,8 +143,7 @@ def get_image_from_website(paint_code):
     return image_url
 
 
-
-def validate_paint_code(code: str ):
+def validate_paint_code(code: str):
     """
     Ensure that a vallejo paint matches the pattern "XX.XXX" Where each x is a digit.
     @param code: Paint code as a string
