@@ -263,6 +263,7 @@ class BulkEditItemsForm(FiltersForm):
     ENABLE_ALERT = "Enable Restock Alert"
     SET_IN_STORE_PRICE = "Set In-Store Price"
     CLEAR_IN_STORE_PRICE = "Clear In-Store Price"
+    SET_DRAFT = "Set as Draft"
 
     ACTION_OPTIONS = (
         (NO_ACTION, NO_ACTION),
@@ -273,6 +274,7 @@ class BulkEditItemsForm(FiltersForm):
         (ENABLE_ALERT, ENABLE_ALERT),
         (SET_IN_STORE_PRICE, SET_IN_STORE_PRICE),
         (CLEAR_IN_STORE_PRICE, CLEAR_IN_STORE_PRICE),
+        (SET_DRAFT, SET_DRAFT),
     )
 
     action_to_take = forms.ChoiceField(choices=ACTION_OPTIONS, required=False)
@@ -282,6 +284,7 @@ class BulkEditItemsForm(FiltersForm):
     allow_backorders_update = forms.BooleanField(required=False)
     enable_restock_alert = forms.BooleanField(required=False)
     low_inventory_alert_threshold = forms.IntegerField(required=False)
+    new_value_for_bool = forms.BooleanField(required=False, help_text="Use for Set as Draft")
 
 
 class ProductsForm(FiltersForm):

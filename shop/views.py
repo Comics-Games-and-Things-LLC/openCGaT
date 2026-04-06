@@ -875,6 +875,11 @@ def bulk_edit(request, partner_slug):
                 item.enable_restock_alert = form.cleaned_data.get("enable_restock_alert")
                 item.low_inventory_alert_threshold = form.cleaned_data.get("low_inventory_alert_threshold")
                 item.save()
+        if action == BulkEditItemsForm.SET_DRAFT:
+            for item in items:
+                item.product.page_is_draft = form.cleaned_data.get("new_value_for_bool")
+                item.product.save()
+                item.save()
 
     page_size = 20
     page_number = 1
@@ -949,5 +954,6 @@ def get_orders_due(partner: Partner, exclude_requested=False) -> Any:
         'requested_qty')
     future_date_items = future_date_items.annotate(requested_qty=Subquery(requested_qty_subquery))
     if exclude_requested:
-        future_date_items = future_date_items.exclude(requested_qty__gte=F('open_item_qty'), requested_qty__isnull=False)
+        future_date_items = future_date_items.exclude(requested_qty__gte=F('open_item_qty'),
+                                                      requested_qty__isnull=False)
     return future_date_items
