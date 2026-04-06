@@ -62,30 +62,31 @@ def import_records():
                 item.msrp = msrp
                 item.map = mapp
                 item.save()
+
                 try:
-                    # First check for items with the same name as the new product
-                    product = Product.objects.get(slug=slugify(name))
-                    if product.barcode != barcode:
-                        potential_existing_product = Product.objects.filter(barcode=barcode)
-                        if potential_existing_product.exists():
-                            log(log_file,
-                                "Couldn't create {} because it now has barcode {}, but {} already has that barcode".format(
-                                    name, barcode, potential_existing_product.first().name
-                                ))
-                            continue
-                        old_barcode = product.barcode
-                        log(log_file,
-                            "{} had barcode {} and now has barcode {}".format(product.name, old_barcode, barcode))
-                        product.barcode = barcode
-                        product.all_retail = True
+                    product = Product.objects.get(barcode=barcode)
                 except Product.DoesNotExist:
-                    product, created = Product.objects.get_or_create(
-                        barcode=barcode,
-                        defaults={'all_retail': True,
-                                  'release_date': datetime.today(),
-                                  'name': name}
-                    )
-                product.name = name
+                    try:
+                        # First check for items with the same name as the new product
+                        product = Product.objects.get(slug=slugify(name))
+                        if product.barcode != barcode:
+                            potential_existing_product = Product.objects.filter(barcode=barcode)
+                            if potential_existing_product.exists():
+                                log(log_file,
+                                    "Couldn't create {} because it now has barcode {}, but {} already has that barcode".format(
+                                        name, barcode, potential_existing_product.first().name
+                                    ))
+                                continue
+                            old_barcode = product.barcode
+                            log(log_file,
+                                "{} had barcode {} and now has barcode {}, but we did not update the barcode in case we had it in stock".format(product.name, old_barcode, barcode))
+                    except Product.DoesNotExist:
+                        product, created = Product.objects.get_or_create(
+                            barcode=barcode,
+                            defaults={'all_retail': True,
+                                      'release_date': datetime.datetime.today(),
+                                      'name': name}
+                        )
                 product.weight = weight
                 product.publisher = publisher
                 product.msrp = msrp
