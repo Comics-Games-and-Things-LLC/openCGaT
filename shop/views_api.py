@@ -23,7 +23,8 @@ def item_list_filter(managing_partner=None,
                      game=None,
                      faction=None,
                      distributor=None,
-                     drafts_only=False,
+                     is_draft=None,
+                     has_barcode=None,
                      missing_image=False,
                      collection=None,
                      order_by=None,
@@ -81,9 +82,15 @@ def item_list_filter(managing_partner=None,
         displayed_items = displayed_items.filter(product__factions=faction)
     if distributor:
         displayed_items = displayed_items.filter(product__publisher__available_through_distributors=distributor)
-    if drafts_only:
-        # Templates are drafts so we have to exclude them as well.
-        displayed_items = displayed_items.filter(product__page_is_draft=True, product__page_is_template=False)
+
+    if is_draft is not None:
+        displayed_items = displayed_items.filter(product__page_is_draft=is_draft)
+        if is_draft:
+            # Templates are drafts so we have to exclude them as well.
+            displayed_items = displayed_items.filter(product__page_is_template=False)
+
+    if has_barcode is not None:
+        displayed_items = displayed_items.filter(product__barcode__isnull=not has_barcode)
 
     if missing_image:
         displayed_items = displayed_items.filter(product__primary_image__isnull=True)
