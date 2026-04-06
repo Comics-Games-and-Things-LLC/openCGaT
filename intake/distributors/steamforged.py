@@ -1,13 +1,16 @@
+import datetime
 import traceback
 from _decimal import Decimal, ROUND_UP
 
 import pandas
 from django.utils.text import slugify
+from djmoney.money import Money
 
 from game_info.models import Game
 from intake.distributors.common import create_valhalla_item
 from intake.distributors.utility import log
-from intake.models import *
+from intake.models import Distributor, DistItem
+from openCGaT.management_util import email_report
 from shop.models import Product, Publisher
 
 dist_name = "Steamforged Wholesale"
@@ -19,12 +22,14 @@ def import_records():
     publisher, _ = Publisher.objects.get_or_create(name="Steamforged Games")
     warmachine_game, _ = Game.objects.get_or_create(name="Warmachine")
 
-    file = pandas.ExcelFile('./intake/inventories/USA Stockist & SFG Order Form.xlsx')
+    file = pandas.ExcelFile('./intake/inventories/Q2 2026 USA Stockist & SFG Order Form.xlsx')
     dataframe = pandas.read_excel(file, sheet_name='WM General')
     product_name_column = "Product Name"
 
-    log_file = open(f"reports/valhalla_inventory_price_adjustments_warmachine_{datetime.today()}.txt", "a")
+    log_file = open(f"reports/valhalla_inventory_price_adjustments_warmachine_{datetime.datetime.today()}.txt", "a")
     log(log_file, "Updating Warmachine Prices \n")
+    price_adjustment_csv = open(f"reports/valhalla_inventory_price_adjustments_steamforged_{datetime.datetime.now()}.csv", "w")
+
 
     records = dataframe.astype('string').to_dict(orient='records')
     for row in records:
@@ -93,8 +98,13 @@ def import_records():
                     Decimal(Decimal(85) / Decimal(100) * msrp.amount).quantize(
                         Decimal('.01'), rounding=ROUND_UP),
                     'USD', decimal_places=2)
-                create_valhalla_item(product, price=our_price, f=log_file)
+                create_valhalla_item(product, price=our_price, f=log_file, price_adjustment_csv=price_adjustment_csv)
 
         except Exception as e:
             traceback.print_exc()
             print("Not full line, can't get values")
+
+    log_file.flush()
+    price_adjustment_csv.flush()
+    email_report("Steamforged Price Adjustments", [log_file.name, price_adjustment_csv.name])
+

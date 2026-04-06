@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from intake.distributors.utility import log
 from partner.models import Partner
 from shop.models import InventoryItem
@@ -25,14 +23,14 @@ def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=
         if price != item.price and item.current_inventory > 0:
             # If we are only adjusting the default price, and the price change is greater than 1 cent,
             #   only adjust the default price and not the current price.
-            if only_adjust_default_price: #  and (item.price.amount - price.amount) > Decimal(0.01):
+            if only_adjust_default_price:  # and (item.price.amount - price.amount) > Decimal(0.01):
                 log(f, "Default price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
                                                                                             item.product.barcode))
-                price_adjustment_csv.write(f"{item.product.name},{item.product.barcode},{item.current_inventory}\n")
             else:
                 log(f, "Price for {} updated to {} (was {}), has barcode {}".format(item, price, item.price,
                                                                                     item.product.barcode))
                 item.price = price
+            price_adjustment_csv.write(f"{item.product.name},{item.product.barcode},{item.current_inventory}\n")
 
         if item.current_inventory == 0:  # If there are none in stock adjust the price anyway.
             item.price = price
