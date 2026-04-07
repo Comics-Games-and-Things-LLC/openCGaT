@@ -136,7 +136,7 @@ def compare_maps():
                         new_price = maprice
                     else:
                         new_price = product.get_price_from_rule(partner)
-                    create_valhalla_item(product, f=f, price=new_price, price_adjustment_csv=price_adjustment_csv)
+                    item = create_valhalla_item(product, f=f, price=new_price, price_adjustment_csv=price_adjustment_csv)
 
             writer.writerow(
                 {'Publisher': row.get('Publisher'), 'Product': row.get('Title'), 'Barcode': barcode, 'MSRP': msrp,
