@@ -87,7 +87,7 @@ def compare_maps():
     f = open(f"reports/asmodee_check_{datetime.now()}.txt", "w")
 
     filename = "./intake/inventories/ausa-mapcatalog-04012026.csv"
-    price_adjustment_csv = open("reports/asmodee_check_adjustments_{datetime.now()}.csv", "a")
+    price_adjustment_csv = open(f"reports/asmodee_check_adjustments_{datetime.now()}.csv", "a")
 
     dataframe = pandas.read_csv(filename, header=0, encoding='latin1')
     records = dataframe.astype('string').fillna("").to_dict(orient='records')
