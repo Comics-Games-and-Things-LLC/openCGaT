@@ -32,6 +32,8 @@ def item_list_filter(managing_partner=None,
                      has_in_store_only_price=None,
                      min_qty=None,
                      max_qty=None,
+                     min_date=None,
+                     max_date=None,
                      ):
 
     if categories_to_include is None:
@@ -103,6 +105,11 @@ def item_list_filter(managing_partner=None,
 
     if has_in_store_only_price:
         displayed_items = displayed_items.exclude(in_store_only_price__isnull=True)
+
+    if min_date:
+        displayed_items = displayed_items.filter(product__release_date__gte=min_date)
+    if max_date:
+        displayed_items = displayed_items.filter(product__release_date__lte=max_date)
 
     displayed_items = displayed_items.distinct()
 

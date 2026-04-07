@@ -183,6 +183,9 @@ class FiltersForm(forms.Form):
     min_qty = forms.IntegerField(required=False, widget=widgets.NumberInput())
     max_qty = forms.IntegerField(required=False, widget=widgets.NumberInput())
 
+    min_date = forms.DateField(required=False, widget=widgets.DateInput(attrs={'type': 'date'}))
+    max_date = forms.DateField(required=False, widget=widgets.DateInput(attrs={'type': 'date'}))
+
     def __init__(self, *args, **kwargs):
         manage = kwargs.pop('manage')
         super(FiltersForm, self).__init__(*args, **kwargs)
@@ -224,6 +227,8 @@ class FiltersForm(forms.Form):
             self.fields.pop('has_in_store_only_price')
             self.fields.pop('min_qty')
             self.fields.pop('max_qty')
+            self.fields.pop('min_date')
+            self.fields.pop('max_date')
 
 
 class AddMTOItemForm(forms.ModelForm):
