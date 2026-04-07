@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.admin.widgets import AdminDateWidget
+from django.forms import widgets
 from django_select2 import forms as s2forms
 
 from dist_requests.models import DistRequestLine, DistRequest
@@ -24,7 +24,7 @@ class DistRequestLineForm(forms.ModelForm):
                                        help_text="Set if not selecting an existing request")
     date = forms.DateField(required=False,
                            help_text="Set if not selecting an existing request",
-                           widget=AdminDateWidget)
+                           widget=widgets.DateInput(attrs={'type': 'date'}))
 
     class Meta:
         model = DistRequestLine

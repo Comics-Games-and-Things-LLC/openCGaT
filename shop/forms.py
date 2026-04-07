@@ -1,5 +1,4 @@
 from django import forms
-from django.contrib.admin.widgets import AdminDateWidget
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.forms import widgets
@@ -58,10 +57,10 @@ class AddProductForm(forms.ModelForm):
                   'games', 'editions', 'formats', 'factions', 'attributes',
                   ]
         widgets = {
-            'release_date': AdminDateWidget(),
-            'preorder_or_secondary_release_date': AdminDateWidget(),
-            'in_store_early_release_date': AdminDateWidget(),
-            'order_cutoff_for_shops_date': AdminDateWidget(),
+            'release_date': widgets.DateInput(attrs={'type': 'date'}),
+            'preorder_or_secondary_release_date': widgets.DateInput(attrs={'type': 'date'}),
+            'in_store_early_release_date': widgets.DateInput(attrs={'type': 'date'}),
+            'order_cutoff_for_shops_date': widgets.DateInput(attrs={'type': 'date'}),
         }
 
     def __init__(self, *args, **kwargs):
