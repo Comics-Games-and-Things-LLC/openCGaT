@@ -825,16 +825,17 @@ Final state:
         return self.get_total_subtotal() + self.get_tax()
 
     @property
-    def final_subtotal_no_shipping(self) -> Money:
+    def final_subtotal_no_tax(self) -> Money:
         return (handle_null_money(self.final_total)
-                - handle_null_money(self.final_ship)
                 - handle_null_money(self.final_tax))
 
     @property
     def final_tax_percentage(self) -> Decimal:
-        if not self.final_subtotal_no_shipping:
+        if not self.final_subtotal_no_tax:
             return Decimal(0)
-        return handle_null_money(self.final_tax) / self.final_subtotal_no_shipping
+        if not self.final_tax:
+            return Decimal(0)
+        return self.final_tax / self.final_subtotal_no_tax
 
     def get_cancelled_amount(self) -> Decimal:
         if self.status == Cart.CANCELLED:
@@ -943,6 +944,7 @@ Final state:
                     return Money(0, "USD")
                 rate = TaxRateCache.taxes.get_tax_rate(address)
 
+            subtotal = subtotal + self.get_shipping()
             tax = subtotal * rate
             self.cart_tax_rate = rate
             if final:
