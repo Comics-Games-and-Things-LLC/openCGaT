@@ -1,6 +1,6 @@
 rfc3339
 gunicorn
-Django==5.2.12
+Django==5.2.13
 django-allauth==65.15.0
 django-select2==8.4.3
 django-debug-toolbar~=6.2.0
