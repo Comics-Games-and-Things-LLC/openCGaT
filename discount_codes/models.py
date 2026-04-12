@@ -170,12 +170,24 @@ class CodeUsage(models.Model):
     Keeps track of every cart that has come in through a referral usage, or any discount code that was tried.
     """
     timestamp = models.DateTimeField(auto_now_add=True)
-    code = models.ForeignKey(DiscountCode, on_delete=models.CASCADE)
+    code = models.ForeignKey(DiscountCode, on_delete=models.CASCADE, blank=True, null=True, related_name="code_usage")
+    code_text = models.CharField(max_length=200, blank=True,
+                                 null=True)  # What text was tried if the code did not exist?
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, blank=True, null=True)
     user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+    used_link = models.BooleanField(default=False)
+    referrer_url = models.URLField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.code} was used at {self.timestamp} for cart {self.cart}"
+        who_or_what = f"{self.cart}" if self.cart else ""
+        if not who_or_what:
+            who_or_what = f"User {self.user}" if self.user else ""
+        if who_or_what:
+            who_or_what = f" for {who_or_what}"
+        if self.code:
+            return f"{self.code} was used at {self.timestamp}{who_or_what}"
+        else:
+            return f"{self.code_text} was attempted at {self.timestamp}{who_or_what}"
 
 
 class URLShortener(models.Model):

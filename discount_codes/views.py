@@ -18,15 +18,24 @@ from partner.models import get_partner_or_401
 # Create your views here.
 
 def short_redirect(request, code=None):
+    referrer_url = request.META.get('HTTP_REFERER', None)
+    print(request.META)
+    print("Referrer URL: ", referrer_url)
+
     apply_code_page = ""
     if code:
         potential_codes = DiscountCode.objects.filter(code=code.lower())
-        # Attempt to get discount code and use it's redirect
+        # Attempt to get discount code and use its redirect
         if potential_codes.exists():
             code_obj = potential_codes.first()
             encoded_url = ""
+            properties_to_encode = {'used_link': True}
+            if referrer_url:
+                properties_to_encode["referrer_url_from_short"] = referrer_url
             if code_obj.redirect:
-                encoded_url = urlencode({"next": code_obj.redirect})
+                properties_to_encode["next"] = code_obj.redirect
+            if properties_to_encode:
+                encoded_url = urlencode(properties_to_encode)
             apply_code_page = f"/cart/code/{code}/?" + encoded_url
     # if code does not exist this will take you to the default page
 
@@ -47,8 +56,20 @@ def short_redirect(request, code=None):
 def apply_code(request, code: str = "", cart=None):
     potential_codes = DiscountCode.objects.filter(code=code.lower())
 
+    referrer_url = request.META.get('HTTP_REFERER', None)
+    # If coming from the short URL, the referrer would be the short url site.
+    used_link = request.GET.get("used_link", False)
+    referrer_url_from_short = request.GET.get("referrer_url_from_short", None)
+    if referrer_url_from_short:
+        used_link = True
+        referrer_url = referrer_url_from_short
+
     if cart is None:
         cart = request.cart
+
+    user = None
+    if request.user.is_authenticated:
+        user = request.user
 
     if code.strip() == "":
         cart.discount_code_message = None
@@ -59,12 +80,11 @@ def apply_code(request, code: str = "", cart=None):
     if potential_codes.exists():
         next_page = request.GET.get("next")
 
-        code = potential_codes.first()
-        user = None
-        if request.user.is_authenticated:
-            user = request.user
-        CodeUsage.objects.create(code=code, cart_id=cart.id, user=user)
-        if code.validate_code_for_cart(cart):
+        disc_code = potential_codes.first()
+        CodeUsage.objects.create(code=disc_code,
+                                 code_text=code, cart_id=cart.id, user=user, referrer_url=referrer_url,
+                                 used_link=used_link)
+        if disc_code.validate_code_for_cart(cart):
             pass  # Validating the code saves it to the cart.
         else:
             next_page = reverse('view_cart')  # redirect user to page where they can see error message
@@ -72,10 +92,12 @@ def apply_code(request, code: str = "", cart=None):
         if request.method == "POST":
             return HttpResponse(status=200)
         if next_page is None:
-            next_page = reverse('shop')
+            next_page = '/'
         return HttpResponseRedirect(next_page)
     else:
         cart.discount_code_message = f"The code '{code}' does not exist"
+        CodeUsage.objects.create(code_text=code, cart_id=cart.id, user=user, referrer_url=referrer_url,
+                                 used_link=used_link)
     cart.discount_code = None
     cart.save()  # Clear code if we can't find the discount.
     return HttpResponse(status=200)

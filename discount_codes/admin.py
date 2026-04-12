@@ -11,7 +11,9 @@ admin.site.register(PartnerDiscount)
 
 class CodeUsageAdmin(HasCartAdmin):
     autocomplete_fields = ['cart', 'user']
+    ordering = ['-timestamp']
 
 
 admin.site.register(CodeUsage, CodeUsageAdmin)
+
 admin.site.register(URLShortener)
