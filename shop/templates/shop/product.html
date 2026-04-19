@@ -210,7 +210,15 @@
                     {% if product.barcode %}
                         <tr>
                             <td>
-                                Barcode: {{ product.barcode }}
+                                Barcode:
+                                {% if partner %}
+                                    <span class="font-bold text-primary-700"
+                                          onclick="CopyToClipboard(this)">
+                                    {{ product.barcode }}
+                                    </span>
+                                {% else %}
+                                    {{ product.barcode }}
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
@@ -227,14 +235,30 @@
                     {% if product.publisher_sku %}
                         <tr>
                             <td>
-                                SKU: {{ product.publisher_sku }}
+                                SKU:
+                                {% if partner %}
+                                    <span class="font-bold text-primary-700"
+                                          onclick="CopyToClipboard(this)">
+                                    {{ product.publisher_sku }}
+                                    </span>
+                                {% else %}
+                                    {{ product.publisher_sku }}
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
                     {% if product.publisher_short_sku %}
                         <tr>
                             <td>
-                                Short SKU: {{ product.publisher_short_sku }}
+                                Short SKU:
+                                {% if partner %}
+                                    <span class="font-bold text-primary-700"
+                                          onclick="CopyToClipboard(this)">
+                                    {{ product.publisher_short_sku }}
+                                    </span>
+                                {% else %}
+                                    {{ product.publisher_short_sku }}
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
