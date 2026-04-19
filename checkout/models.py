@@ -143,7 +143,8 @@ class Cart(RepresentationMixin, models.Model):
     delivery_address = AddressField(null=True, related_name="delivery_address", blank=True)
 
     shipping_address = models.ForeignKey(ShippingAddress, on_delete=models.PROTECT, blank=True, null=True)
-    billing_address = models.ForeignKey(BillingAddress, on_delete=models.PROTECT, blank=True, null=True)
+    billing_address = models.ForeignKey(BillingAddress, on_delete=models.PROTECT, blank=True, null=True,
+                                        help_text="No longer used, in favor of always using shipping address")
 
     old_billing_address = AddressField(null=True, related_name="billing_address", blank=True)
 
@@ -156,6 +157,7 @@ class Cart(RepresentationMixin, models.Model):
     final_total = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
     final_tax = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
     final_ship = MoneyField(max_digits=19, decimal_places=2, null=True, blank=True, default_currency='USD')
+    pre_tax_subtotal_includes_shipping = models.BooleanField(default=False)
 
     cart_tax_rate = models.FloatField(help_text="Percent in decimal form( ex .055)", blank=True,
                                       null=True)  # Assumes all items have the same tax rate
@@ -830,6 +832,14 @@ Final state:
                 - handle_null_money(self.final_tax))
 
     @property
+    def address_tax_excludes_shipping(self) -> bool:
+        if not self.shipping_address:
+            return False
+        if not self.shipping_address.state:
+            return False
+        return self.shipping_address.state.lower() in ["kansas", "ks"]
+
+    @property
     def final_tax_percentage(self) -> Decimal:
         if not self.final_subtotal_no_tax:
             return Decimal(0)
@@ -931,9 +941,29 @@ Final state:
         else:
             return self.shipping_address
 
+    def get_pre_tax_subtotal(self):
+        """
+        Based on the cart's address, return the subtotal with or without shipping.
+        Will set self.pre_tax_subtotal_includes_shipping if final_tax is not set,
+        but will not save that property unless the caller does.
+        :return:
+        """
+        subtotal = self.get_total_subtotal()
+        if self.final_tax is not None:
+            tax_includes_shipping = self.pre_tax_subtotal_includes_shipping
+        else:
+            tax_includes_shipping = not self.address_tax_excludes_shipping
+            self.pre_tax_subtotal_includes_shipping = tax_includes_shipping
+        if tax_includes_shipping:
+            if self.final_ship:
+                return subtotal + self.final_ship
+            return subtotal + self.get_shipping()
+        else:
+            return subtotal
+
     def get_tax(self, final=False):
         try:
-            subtotal = self.get_total_subtotal()
+            subtotal = self.get_pre_tax_subtotal()
             if self.payment_method == self.PAY_IN_STORE and self.payment_partner is not None:
                 rate = self.payment_partner.in_store_tax_rate
             elif self.delivery_method == self.PICKUP_ALL and self.pickup_partner is not None:
@@ -944,7 +974,6 @@ Final state:
                     return Money(0, "USD")
                 rate = TaxRateCache.taxes.get_tax_rate(address)
 
-            subtotal = subtotal + self.get_shipping()
             tax = subtotal * rate
             self.cart_tax_rate = rate
             if final:

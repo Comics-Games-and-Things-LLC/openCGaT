@@ -187,6 +187,25 @@
                     <td></td>
                 {% endif %}
                 <td></td>
+                <td>Pre tax subtotal
+                    {% if cart.pre_tax_subtotal_includes_shipping %}
+                        (includes {% else %} (excludes {% endif %}
+                    shipping):
+                </td>
+                <td>
+                    {{ cart.get_pre_tax_subtotal }}
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                {% if seller_col %}
+                    <td></td>
+                {% endif %}
+                {% if status_col %}
+                    <td></td>
+                {% endif %}
+                <td></td>
                 <td>Tax:</td>
                 <td>
                     {% if cart.final_tax %}
