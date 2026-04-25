@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.urls import path, include
+from django.urls import path, include, re_path
 
 from . import views
 
@@ -7,10 +7,10 @@ urlpatterns = [
     path('<code>/', views.short_redirect, name='short_url_redirect'),
     path('<code>', views.short_redirect, name='short_url_redirect'),
     # All non-code urls will redirect as well
-    path(r'^', views.short_redirect, name='short_url_base'),
-    path(r'', views.short_redirect, name='short_url_base'),
-    # Doesn't seem to work in debug mode but maybe will work in prod
-    path(r'^.*', views.short_redirect, name='short_url_base'),
+    re_path(r'^', views.short_redirect, name='short_url_base'),
+    re_path(r'', views.short_redirect, name='short_url_base'),
+    re_path(r'^.*$', views.short_redirect, name='short_url_base'),
+    re_path(r'^.*', views.short_redirect, name='short_url_base'),
 
 ]
 if settings.DEBUG:
