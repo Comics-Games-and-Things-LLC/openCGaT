@@ -32,6 +32,12 @@ from .views_api import item_list_filter
 
 
 def product_list(request, partner_slug=None):
+    """
+    Lists all items for a partner.
+    :param request:
+    :param partner_slug:
+    :return:
+    """
     page_size = 20
 
     initial_data = {'page_size': page_size}
@@ -115,8 +121,16 @@ def product_list(request, partner_slug=None):
         page_number = 1
     page_obj = paginator.get_page(page_number)
 
+    serialized_list = []
+    for item in page_obj.object_list:
+        if manage:
+            serialized_list.append(ManageItemSerializer(item).data)
+        else:
+            serialized_list.append(ItemSerializer(item).data)
+
     context = {
         'page': page_obj,
+        'serialized_list': serialized_list,
         'filters_form': form,
         'manual_form_fields': manual_form_fields,
         'page_number': int(page_number),

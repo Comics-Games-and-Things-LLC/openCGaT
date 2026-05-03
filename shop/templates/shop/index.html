@@ -38,9 +38,18 @@
         </div>
     {% endif %}
 {% endblock %}
-{% block card %}
-    {% include 'shop/snippets/item_list_entry.html' with first=1 item=entry %}
-{% endblock card %}
+{% block list %}
+    <ul class="lg:divide-y-2 lg:divide-neutral_back shoplist">
+        {% for entry in page %}
+            <li class="bg-white rounded-md lg:rounded-none shadow lg:shadow-none mb-3 lg:mb-0">
+                {% block card %}
+                    {% include 'shop/snippets/item_list_entry.html' with first=1 item=entry %}
+                {% endblock card %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
 {% block alternate %}
     <p class="p-6">No products are available that match your search criteria.</p>
     {% if collection %}

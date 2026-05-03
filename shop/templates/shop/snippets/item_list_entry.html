@@ -40,78 +40,95 @@
                 <div></div>
             {% endif %}
 
-            <div class="text-right self-end text-sm">
-                {% if item|is_inventory_item %}
-                    {% if item.get_inventory > 0 %}
-                        <p class="text-gray-400"><span class="text-gray-500 font-bold">{{ item.get_inventory }}</span>
-                            Available
-                            {% if item.product.is_preorder %}
-                                for <span class="font-bold text-primary-700">Preorder</span>
-                            {% endif %}
-                        </p>
-                    {% else %}
-                        {% if item.allow_backorders %}
-                            {% if item.product.is_preorder %}
-                                <p class="font-bold text-primary-700">Preorderable</p>
-                            {% else %}
-                                <p class="font-bold text-yellow-700">Backorder</p>
+            <div class="self-end text-sm">
+                <div class="text-right">
+                    {% if item|is_inventory_item %}
+                        {% if item.get_inventory > 0 %}
+                            <p class="text-gray-400"><span
+                                    class="text-gray-500 font-bold">{{ item.get_inventory }}</span>
+                                Available
+                                {% if item.product.is_preorder %}
+                                    for <span class="font-bold text-primary-700">Preorder</span>
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            {% if item.allow_backorders %}
+                                {% if item.product.is_preorder %}
+                                    <p class="font-bold text-primary-700">Preorderable</p>
+                                {% else %}
+                                    <p class="font-bold text-yellow-700">Backorder</p>
+                                {% endif %}
                             {% endif %}
                         {% endif %}
                     {% endif %}
-                {% endif %}
-                {% if partner and item.enable_restock_alert %}
-                    <p class="text-gray-400">
-                        {{ item.low_inventory_alert_threshold }} Threshold
-                    </p>
-                {% endif %}
-                {% if item.product.msrp %}
-                    <p class="text-gray-400">
-                        MSRP {{ item.product.msrp }}
-                    </p>
-                {% endif %}
-                {% if partner and item.product.publisher_sku %}
-                    <p class="text-gray-400">
-                        SKU:
-                        <span class="font-bold text-primary-700"
-                              onclick="CopyToClipboard(this)"> 
-                            {{ item.product.publisher_sku }} 
-                        </span>
-                    </p>
-                {% endif %}
-                {% if partner and item.product.publisher_short_sku %}
-                    <p class="text-gray-400">
-                        Short SKU:
-                        <span class="font-bold text-primary-700"
-                              onclick="CopyToClipboard(this)"> 
-                            {{ item.product.publisher_short_sku }} 
-                        </span>
-                    </p>
-                {% endif %}
-                {% if partner and item.product.barcode %}
-                    <p class="text-gray-400">
-                        Barcode:
-                        <span class="font-bold text-primary-700"
-                              onclick="CopyToClipboard(this)"> 
-                            {{ item.product.barcode }} 
-                        </span>
-                    </p>
-                {% endif %}
-                {% if item.product.in_store_pickup_only and not item|is_download_item %}
-                    <p class="text-gray-400">
-                        In-store pickup only
-                    </p>
-                {% endif %}
-                {% if item.product.release_date %}
-                    {% if item.item.product.is_preorder and item.item.product.in_store_early_release_date %}
-                        <p class="font-bold text-primary-700">
-                            In-Store Early Release {{ item.item.product.in_store_early_release_date }}
+                    {% if partner and item.enable_restock_alert %}
+                        <p class="text-gray-400">
+                            {{ item.low_inventory_alert_threshold }} Threshold
                         </p>
                     {% endif %}
-                    <p class="text-gray-400">
-                        Released on <span class="font-bold text-gray-500">{{ item.product.release_date }}</span>
-                    </p>
-                {% endif %}
+                    {% if item.product.msrp %}
+                        <p class="text-gray-400">
+                            MSRP {{ item.product.msrp }}
+                        </p>
+                    {% endif %}
+                    {% if partner and item.product.publisher_sku %}
+                        <p class="text-gray-400">
+                            SKU:
+                            <span class="font-bold text-primary-700"
+                                  onclick="CopyToClipboard(this)">
+                            {{ item.product.publisher_sku }} 
+                        </span>
+                        </p>
+                    {% endif %}
+                    {% if partner and item.product.publisher_short_sku %}
+                        <p class="text-gray-400">
+                            Short SKU:
+                            <span class="font-bold text-primary-700"
+                                  onclick="CopyToClipboard(this)">
+                            {{ item.product.publisher_short_sku }} 
+                        </span>
+                        </p>
+                    {% endif %}
+                    {% if partner and item.product.barcode %}
+                        <p class="text-gray-400">
+                            Barcode:
+                            <span class="font-bold text-primary-700"
+                                  onclick="CopyToClipboard(this)">
+                            {{ item.product.barcode }} 
+                        </span>
+                        </p>
+                    {% endif %}
+                    {% if item.product.in_store_pickup_only and not item|is_download_item %}
+                        <p class="text-gray-400">
+                            In-store pickup only
+                        </p>
+                    {% endif %}
+                    {% if item.product.release_date %}
+                        {% if item.item.product.is_preorder and item.item.product.in_store_early_release_date %}
+                            <p class="font-bold text-primary-700">
+                                In-Store Early Release {{ item.item.product.in_store_early_release_date }}
+                            </p>
+                        {% endif %}
+                        <p class="text-gray-400">
+                            Released on <span class="font-bold text-gray-500">{{ item.product.release_date }}</span>
+                        </p>
+                    {% endif %}
+                </div>
             </div>
+            {% if partner %}
+                <table class="mt-2 text-sm text-left text-gray-500">
+                    <tbody>
+                    <tr>
+                        <th scope="row" class="pr-3 font-medium text-gray-700">
+                            Sold Count
+                        </th>
+                        <td>
+                            {{ item.sold_count }}
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            {% endif %}
         </div>
         <div class="w-full lg:w-72 flex flex-col gap-2 py-3 bg-gray-100 p-4 flex-shrink-0 rounded-b-md lg:rounded-b-none text-3xl font-semibold">
             <p>
