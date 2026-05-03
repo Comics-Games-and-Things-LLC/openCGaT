@@ -259,8 +259,8 @@ class Cart(RepresentationMixin, models.Model):
         if not created:
             new_quantity = max(0, line.quantity + quantity)
 
-        # We don't generally have a quantity greater than 1 on creation, but just in case, always run this
-        if item.max_per_cart is not None:
+        # Do not enforce max per cart at POS, otherwise, run this check when we're increasing the quantity in cart.
+        if item.max_per_cart is not None and not self.at_pos:
             if new_quantity > item.max_per_cart:
                 new_quantity = item.max_per_cart
 
