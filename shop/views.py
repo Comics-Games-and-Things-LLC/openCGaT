@@ -115,6 +115,12 @@ def product_list(request, partner_slug=None):
         page_number = 1
     page_obj = paginator.get_page(page_number)
 
+    if partner:
+        for item in page_obj:
+            data = item.product.get_sold_info(partner)
+            for key, value in data.items():
+                setattr(item, key, value)
+                
     context = {
         'page': page_obj,
         'filters_form': form,

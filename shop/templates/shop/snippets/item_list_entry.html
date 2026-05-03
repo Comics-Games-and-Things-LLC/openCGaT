@@ -41,6 +41,26 @@
             {% endif %}
 
             <div class="text-right self-end text-sm">
+                {% if partner %}
+                    <table class="self-end h-fit mt-2 text-sm text-left text-gray-500 py-0">
+                        <thead>
+                        <tr class="pr-3 font-medium text-gray-700">
+                            <th scope="row">
+                                Sold Count
+                            </th>
+                            <th>Sold last 12 months</th>
+                            <th>Sold post release</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr class="whitespace-nowrap w-px">
+                            <td>{{ item.x_sold|default_if_none:0 }}</td>
+                            <td>{{ item.x_sold_last_12_months|default_if_none:0 }}</td>
+                            <td>{{ item.x_sold_post_release|default_if_none:0 }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                {% endif %}
                 {% if item|is_inventory_item %}
                     {% if item.get_inventory > 0 %}
                         <p class="text-gray-400"><span class="text-gray-500 font-bold">{{ item.get_inventory }}</span>
@@ -82,8 +102,8 @@
                     <p class="text-gray-400">
                         Short SKU:
                         <span class="font-bold text-primary-700"
-                              onclick="CopyToClipboard(this)"> 
-                            {{ item.product.publisher_short_sku }} 
+                              onclick="CopyToClipboard(this)">
+                            {{ item.product.publisher_short_sku }}
                         </span>
                     </p>
                 {% endif %}
@@ -91,8 +111,8 @@
                     <p class="text-gray-400">
                         Barcode:
                         <span class="font-bold text-primary-700"
-                              onclick="CopyToClipboard(this)"> 
-                            {{ item.product.barcode }} 
+                              onclick="CopyToClipboard(this)">
+                            {{ item.product.barcode }}
                         </span>
                     </p>
                 {% endif %}

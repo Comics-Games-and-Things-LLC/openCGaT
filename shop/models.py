@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_UP
 
 from django.apps import apps
@@ -395,13 +395,19 @@ class Product(PolymorphicModel):
         sales = CheckoutLine.objects.filter(item__in=Item.objects.filter(product=self, partner=partner),
                                             cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED,
                                                               Cart.CANCELLED]).order_by("-cart__date_submitted")
+        completed_sales = sales.filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED]).exclude(
+            cancelled=True)
         purchases = POLine.objects.filter(barcode=self.barcode, po__partner=partner).exclude(barcode=None).order_by(
             "-po__date")
         context = {}
         context["sales"] = sales
-        context["x_sold"] = \
-            sales.filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED]).exclude(
-                cancelled=True).aggregate(sum=Sum("quantity"))['sum']
+        context["x_sold"] = completed_sales.aggregate(sum=Sum("quantity"))['sum']
+        context["x_sold_last_12_months"] = completed_sales.filter(
+            cart__date_submitted__gte=timezone.now() - timedelta(days=365)
+        ).aggregate(sum=Sum("quantity"))['sum']
+        context["x_sold_post_release"] = completed_sales.filter(
+            cart__date_submitted__date__gte=self.release_date
+        ).aggregate(sum=Sum("quantity"))['sum'] if self.release_date else None
         context["po_lines"] = purchases
         context["x_purchased"] = purchases.aggregate(sum=Sum("received_quantity"))['sum']
         context["inventory_log"] = InventoryLog.objects.filter(
