@@ -24,7 +24,7 @@ split-settings
 
 psycopg2-binary
 
-wagtail==7.3.1
+wagtail==7.3.2
 wagtail_non_admin_draftail==0.20.0
 whitenoise
 
