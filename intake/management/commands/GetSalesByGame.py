@@ -107,6 +107,9 @@ def get_sales_summary(thing=GAME, **options):
         if year:
             # For sales of 2025, get the 2025 inventory report as a baseline.
             starting_inventory = get_total_from_inv_report(lines_writer, thing, product_barcodes, year)
+            # Need to reset PO sold, otherwise the cost of something we had both years is not accounted for properly.
+            reset_po_sold(f)
+
         # Now get how much we spent on inventory for the year.
         spent_on_inventory = get_purchased_this_year_total(year, product_barcodes)
 
