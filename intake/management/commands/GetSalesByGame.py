@@ -61,7 +61,7 @@ def get_sales_summary(thing=GAME, **options):
     summary_filename = f'reports/{report_name} Summary.csv'
     fieldnames = [thing, 'Starting Inventory', 'Spent on Inventory', 'Ending Inventory', 'Invested Inventory', 'COGS',
                   'Collected',
-                  'We Spent on Shipping', 'Gross less Shipping', 'Overall Net Costs (Includes Investment)',
+                  'We Spent on Shipping', 'Gross less Shipping', 'Overall Net (Includes Investment)',
                   'Net from COGS (Excludes Investment)', 'Collected Locally', '% Local']
     summary_file = open(summary_filename, 'w', newline='')
     summary_writer = csv.DictWriter(summary_file, fieldnames=fieldnames)
@@ -145,7 +145,7 @@ def get_sales_summary(thing=GAME, **options):
             'Collected': collected,
             'We Spent on Shipping': spent_on_shipping,
             'Gross less Shipping': collected - spent_on_shipping,
-            'Overall Net Costs (Includes Investment)': collected - spent_on_shipping - spent_on_inventory,
+            'Overall Net (Includes Investment)': collected - spent_on_shipping - spent_on_inventory,
             'Net from COGS (Excludes Investment)': collected - spent_on_shipping - cogs,
             'Collected Locally': collected_locally,
         }
