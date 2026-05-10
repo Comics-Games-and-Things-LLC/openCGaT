@@ -170,7 +170,7 @@ def get_sales_summary(thing=GAME, **options):
 
 def get_purchased_this_year_total(year: int | None, product_barcodes):
     total = Money("0", 'USD')
-    for line in POLine.objects.filter(po__date__year=year, barcode__in=product_barcodes):
+    for line in tqdm(POLine.objects.filter(po__date__year=year, barcode__in=product_barcodes), desc="Calculating total purchases"):
         subtotal = line.actual_cost_subtotal
         if subtotal is None:
             continue
