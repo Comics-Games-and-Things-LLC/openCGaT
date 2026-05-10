@@ -1,7 +1,7 @@
 
 from django.core.management.base import BaseCommand
 
-from intake.management.commands.GetSalesByGame import get_sales_by_thing, PUBLISHER
+from intake.management.commands.GetSalesByGame import get_sales_by_thing, PUBLISHER, get_sales_summary
 
 
 class Command(BaseCommand):
@@ -13,4 +13,4 @@ class Command(BaseCommand):
         parser.add_argument("--all", action='store_true')
 
     def handle(self, *args, **options):
-        get_sales_by_thing(PUBLISHER, **options)
+        get_sales_summary(PUBLISHER, **options)

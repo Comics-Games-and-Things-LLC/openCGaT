@@ -1,20 +1,220 @@
 import csv
 import datetime
+from csv import DictWriter
+from typing import Any
 
 from django.core.management.base import BaseCommand
-from moneyed import Money
+from djmoney.money import Money
+from tqdm import tqdm
 
 from checkout.models import Cart, CheckoutLine
 from game_info.models import Game
 from intake.distributors.utility import log
 from intake.models import POLine
 from inventory_report.management.commands.GetCogs import get_purchased_as, mark_previous_items_as_sold, partner
+from inventory_report.management.commands.GetEOYInventory import reset_po_sold, get_latest_purchased_as
+from inventory_report.models import InventoryReport
 from openCGaT.management_util import email_report
 from shop.models import Product, Publisher, Category, Item
 
 GAME = "Game"
 PUBLISHER = "Publisher"
 CATEGORY = "Category"
+
+
+def get_sales_summary(thing=GAME, **options):
+    '''
+    New version of the sales report,
+    getting the overall collected and spend compared to attempting to calculate the value on each sale.
+    :param thing: Type of thing to categorize by
+    :param options: Parameters, year or all.
+    :return:
+    '''
+    verbose = True  # if we want to print errors.
+
+    year = options.pop('year')  # Last year by default
+    if year is None:
+        year = datetime.date.today().year - 1
+    all_time = options.pop("all")
+    if all_time:
+        year = None
+    display_year = year
+    if year is None:
+        display_year = "all time"
+
+    report_name = f"Earnings by {thing} for {display_year}"
+
+    log_filename = f"reports/{report_name} Log.txt"
+    f = open(log_filename, "w")
+    lines_filename = f'reports/{report_name} Lines.csv'
+    fieldnames = [thing, 'Year', 'Display Name', 'Barcode', 'Purchase order', 'Actual cost']
+    lines_file = open(lines_filename, 'w', newline='')
+    lines_writer = csv.DictWriter(lines_file, fieldnames=fieldnames)
+    lines_writer.writeheader()
+
+    sales_filename = f'reports/{report_name} Sales.csv'
+    fieldnames = [thing, 'Date', 'Product', 'Quantity', 'Collected', 'We Spent on Shipping']
+    sales_file = open(sales_filename, 'w', newline='')
+    sales_writer = csv.DictWriter(sales_file, fieldnames=fieldnames)
+    sales_writer.writeheader()
+
+    summary_filename = f'reports/{report_name} Summary.csv'
+    fieldnames = [thing, 'Starting Inventory', 'Spent on Inventory', 'Ending Inventory', 'Invested Inventory',
+                  'Collected',
+                  'We Spent on Shipping', 'Gross less Shipping', 'Net (Less Shipping and Inventory)',
+                  'Net Excluding Investment',
+                  'Net Excluding Inventory', 'Collected Locally', '% Local']
+    summary_file = open(summary_filename, 'w', newline='')
+    summary_writer = csv.DictWriter(summary_file, fieldnames=fieldnames)
+    summary_writer.writeheader()
+
+    report_file_list = [log_filename, lines_filename, sales_filename, summary_filename]
+
+    reset_po_sold(f)
+
+    cart_lines = CheckoutLine.objects.filter(partner_at_time_of_submit=partner,
+                                             cart__status__in=[Cart.PAID, Cart.COMPLETED]).order_by("cart__date_paid")
+    if year:
+        cart_lines = cart_lines.filter(cart__date_paid__year=year)
+
+    if thing == PUBLISHER:
+        object_to_iterate_on = Publisher.objects.all().order_by('name')
+    elif thing == CATEGORY:
+        object_to_iterate_on = Category.objects.filter(level__lte=0).order_by('name')
+    else:
+        object_to_iterate_on = Game.objects.all().order_by('name')
+
+    for thing_instance in list(object_to_iterate_on) + [None]:
+        if thing_instance:
+            name = thing_instance.name
+        else:
+            name = f"No {thing}"
+
+        if thing == CATEGORY:
+            thing_instance = thing_instance.get_descendants(include_self=True)
+
+        log(f, f"Reporting on {name}")
+
+        starting_inventory = Money("0", 'USD')
+        ending_inventory = Money("0", 'USD')
+        spent_on_inventory = Money("0", 'USD')
+        spent_on_shipping = Money("0", 'USD')
+        collected = Money("0", 'USD')
+        collected_locally = Money("0", 'USD')
+
+        product_barcodes = get_product_barcodes(thing, thing_instance)
+
+        # First, get starting inventory if relevant:
+        if year:
+            # For sales of 2025, get the 2025 inventory report as a baseline.
+            starting_inventory = get_total_from_inv_report(lines_writer, thing, product_barcodes, year)
+        # Now get how much we spent on inventory for the year.
+        spent_on_inventory = get_purchased_this_year_total(year, product_barcodes)
+
+        # Also get inventory remaining for the year from the next year:
+        try:
+            ending_inventory = get_total_from_inv_report(lines_writer, thing, product_barcodes, year + 1)
+        except Exception as e:
+            print(e)  # Maybe the report doesn't exist, not too worried about it.
+
+        # Now get the total spent on inventory:
+        filtered_cart_lines = cart_lines.filter(item__product__barcode__in=product_barcodes)
+
+        for line in filtered_cart_lines:
+            collected_on_line = line.get_subtotal()
+            shipping_on_line = line.get_proportional_postage_paid()
+            sales_writer.writerow({
+                thing: thing_instance,
+                "Date": line.cart.date_paid,
+                "Product": line.item.product,
+                "Quantity": line.quantity,
+                "Collected": collected_on_line,
+                "We Spent on Shipping": shipping_on_line,
+            })
+            collected += collected_on_line
+            if not (shipping_on_line.amount > 0):
+                collected_locally += collected_on_line
+            spent_on_shipping += shipping_on_line
+        row_data = {
+            thing: thing_instance,
+            'Starting Inventory': starting_inventory,
+            'Spent on Inventory': spent_on_inventory,
+            'Ending Inventory': ending_inventory,
+            'Invested Inventory': (ending_inventory - starting_inventory),
+            'Collected': collected,
+            'We Spent on Shipping': spent_on_shipping,
+            'Gross less Shipping': collected - spent_on_shipping,
+            'Net (Less Shipping and Inventory)': collected - spent_on_shipping - spent_on_inventory,
+            'Net Excluding Investment': collected - spent_on_shipping - (ending_inventory - starting_inventory),
+            'Collected Locally': collected_locally,
+        }
+        if collected:
+            try:
+                row_data['% Local'] = (collected_locally / collected)
+            except TypeError:
+                print("Collected Locally: ", type(collected_locally), collected_locally)
+                print("Collected        : ", type(collected), collected)
+                # Checking for differences between money and djmoney
+                exit()
+
+        summary_writer.writerow(row_data)
+
+    # Close all the files
+    f.close()
+    summary_file.close()
+    sales_file.close()
+    lines_file.close()
+
+    email_report(report_name, report_file_list)
+
+
+def get_purchased_this_year_total(year: int | None, product_barcodes):
+    total = Money("0", 'USD')
+    for line in POLine.objects.filter(po__date__year=year, barcode__in=product_barcodes):
+        subtotal = line.actual_cost_subtotal
+        if subtotal is None:
+            continue
+        total += subtotal
+    return total
+
+
+def get_total_from_inv_report(lines_writer: DictWriter[str], thing: str, product_barcodes,
+                              year: int | None):
+    inventory_cost = Money("0", 'USD')
+    previous_inventory_report = InventoryReport.objects.get(date__year=year)
+    for line in tqdm(previous_inventory_report.report_lines.filter(barcode__in=product_barcodes).order_by('-id')):
+        display_name = ""
+        if line.barcode is not None:
+            try:
+                display_name = Product.objects.get(barcode=line.barcode).name
+            except Product.DoesNotExist:
+                pass
+        p_as = get_latest_purchased_as(year, line.barcode)
+        row_info = {
+            thing: display_name,
+            'Year': year,
+            'Display Name': display_name,
+            'Barcode': line.barcode,
+        }
+        if p_as:
+            row_info['Purchase order'] = p_as.po
+            if p_as.actual_cost:
+                inventory_cost += p_as.actual_cost
+                row_info['Actual cost'] = p_as.actual_cost
+        lines_writer.writerow(row_info)
+    return inventory_cost
+
+
+def get_product_barcodes(thing: str, thing_instance) -> Any:
+    if thing == PUBLISHER:
+        products = Product.objects.filter(publisher=thing_instance)
+    elif thing == CATEGORY:
+        products = Product.objects.filter(categories__in=thing_instance)
+    else:
+        products = Product.objects.filter(games=thing_instance)
+
+    product_barcodes = products.values_list("barcode", flat=True)
+    return product_barcodes
 
 
 def get_sales_by_thing(thing=GAME, **options):
@@ -216,4 +416,4 @@ class Command(BaseCommand):
         parser.add_argument("--all", action='store_true')
 
     def handle(self, *args, **options):
-        get_sales_by_thing(GAME, **options)
+        get_sales_summary(GAME, **options)
