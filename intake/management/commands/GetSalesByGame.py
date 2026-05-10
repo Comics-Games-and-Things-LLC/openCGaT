@@ -59,11 +59,10 @@ def get_sales_summary(thing=GAME, **options):
     sales_writer.writeheader()
 
     summary_filename = f'reports/{report_name} Summary.csv'
-    fieldnames = [thing, 'Starting Inventory', 'Spent on Inventory', 'Ending Inventory', 'Invested Inventory',
+    fieldnames = [thing, 'Starting Inventory', 'Spent on Inventory', 'Ending Inventory', 'Invested Inventory', 'COGS',
                   'Collected',
-                  'We Spent on Shipping', 'Gross less Shipping', 'Net (Less Shipping and Inventory)',
-                  'Net Excluding Investment',
-                  'Net Excluding Inventory', 'Collected Locally', '% Local']
+                  'We Spent on Shipping', 'Gross less Shipping', 'Overall Net Costs (Includes Investment)',
+                  'Net from COGS (Excludes Investment)', 'Collected Locally', '% Local']
     summary_file = open(summary_filename, 'w', newline='')
     summary_writer = csv.DictWriter(summary_file, fieldnames=fieldnames)
     summary_writer.writeheader()
@@ -135,17 +134,19 @@ def get_sales_summary(thing=GAME, **options):
             if not (shipping_on_line.amount > 0):
                 collected_locally += collected_on_line
             spent_on_shipping += shipping_on_line
+        cogs = spent_on_inventory - (ending_inventory - starting_inventory)
         row_data = {
             thing: thing_instance,
             'Starting Inventory': starting_inventory,
             'Spent on Inventory': spent_on_inventory,
             'Ending Inventory': ending_inventory,
             'Invested Inventory': (ending_inventory - starting_inventory),
+            'COGS': cogs,
             'Collected': collected,
             'We Spent on Shipping': spent_on_shipping,
             'Gross less Shipping': collected - spent_on_shipping,
-            'Net (Less Shipping and Inventory)': collected - spent_on_shipping - spent_on_inventory,
-            'Net Excluding Investment': collected - spent_on_shipping - (ending_inventory - starting_inventory),
+            'Overall Net Costs (Includes Investment)': collected - spent_on_shipping - spent_on_inventory,
+            'Net from COGS (Excludes Investment)': collected - spent_on_shipping - cogs,
             'Collected Locally': collected_locally,
         }
         if collected:
@@ -170,7 +171,8 @@ def get_sales_summary(thing=GAME, **options):
 
 def get_purchased_this_year_total(year: int | None, product_barcodes):
     total = Money("0", 'USD')
-    for line in tqdm(POLine.objects.filter(po__date__year=year, barcode__in=product_barcodes), desc="Calculating total purchases"):
+    for line in tqdm(POLine.objects.filter(po__date__year=year, barcode__in=product_barcodes),
+                     desc="Calculating total purchases"):
         subtotal = line.actual_cost_subtotal
         if subtotal is None:
             continue
