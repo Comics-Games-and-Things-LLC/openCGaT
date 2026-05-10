@@ -178,7 +178,7 @@ def get_purchased_this_year_total(year: int | None, product_barcodes):
     return total
 
 
-def get_total_from_inv_report(lines_writer: DictWriter[str], thing: str, product_barcodes,
+def get_total_from_inv_report(lines_writer: DictWriter, thing: str, product_barcodes,
                               year: int | None):
     inventory_cost = Money("0", 'USD')
     previous_inventory_report = InventoryReport.objects.get(date__year=year)
