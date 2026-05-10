@@ -193,7 +193,7 @@ def get_total_from_inv_report(lines_writer: DictWriter, thing: str, product_barc
                 pass
         p_as = get_latest_purchased_as(year, line.barcode)
         row_info = {
-            thing: display_name,
+            thing: thing,
             'Year': year,
             'Display Name': display_name,
             'Barcode': line.barcode,
