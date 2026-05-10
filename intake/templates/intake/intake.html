@@ -125,6 +125,12 @@
             {% endif %}
             {% if local_item %}
                 Price: {{ local_item.price }}
+                {% if local_item.default_price != local_item.price %}
+                    <br> Default Price: {{ local_item.default_price }}
+                {% endif %}
+                {% if local_item.in_store_only_price %}
+                    <br> In Store Only Price: {{ local_item.in_store_only_price }}
+                {% endif %}
                 <br>
                 Inventory: {{ local_item.current_inventory }}
 

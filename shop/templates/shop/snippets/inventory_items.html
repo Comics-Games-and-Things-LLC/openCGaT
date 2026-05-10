@@ -10,6 +10,9 @@
                                         id="{{ item.id }}_count">{{ item.get_inventory }}</span>
                                     at {{ item.partner }}</h5>
                                 {% if partner and partner == item.partner %}
+                                    {% if item.in_store_only_price %}
+                                        In Store Only Price: {{ item.in_store_only_price }} <br>
+                                    {% endif %}
                                     <a href="{% url 'edit_item' partner_slug=partner.slug product_slug=product.slug item_id=item.id %}">
                                         Edit
                                     </a>
