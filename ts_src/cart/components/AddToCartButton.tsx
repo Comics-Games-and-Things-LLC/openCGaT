@@ -154,7 +154,7 @@ const AddToCartButton: React.FunctionComponent<IAddProps> = (
         };
 
         const validate_qty_changed = (target: HTMLInputElement, new_qty: number) => {
-            if (new_qty > item.max_per_cart) {
+            if (item.max_per_cart && new_qty > item.max_per_cart) {
                 target.value = item.max_per_cart.toString()
                 return item.max_per_cart
             }
