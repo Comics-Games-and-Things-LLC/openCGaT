@@ -402,6 +402,8 @@ class Product(PolymorphicModel):
         context = {}
         context["sales"] = sales
         context["x_sold"] = completed_sales.aggregate(sum=Sum("quantity"))['sum']
+        context["x_open"] = completed_sales.exclude(cart__status=Cart.COMPLETED).aggregate(sum=Sum("quantity"))['sum']
+
         context["x_sold_last_12_months"] = completed_sales.filter(
             cart__date_submitted__gte=timezone.now() - timedelta(days=365)
         ).aggregate(sum=Sum("quantity"))['sum']
