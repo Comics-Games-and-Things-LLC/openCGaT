@@ -888,7 +888,10 @@ Final state:
         """
         if self.is_shipping_required():
             if self.delivery_method == self.SHIP_ALL:
-                return Money(4, "USD")
+                date = self.date_submitted if self.date_submitted else now()
+                if date.date() <= datetime.date(2026, 5, 31):
+                    return Money(4, "USD")
+                return Money(5.50, "USD")
         return Money(0, "USD")
 
     def can_get_shipping(self):

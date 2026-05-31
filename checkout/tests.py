@@ -1,4 +1,6 @@
 import os
+import datetime
+from unittest import mock
 
 from django.contrib.sites.models import Site
 from django.test import TestCase
@@ -47,20 +49,43 @@ class CheckoutTestCase(TestCase):
         cart.save()
 
     def test_pay(self):
-        cart = Cart.objects.get(email="Test@comicsgamesandthings.com")
-        has_quaderno = os.getenv("QUADERNO_URL")
-        if has_quaderno:
-            print("Testing tax with quaderno configured")
-            # Assuming that the quaderno account is registered in wisconsin and the tax rate is still 5.5%
-            cart.pay_amount(Money(10.55, "USD"))
-            self.assertEqual(cart.status, Cart.PAID)
-            self.assertEqual(cart.final_total, Money("10.55", 'USD'))
-            self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
-            self.assertEqual(cart.final_tax, Money(".55", 'USD'))
-        else:
-            print("Will not test tax")
-            cart.pay_amount(Money(10.00, "USD"))
-            self.assertEqual(cart.status, Cart.PAID)
-            self.assertEqual(cart.final_total, Money("10.00", 'USD'))
-            self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
-            self.assertEqual(cart.final_tax, Money(".00", 'USD'))
+        with mock.patch('checkout.models.now') as mock_now:
+            mock_now.return_value = datetime.datetime(2026, 5, 31, tzinfo=datetime.timezone.utc)
+            cart = Cart.objects.get(email="Test@comicsgamesandthings.com")
+            has_quaderno = os.getenv("QUADERNO_URL")
+            if has_quaderno:
+                print("Testing tax with quaderno configured")
+                # Assuming that the quaderno account is registered in wisconsin and the tax rate is still 5.5%
+                cart.pay_amount(Money(10.55, "USD"))
+                self.assertEqual(cart.status, Cart.PAID)
+                self.assertEqual(cart.final_total, Money("10.55", 'USD'))
+                self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
+                self.assertEqual(cart.final_tax, Money(".55", 'USD'))
+            else:
+                print("Will not test tax")
+                cart.pay_amount(Money(10.00, "USD"))
+                self.assertEqual(cart.status, Cart.PAID)
+                self.assertEqual(cart.final_total, Money("10.00", 'USD'))
+                self.assertEqual(cart.final_ship, Money("4.00", 'USD'))
+                self.assertEqual(cart.final_tax, Money(".00", 'USD'))
+
+    def test_pay_after_may_2026(self):
+        with mock.patch('checkout.models.now') as mock_now:
+            mock_now.return_value = datetime.datetime(2026, 6, 1, tzinfo=datetime.timezone.utc)
+            cart = Cart.objects.get(email="Test@comicsgamesandthings.com")
+            has_quaderno = os.getenv("QUADERNO_URL")
+            if has_quaderno:
+                # 1 (item 1 override) + 5 (item 2) + 5.50 (ship) = 11.50
+                # tax = 11.50 * 0.055 = 0.6325 -> 0.63
+                # total = 11.50 + 0.63 = 12.13
+                cart.pay_amount(Money(12.13, "USD"))
+                self.assertEqual(cart.status, Cart.PAID)
+                self.assertEqual(cart.final_ship, Money("5.50", 'USD'))
+                self.assertEqual(cart.final_tax, Money(".63", 'USD'))
+                self.assertEqual(cart.final_total, Money("12.13", 'USD'))
+            else:
+                # 1 + 5 + 5.50 = 11.50
+                cart.pay_amount(Money(11.50, "USD"))
+                self.assertEqual(cart.status, Cart.PAID)
+                self.assertEqual(cart.final_ship, Money("5.50", 'USD'))
+                self.assertEqual(cart.final_total, Money("11.50", 'USD'))

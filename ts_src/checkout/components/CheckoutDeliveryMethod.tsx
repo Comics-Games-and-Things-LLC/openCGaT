@@ -94,7 +94,7 @@ const CheckoutDeliveryMethod: React.FunctionComponent<iCheckoutForm> = (props): 
             <SimpleCard>
                 <div className={`flex justify-center ${gap}`}>
                     <h4>Ship</h4>
-                    <p>US only, $4 Flat Rate Shipping</p>
+                    <p>US only, $5.50 Flat Rate Shipping</p>
                 </div>
                 <AddressForm address={currentCart.shipping_address} phoneRequired={true}
                              limit_country_options={true} endpoint={`/cart/api/set/shippingAddress/`}/>
