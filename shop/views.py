@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.postgres.search import SearchQuery
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, Page
 from django.db.models import Q, OuterRef, Sum, F, Subquery, ExpressionWrapper, DurationField
 from django.db.models.functions import TruncDate, Now, ExtractDay
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -26,7 +26,7 @@ from partner.models import get_partner, get_partner_or_401, Partner
 from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm, ProductsForm
-from .models import Product, Item, InventoryItem, MadeToOrder, CustomChargeItem
+from .models import Product, Item, InventoryItem, MadeToOrder, CustomChargeItem, ItemQuerySet
 from .serializers import ItemSerializer, ManageItemSerializer
 from .views_api import item_list_filter
 
@@ -52,6 +52,32 @@ def product_list(request, partner_slug=None):
     partner = None
     if partner_slug:
         partner = get_partner_or_401(request, partner_slug)
+    collection, items, page_number, page_obj = handle_items_form(form, page_size, partner)
+
+    if items.count() == 1:
+        if partner_slug:
+            return HttpResponseRedirect(
+                reverse("manage_product", kwargs={'product_slug': items[0].product.slug,
+                                                  'partner_slug': partner_slug}))
+        return HttpResponseRedirect(
+            reverse("product_detail", kwargs={'product_slug': items[0].product.slug}))
+
+    context = {
+        'page': page_obj,
+        'filters_form': form,
+        'manual_form_fields': manual_form_fields,
+        'page_number': int(page_number),
+        'partner_slug': partner_slug,
+        'manage': manage,
+        'collection': collection,
+    }
+    if partner:
+        context['partner'] = partner
+    return TemplateResponse(request, "shop/index.html", context=context)
+
+
+def handle_items_form(form: FiltersForm, page_size: int | Any, partner: Partner | None) -> \
+        tuple[ItemQuerySet, Page[Any], int, Any | None]:
     collection = None
     if form.is_valid():
         collection = form.cleaned_data.get('collection', None)
@@ -91,16 +117,14 @@ def product_list(request, partner_slug=None):
 
     items = items.exclude(customchargeitem__isnull=False)
 
-    if items.count() == 1:
-        if partner_slug:
-            return HttpResponseRedirect(
-                reverse("manage_product", kwargs={'product_slug': items[0].product.slug,
-                                                  'partner_slug': partner_slug}))
-        return HttpResponseRedirect(
-            reverse("product_detail", kwargs={'product_slug': items[0].product.slug}))
+    # Handle pagination
 
-    # Handle pageination
+    page_number, page_obj = handle_pagination(form, items, page_size)
 
+    return collection, items, page_number, page_obj
+
+
+def handle_pagination(form: FiltersForm, items: ItemQuerySet, page_size: int | Any) -> tuple[int, Page[Any]]:
     page_number = 1
     if form.is_valid():
         page_size = form.cleaned_data['page_size']
@@ -114,25 +138,7 @@ def product_list(request, partner_slug=None):
     if page_number > paginator.num_pages:
         page_number = 1
     page_obj = paginator.get_page(page_number)
-
-    if partner:
-        for item in page_obj:
-            data = item.product.get_sold_info(partner)
-            for key, value in data.items():
-                setattr(item, key, value)
-                
-    context = {
-        'page': page_obj,
-        'filters_form': form,
-        'manual_form_fields': manual_form_fields,
-        'page_number': int(page_number),
-        'partner_slug': partner_slug,
-        'manage': manage,
-        'collection': collection,
-    }
-    if partner:
-        context['partner'] = partner
-    return TemplateResponse(request, "shop/index.html", context=context)
+    return page_number, page_obj
 
 
 def manage_product_list(request, partner_slug):
@@ -232,19 +238,7 @@ def manage_product_list(request, partner_slug):
     new_product_list = displayed_products.distinct().order_by(
         order_by, secondary_order_string)
 
-    page_number = 1
-    if form.is_valid():
-        page_size = form.cleaned_data['page_size']
-        if page_size is None or page_size <= 1:
-            page_size = 20
-        page_number = form.cleaned_data['page_number']
-        if page_number is None or page_number <= 1:
-            page_number = 1
-
-    paginator = Paginator(new_product_list, page_size)
-    if page_number > paginator.num_pages:
-        page_number = 1
-    page_obj = paginator.get_page(page_number)
+    page_number, page_obj = handle_pagination(form, new_product_list, page_size)
 
     context = {
         'page': page_obj,
