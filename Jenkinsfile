@@ -28,6 +28,7 @@ node {
         withCredentials([file(credentialsId: 'jenkins.env', variable: 'env_file')]){
             djangoImage.inside('-u root --env-file $env_file'){
                 sh 'cd /app/'
+                sh './manage.py collectstatic --no-input'
                 sh './manage.py test --no-input'
             }
         }
