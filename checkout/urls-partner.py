@@ -25,6 +25,8 @@ urlpatterns = [
     path('<int:cart_id>/line/<int:line_id>/split/', partner_split_line,
          name='partner_split_line'),
 
+    path('in_store_sales_for_day/', in_store_sales_for_day, name='in_store_sales_for_day'),
+
     path('pos/', pos, name='pos'),
     path('pos/data/', partner_cart_endpoint, name='partner_cart_endpoint'),
     path('pos/cart_list/', pos_cart_list_endpoint, name='pos_cart_list_endpoint'),

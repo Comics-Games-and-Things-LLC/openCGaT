@@ -1,8 +1,10 @@
+import datetime
 import json
 from _decimal import Decimal
 from collections import Counter
 from typing import Any
 
+import pytz
 import stripe
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
@@ -14,6 +16,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpRe
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from djmoney.money import Money
@@ -1080,3 +1083,56 @@ def tasks(request, partner_slug):
                'orders_due_items': get_orders_due(partner, exclude_requested=True).filter(days_until_cutoff__lte=2),
                }
     return TemplateResponse(request, "partner/tasks.html", context)
+
+
+def in_store_sales_for_day(request, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+    date_str = request.GET.get('date')
+    if date_str:
+        try:
+            date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            date = timezone.now().date()
+    else:
+        # Default to today in Central Time
+        tz = pytz.timezone('US/Central')
+        date = timezone.now().astimezone(tz).date()
+
+    # Define the day in Central Time
+    tz = pytz.timezone('US/Central')
+    start_of_day = tz.localize(datetime.datetime.combine(date, datetime.time.min))
+    end_of_day = tz.localize(datetime.datetime.combine(date, datetime.time.max))
+
+    # Convert to UTC for database filtering if necessary,
+    # but Django usually handles localized datetimes correctly if USE_TZ=True.
+
+    sales = CheckoutLine.objects.filter(
+        cart__at_pos=True,
+        cart__status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED],
+        cart__date_submitted__range=(start_of_day, end_of_day),
+        item__partner=partner
+    ).exclude(cancelled=True)
+
+    # Group by item
+    item_sales = sales.values('item').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')
+
+    # Prefetch items and products
+    item_ids = [s['item'] for s in item_sales]
+    items_dict = {item.id: item for item in Item.objects.filter(id__in=item_ids).select_related('product')}
+
+    results = []
+    for s in item_sales:
+        item = items_dict.get(s['item'])
+        if item:
+            results.append({
+                'item': item,
+                'quantity': s['total_quantity'],
+                'inventory': item.get_inventory() if hasattr(item, 'get_inventory') else 0
+            })
+
+    context = {
+        'partner': partner,
+        'date': date,
+        'sales': results,
+    }
+    return TemplateResponse(request, "partner/in_store_sales_for_day.html", context)

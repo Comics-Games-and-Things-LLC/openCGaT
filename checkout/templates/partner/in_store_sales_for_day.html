@@ -1,0 +1,58 @@
+{% extends 'container.html' %}
+{% load static %}
+
+{% block title %}POS Sales for {{ date }}{% endblock %}
+
+{% block content %}
+    <h1>POS Sales for {{ date }}</h1>
+    
+    <div>
+        <form method="get">
+            <label for="date">Change Date:</label>
+            <input type="date" id="date" name="date" value="{{ date|date:'Y-m-d' }}">
+            <button type="submit" class="btn btn-primary">Go</button>
+        </form>
+    </div>
+    <br>
+    {% if sales %}
+    <div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Sold Today</th>
+                    <th>Current Inventory</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr>
+                    <td>
+                        <div>
+                            {{ sale.item.product.name }}
+                        </div>
+                        <div>
+                            {{ sale.item.product.barcode|default:"" }}
+                        </div>
+                    </td>
+                    <td>
+                        {{ sale.quantity }}
+                    </td>
+                    <td>
+                        {{ sale.inventory }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div>
+        <p>No POS sales found for this day.</p>
+    </div>
+{% endif %}
+    
+    <div>
+        <a href="{% url 'partner_homepage' partner_slug=partner.slug %}">Back to Partner Dashboard</a>
+    </div>
+{% endblock %}

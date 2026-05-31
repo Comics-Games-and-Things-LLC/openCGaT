@@ -140,6 +140,7 @@ def handle_pagination(form: FiltersForm, items: ItemQuerySet, page_size: int | A
     page_obj = paginator.get_page(page_number)
     return page_number, page_obj
 
+
 def item_sales_data_list(request, partner_slug):
     page_size = 20
     partner = get_partner_or_401(request, partner_slug)
