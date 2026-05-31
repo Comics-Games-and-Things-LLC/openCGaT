@@ -14,7 +14,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ('id', 'name', 'slug', 'visible', 'primary_image')
+        fields = ('id', 'name', 'slug', 'visible', 'primary_image', 'release_date')
 
     @staticmethod
     def get_visible(product):

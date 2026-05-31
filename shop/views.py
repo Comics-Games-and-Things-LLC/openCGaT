@@ -140,6 +140,40 @@ def handle_pagination(form: FiltersForm, items: ItemQuerySet, page_size: int | A
     page_obj = paginator.get_page(page_number)
     return page_number, page_obj
 
+def item_sales_data_list(request, partner_slug):
+    page_size = 20
+    partner = get_partner_or_401(request, partner_slug)
+
+    initial_data = {'page_size': page_size}
+    form = FiltersForm(initial=initial_data, manage=True)
+    manual_form_fields = []
+    if len(request.GET) != 0:
+        form = FiltersForm(request.GET, initial=initial_data, manage=True)
+
+    collection, items, page_number, page_obj = handle_items_form(form, page_size, partner)
+
+    serialized_list = []
+
+    for item in page_obj.object_list:
+        data = ManageItemSerializer(item).data
+        for key, value in item.product.get_sold_info(partner).items():
+            setattr(data, key, value)
+        serialized_list.append(data)
+
+    context = {
+        'page': page_obj,  # used only for "has_next_page"
+        'serialized_list': serialized_list,
+        'filters_form': form,
+        'manual_form_fields': manual_form_fields,
+        'page_number': int(page_number),
+        'partner_slug': partner_slug,
+        'manage': True,
+        'collection': collection,
+    }
+    if partner:
+        context['partner'] = partner
+    return TemplateResponse(request, "partner/item_sales_data.html", context=context)
+
 
 def manage_product_list(request, partner_slug):
     """

@@ -1,0 +1,72 @@
+{% extends 'filtered_list_view.html' %}
+{% load wagtailcore_tags %}
+{% load templatehelpers %}
+{% load static %}
+
+{% block title %}Item sales data{% endblock %}
+{% block content_header %}
+    Use this form to find a list of items, then set an action and apply it.
+    <a href="{% keep_get_params_url 'manage_products' partner_slug=partner.slug %}">
+        Switch to Manage Products
+    </a>
+{% endblock %}
+{% block list %}
+    <table class="table">
+        <tr>
+            <th>Product</th>
+            <th>Inventory</th>
+            <th>Price</th>
+            <th>Total Sold</th>
+            <th>Last 12 Months</th>
+            <th>Release Date</th>
+            <th>Post Release</th>
+        </tr>
+        {% for item in serialized_list %}
+            <tr>
+                <td>
+                    {% if item.product.primary_image %}
+                        <a href="{{ item.product.primary_image.image_url }}">
+                            <i class="fas fa-image"></i>
+                        </a>
+                    {% endif %}
+                    {% if item.partner.slug and item.product.slug %}
+                        <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=item.product.slug %}">
+                            {{ item.product.name }}
+                        </a>
+                        {% if not item.product.visible %}
+                            <i class="fas fa-eye-slash"></i>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    {{ item.inventory }}
+                    {% if item.enable_restock_alert %}
+                        / {{ item.low_inventory_alert_threshold }}
+                    {% endif %}
+                </td>
+                <td>
+                    ${{ item.price }}
+                    {% if item.in_store_only_price %}
+                        <br>
+                        In Store: {{ item.in_store_only_price }}
+                    {% endif %}
+                </td>
+                <td>{{ item.x_sold|default_if_none:0 }}</td>
+                <td>{{ item.x_sold_last_12_months|default_if_none:0 }}</td>
+                <td>{{ item.product.release_date }}</td>
+                <td>{{ item.x_sold_post_release|default_if_none:0 }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+{% endblock %}
+
+{% block alternate %}
+    <p class="p-6">
+        {% if form.is_valid %}
+            No items are available that match your search criteria.
+        {% else %}
+            Please filter the form to a subset of items.
+        {% endif %}
+    </p>
+{% endblock %}

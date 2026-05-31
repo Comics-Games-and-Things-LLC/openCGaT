@@ -1,6 +1,12 @@
 {% if sales %}
     <div class="row mb-3 p-0.5">
-        <h2> Sales ({{ x_sold }} Sold) {% if x_open %}({{ x_open }} Open){% endif %}</h2>
+        <div>
+            <h2> Sales ({{ x_sold }} Sold) {% if x_open %}({{ x_open }} Open){% endif %}</h2>
+            <p>
+                Last 12 months: {{ x_sold_last_12_months|default_if_none:0 }}
+                After release sales: {{ x_sold_post_release|default_if_none:0 }}
+            </p>
+        </div>
         <table class="table">
             <tr>
                 <th scope="col">ID</th>
