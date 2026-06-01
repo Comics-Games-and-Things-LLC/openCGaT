@@ -1114,7 +1114,7 @@ def in_store_sales_for_day(request, partner_slug):
     ).exclude(cancelled=True)
 
     # Group by item
-    item_sales = sales.values('item').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')
+    item_sales = sales.values('item').annotate(total_quantity=Sum('quantity')).order_by('item__product__name')
 
     # Prefetch items and products
     item_ids = [s['item'] for s in item_sales]
