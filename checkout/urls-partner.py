@@ -15,6 +15,10 @@ urlpatterns = [
     path('<int:cart_id>/update/', partner_order_status_update, name='partner_order_status_update'),
 
     path('<int:cart_id>/comments/', update_partner_comments, name='partner_update_comments'),
+    path('<int:cart_id>/apply_discount/', partner_retroactively_apply_discount,
+         name='partner_retroactively_apply_discount'),
+    path('<int:cart_id>/apply_discount/<discount_code>/', partner_retroactively_apply_discount,
+         name='partner_retroactively_apply_discount_with_code'),
 
     path('<int:cart_id>/line/<int:line_id>/cancel/', partner_cancel_line,
          name='partner_cancel_line'),

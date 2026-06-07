@@ -22,6 +22,7 @@ from django.views.decorators.http import require_POST
 from djmoney.money import Money
 
 import discount_codes.views
+from discount_codes.models import DiscountCode
 from box_counter.models import BoxInventory
 from digitalitems.models import DigitalItem
 from partner.models import get_partner_or_401, Partner
@@ -824,6 +825,40 @@ def pos_cart_list_endpoint(request, partner_slug):
 def pos_active_cart_endpoint(request, partner_slug, cart_id):
     partner = get_partner_or_401(request, partner_slug)
     return JsonResponse(get_active_cart(cart_id))
+
+def partner_retroactively_apply_discount(request, partner_slug, cart_id, discount_code=None):
+    partner = get_partner_or_401(request, partner_slug)
+    cart = Cart.objects.get(id=cart_id)
+    if discount_code is None:
+        discount_code = request.GET.get('discount_code')
+    if not discount_code:
+        return redirect('partner_order_details', partner_slug=partner_slug, cart_id=cart_id)
+    code_obj = get_object_or_404(DiscountCode, code=discount_code.lower())
+
+    initial_total = cart.final_total
+    cart.discount_code = code_obj
+    for line in cart.lines_submitted.all():
+        old_price = line.price_per_unit_at_submit
+        line.price_per_unit_override = old_price
+        (applicable, new_price) = code_obj.apply_discount_to_line_item(line)
+        if applicable:
+            line.price_per_unit_at_submit = new_price
+            line.save()
+    cart.update_final_totals()
+    refund_amount = initial_total - cart.final_total
+    if cart.amount_refunded:
+        cart.amount_refunded += refund_amount
+    else:
+        cart.amount_refunded = refund_amount
+
+    comment = f"Discount code {code_obj.code} retroactively applied, to refund amount {refund_amount}"
+    if cart.private_comments:
+        cart.private_comments += "\n" + comment
+    else:
+        cart.private_comments = comment
+    cart.save()
+
+    return redirect('partner_order_details', partner_slug=partner_slug, cart_id=cart_id)
 
 
 def partner_update_line(request, cart_id, partner_slug, item_id):
