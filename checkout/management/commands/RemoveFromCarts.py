@@ -1,19 +1,14 @@
-import csv
-import datetime
-
-from django.conf import settings
-from django.core.mail import EmailMessage
-from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
-
-from checkout.models import Cart
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        from checkout.models import CheckoutLine
+        from checkout.models import CheckoutLine, Cart
         from shop.models import Product
         product = Product.objects.get(name="Warhammer 40000: Armageddon")
-        for line in CheckoutLine.objects.filter(cart__status=Cart.OPEN, item__product=product):
+        for line in CheckoutLine.objects.filter(cart__status__in=[Cart.FROZEN, Cart.OPEN], item__product=product):
+            line.cart.thaw()
+            line.cart.save()
+            line.delete()
             print("Removing line: ", line)
             line.delete()
