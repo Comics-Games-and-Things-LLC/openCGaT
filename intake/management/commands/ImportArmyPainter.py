@@ -12,19 +12,23 @@ class Command(BaseCommand):
     help = "Download Army Painter Fanatic from ACD"
 
     def handle(self, *args, **options):
-        category = Category.objects.get(id=2337)
+        # category = Category.objects.get(id=2337)
+        category = Category.objects.get(id=88)  # Primers
         publisher = Publisher.objects.get(name="Army Painter")
         partner = Partner.objects.get(name__icontains="Valhalla")
 
-        for i in range(1, 217):
-            sku = f"AMYWP3{str(i).rjust(3, '0')}"
+        for i in range(1, 34):
+            # sku = f"AMYWP3{str(i).rjust(3, '0')}"
+            sku = f"AMYCP3{str(i).rjust(3, '0')}"
             print(sku)
             try:
                 time.sleep(1)
                 info = query_for_info(sku, debug=False)
+                print(info)
             except Exception as e:
                 print(e)
                 continue
+            if not info: continue
             if Product.objects.filter(name=info['Name']).exists():
                 product = Product.objects.get(name=info['Name'])
                 if info['SKU']:
