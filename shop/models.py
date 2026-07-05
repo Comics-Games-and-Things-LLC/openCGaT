@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from decimal import Decimal, ROUND_UP
 
 from django.apps import apps
@@ -452,7 +452,10 @@ class Product(PolymorphicModel):
         if info['SKU']:
             product.publisher_sku = info['SKU']
         if info["Release Date"]:
-            product.release_date = datetime.strptime(info["Release Date"], "%Y%m%d").date()
+            if isinstance(info["Release Date"], date):
+                product.release_date = info["Release Date"]
+            else:
+                product.release_date = datetime.strptime(info["Release Date"], "%Y%m%d").date()
         if info["Picture Source"]:
             image = Image.create_from_external_url(info["Picture Source"])
             product.primary_image = image
