@@ -288,10 +288,11 @@
             avgTimeByChar: 60, //Slowed down for newer scanner
             onScan: function (sCode, iQty) { // Alternative to document.addEventListener('scan')
                 console.log('Scanned: ' + iQty + 'x ' + sCode);
-                if (sCode.startsWith('420') && sCode.length === 30) {
-                    // First 8 characters will be the barcode and the zip code
+                if (sCode.startsWith('420') && sCode.length >= 30) { // Tracking numbers seem to now be 34 digits
+                    // First 8 characters will be the barcode prefix and the zip code
                     console.log("Populating tracking number")
-                    let tracking_number = sCode.substring(8);
+                    let tracking_number = sCode.substring(8); //Strip 420 and zip code.
+                    if (sCode.length > 30) { tracking_number = tracking_number.substring(4)} // strip zip extension.
                     const existing_tracking_number = document.getElementById("id_tracking_number").value;
                     if (!!existing_tracking_number) {
                         tracking_number = existing_tracking_number + " and " + tracking_number
