@@ -22,9 +22,9 @@ from django.views.decorators.http import require_POST
 from djmoney.money import Money
 
 import discount_codes.views
-from discount_codes.models import DiscountCode
 from box_counter.models import BoxInventory
 from digitalitems.models import DigitalItem
+from discount_codes.models import DiscountCode
 from partner.models import get_partner_or_401, Partner
 from shop.models import CustomChargeItem, Product, Item, InventoryItem
 from shop.serializers import ItemSerializer
@@ -826,6 +826,7 @@ def pos_active_cart_endpoint(request, partner_slug, cart_id):
     partner = get_partner_or_401(request, partner_slug)
     return JsonResponse(get_active_cart(cart_id))
 
+
 def partner_retroactively_apply_discount(request, partner_slug, cart_id, discount_code=None):
     partner = get_partner_or_401(request, partner_slug)
     cart = Cart.objects.get(id=cart_id)
@@ -1156,18 +1157,24 @@ def in_store_sales_for_day(request, partner_slug):
     items_dict = {item.id: item for item in Item.objects.filter(id__in=item_ids).select_related('product')}
 
     results = []
+    sold_out = []
     for s in item_sales:
         item = items_dict.get(s['item'])
         if item:
-            results.append({
+            inventory = item.get_inventory() if hasattr(item, 'get_inventory') else 0
+            data = {
                 'item': item,
                 'quantity': s['total_quantity'],
-                'inventory': item.get_inventory() if hasattr(item, 'get_inventory') else 0
-            })
-
+                'inventory': inventory
+            }
+            if inventory > 0:
+                results.append(data)
+            else:
+                sold_out.append(data)
     context = {
         'partner': partner,
         'date': date,
         'sales': results,
+        'sold_out': sold_out,
     }
     return TemplateResponse(request, "partner/in_store_sales_for_day.html", context)

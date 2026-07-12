@@ -1,0 +1,26 @@
+<table class="table">
+    <thead>
+    <tr>
+        <th>Item</th>
+        <th>Sold Today</th>
+        <th>Current Inventory</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for sale in sales %}
+        <tr>
+            <td>
+                <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=sale.item.product.slug %}">
+                    {{ sale.item.product.name }}
+                </a>
+            </td>
+            <td>
+                {{ sale.quantity }}
+            </td>
+            <td>
+                {{ sale.inventory }}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

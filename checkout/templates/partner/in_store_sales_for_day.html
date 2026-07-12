@@ -15,41 +15,15 @@
     </div>
     <br>
     {% if sales %}
-        <div>
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Sold Today</th>
-                    <th>Current Inventory</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for sale in sales %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=sale.item.product.slug %}">
-                                {{ sale.item.product.name }}
-                            </a>
-                        </td>
-                        <td>
-                            {{ sale.quantity }}
-                        </td>
-                        <td>
-                            {{ sale.inventory }}
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        {% include 'partner/snippets/daily_sales_table.html' with sales=sales %}
     {% else %}
-        <div>
-            <p>No POS sales found for this day.</p>
-        </div>
+        <p>No POS sales found for this day.</p>
     {% endif %}
+    {% if sold_out %}
+        <h2>Sold out items</h2>
+        {% include 'partner/snippets/daily_sales_table.html' with sales=sold_out %}
+    {% else %}
+        <p>No items sold out.</p>
 
-    <div>
-        <a href="{% url 'partner_homepage' partner_slug=partner.slug %}">Back to Partner Dashboard</a>
-    </div>
+    {% endif %}
 {% endblock %}
