@@ -14,9 +14,9 @@
     <div class="mt-4">
         <h2 class="text-xl font-bold">Quick Links</h2>
         <ul class="list-disc ml-6">
-            <li><a href="{% url 'pos' partner_slug=partner.slug %}" class="text-blue-500 hover:underline">Point of Sale (POS)</a></li>
-            <li><a href="{% url 'in_store_sales_for_day' partner_slug=partner.slug %}" class="text-blue-500 hover:underline">Daily POS Sales Report</a></li>
-            <li><a href="{% url 'partner_orders' partner_slug=partner.slug %}" class="text-blue-500 hover:underline">Manage Orders</a></li>
+            <li><a href="{% url 'pos' partner_slug=partner.slug %}" class="hover:underline">Point of Sale (POS)</a></li>
+            <li><a href="{% url 'in_store_sales_for_day' partner_slug=partner.slug %}" class="hover:underline">Daily POS Sales Report</a></li>
+            <li><a href="{% url 'partner_orders' partner_slug=partner.slug %}" class="hover:underline">Manage Orders</a></li>
         </ul>
     </div>
 {% endblock %}
