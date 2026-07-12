@@ -1,6 +1,7 @@
 import datetime
 
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
@@ -349,7 +350,6 @@ def po_details(request, partner_slug, po_id):
     partner = get_partner_or_401(request, partner_slug)
     po = get_object_or_404(PurchaseOrder, po_number=po_id, partner=partner)
     form = None
-    processing_result = None
     if request.method == "POST":
         form = UploadPoFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -357,7 +357,9 @@ def po_details(request, partner_slug, po_id):
             po_file.po = po
             po_file.distributor = po.distributor
             po_file.save()
-            processing_result = "File uploaded and will be processed soon."
+            messages.success(request, "File uploaded and will be processed soon.")
+            return HttpResponseRedirect(reverse("po_details", kwargs={'partner_slug': partner.slug,
+                                                                      'po_id': po.po_number}))
     else:
         form = UploadPoFileForm()
     context = {
@@ -365,7 +367,6 @@ def po_details(request, partner_slug, po_id):
         'po': po,
         'lines': po.lines.order_by('line_number', po.distributor.get_secondary_sort_key()).all(),
         'form': form,
-        'processing_result': processing_result,
         'uploaded_files': po.poinvoicefile_set.all(),
     }
     return TemplateResponse(request, "purchase_order/po_details.html", context)

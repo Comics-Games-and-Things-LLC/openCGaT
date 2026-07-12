@@ -116,7 +116,11 @@
                     {% include 'snippets/form_body.html' %}
                     <input type="submit" value="Submit">
                 </form>
-                <h3> {{ processing_result|linebreaks }} </h3>
+                {% if messages %}
+                    {% for message in messages %}
+                        <h3 class="{{ message.tags }}"> {{ message }} </h3>
+                    {% endfor %}
+                {% endif %}
                 {% if uploaded_files %}
                     <h4>Previously uploaded invoices:</h4>
                     <ul>
