@@ -93,6 +93,4 @@ class POSSalesDayTest(TestCase):
 
 
 def wrap_in_td(text):
-    return f"""<td>
-                        {text}
-                    </td>"""
+    return f"""<td>{text}</td>"""
