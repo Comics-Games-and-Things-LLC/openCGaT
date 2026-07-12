@@ -44,5 +44,5 @@ class Command(BaseCommand):
                 writer.writeheader()
                 writer.writerows(could_not_process_lines)
 
-            email_report(f"{po}: {len(could_not_process_lines)} lines that could not be processed",
+            email_report(f"{po}: {len(could_not_process_lines)} lines that could not be processed or have issues",
                          ['reports/lines_that_could_not_be_processed.csv'])

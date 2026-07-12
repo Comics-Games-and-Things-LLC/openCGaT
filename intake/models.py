@@ -446,7 +446,7 @@ class PoInvoiceFile(models.Model):
                 writer.writeheader()
                 writer.writerows(could_not_process_lines)
 
-            email_report(f"{self.po}: {len(could_not_process_lines)} lines that could not be processed",
+            email_report(f"{self.po}: {len(could_not_process_lines)} lines that could not be processed or have issues",
                          [report_path])
 
 class DistributorWarehouse(models.Model):

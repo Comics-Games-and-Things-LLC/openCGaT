@@ -32,6 +32,17 @@ def read_pdf_invoice(invoice_source):
     return po, get_invoice_lines(pdf_file, po)
 
 
+def record_issue(line, message, lines_with_issues):
+    print(line)
+    print('\t', message)
+    if line.get("Processing Note"):
+        line["Processing Note"] = f"{line['Processing Note']}; {message}"
+    else:
+        line["Processing Note"] = message
+    if line not in lines_with_issues:
+        lines_with_issues.append(line)
+
+
 def get_invoice_lines(pdf_file, po):
     tables = pypdf_table_extraction.read_pdf(pdf_file,
                                              flavor='stream',
@@ -39,9 +50,9 @@ def get_invoice_lines(pdf_file, po):
                                              row_tol=20,
                                              )
     line_index = 0
-    columns = ['Item Name', 'SKU', 'HS\nCode', 'COO', 'Unit Price', 'Quantity', 'Total', 'Total Tax']
+    columns = ['Item Name', 'SKU', 'HS\nCode', 'COO', 'Unit Price', 'Quantity', 'Total', 'Total Tax', 'Processing Note']
     found_start = False
-    could_not_process_lines = []
+    lines_with_issues = []
 
     for table in tables:
         for line in table.df.to_numpy():
@@ -66,22 +77,22 @@ def get_invoice_lines(pdf_file, po):
             line = {'Line Number': line_index} | line
 
             if line_info.processing_error:
-                print(line)
-                print('\t', line_info.processing_error)
+                record_issue(line, line_info.processing_error, lines_with_issues)
                 continue
 
             barcode = find_barcode_from_product(line_info.sku, line_info.abridged_name)
+            if isinstance(barcode, tuple):
+                barcode, message = barcode
+                record_issue(line, message, lines_with_issues)
             if not barcode:
-                print(line)
-                print('\t', f"Could not find a specific product with sku {line_info.sku} for {line_info.abridged_name}")
-                could_not_process_lines.append(line)
+                message = f"Could not find a specific product with sku {line_info.sku} for {line_info.abridged_name}"
+                record_issue(line, message, lines_with_issues)
                 continue
 
             po_lines = POLine.objects.filter(po=po, barcode=barcode)
             if po_lines.count() != 1:
-                print(line)
-                print('\t', f"Could not find a specific PO line for barcode {barcode} for {line_info.abridged_name}")
-                could_not_process_lines.append(line)
+                message = f"Could not find a specific PO line for barcode {barcode} for {line_info.abridged_name}"
+                record_issue(line, message, lines_with_issues)
                 continue
 
             po_line = po_lines.first()
@@ -89,20 +100,20 @@ def get_invoice_lines(pdf_file, po):
             if not po_line.line_number:
                 po_line.line_number = line_info.line_number
             elif po_line.line_number != line_info.line_number:
-                print(f"{line}\n\tLine number differs!")
+                record_issue(line, "Line number differs!", lines_with_issues)
             if not po_line.expected_quantity:
                 po_line.expected_quantity = int(line_info.qty_unit)
             elif po_line.expected_quantity != int(line_info.qty_unit):
-                print(f"{line}\n\tExpected Quantity differs!")
+                record_issue(line, "Expected Quantity differs!", lines_with_issues)
 
             if not po_line.cost_per_item:
                 po_line.cost_per_item = Money(line_info.final_cost, "USD")
             elif po_line.cost_per_item != Money(line_info.final_cost, "USD"):
-                print(f"{line}\n\tCost differs! Calculated to be {line_info.final_cost}")
+                record_issue(line, f"Cost differs! Calculated to be {line_info.final_cost}", lines_with_issues)
 
             po_line.save()
     print(f"{line_index} lines processed")
-    return could_not_process_lines
+    return lines_with_issues
 
 
 def find_barcode_from_product(sku, name):
@@ -115,8 +126,10 @@ def find_barcode_from_product(sku, name):
     products = Product.objects.filter(name__search=name)
     if products.count() == 1:
         product = products.first()
-        print(f"Assuming that {name} is {product.name}")
-        return product.barcode
+        message = f"Assuming that {name} is {product.name}"
+        print(message)
+        return product.barcode, message
+    return None
 
 
 class InvoiceLineInfo:

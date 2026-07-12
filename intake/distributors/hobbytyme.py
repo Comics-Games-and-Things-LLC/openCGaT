@@ -38,16 +38,27 @@ def read_pdf_invoice(invoice_source):
     return po, get_invoice_lines(pdf_file, po)
 
 
+def record_issue(line, message, lines_with_issues):
+    print(line)
+    print('\t', message)
+    if line.get("Processing Note"):
+        line["Processing Note"] = f"{line['Processing Note']}; {message}"
+    else:
+        line["Processing Note"] = message
+    if line not in lines_with_issues:
+        lines_with_issues.append(line)
+
+
 def get_invoice_lines(pdf_file, po):
     tables = pypdf_table_extraction.read_pdf(pdf_file,
                                              flavor='stream',
                                              pages="1-end"
                                              )
-    could_not_process_lines = []
+    lines_with_issues = []
 
     columns = ["Line", "QTY/UM", "MFG / ITEM NO. and DESCRIPTION", "RETAIL PRICE", "FIRST COST", "FINAL COST",
                "EXT BEFORE DISCOUNT",
-               "Other Discount"]  # Sometimes there's an extra blank column with a * indicating discount
+               "Other Discount", "Processing Note"]  # Sometimes there's an extra blank column with a * indicating discount
 
     line_index = 0
     for table in tables:
@@ -76,37 +87,37 @@ def get_invoice_lines(pdf_file, po):
                 if "Other Discount" not in line.keys():
                     line["Other Discount"] = "" # Populate this value by default if needed
             except Exception as e:
-                print(f"Could not parse line {line_number}: {line}: error: {e}")
+                message = f"Could not parse line {line_number}: {line}: error: {e}"
+                record_issue(line, message, lines_with_issues)
                 continue
 
             if line_info.qty_of_type == "0":
                 continue  # Skip lines of quantity 0 (backorders).
 
+            if line_info.qty_per_type > 1:
+                message = f"We determined {line_info.abridged_name} has a quantity of {line_info.qty_per_type}"
+                record_issue(line, message, lines_with_issues)
+
             if line_info.processing_error:
-                print(line)
-                print('\t', line_info.processing_error)
-                could_not_process_lines.append(line)
+                record_issue(line, line_info.processing_error, lines_with_issues)
                 continue
 
             if (line_info.qty_type == "BX" and
                     not (line_info.mfc_code in ["VAL", "TAM", "GNZ"])):
-                print(line)
-                print('\t', "Not sure how to handle boxes not of Vallejo, Tamiya, or Mr Hobby, skipping line")
-                could_not_process_lines.append(line)
+                message = "Not sure how to handle boxes not of Vallejo, Tamiya, or Mr Hobby, skipping line"
+                record_issue(line, message, lines_with_issues)
                 continue
 
             barcode = find_barcode_from_sku(line_info.mfc_code, line_info.sku)
             if not barcode:
-                print(line)
-                print('\t', f"Could not find a specific product with sku {line_info.sku} for {line_info.abridged_name}")
-                could_not_process_lines.append(line)
+                message = f"Could not find a specific product with sku {line_info.sku} for {line_info.abridged_name}"
+                record_issue(line, message, lines_with_issues)
                 continue
 
             po_lines = POLine.objects.filter(po=po, barcode=barcode)
             if po_lines.count() != 1:
-                print(line)
-                print('\t', f"Could not find a specific PO line for barcode {barcode} for {line_info.abridged_name}")
-                could_not_process_lines.append(line)
+                message = f"Could not find a specific PO line for barcode {barcode} for {line_info.abridged_name}"
+                record_issue(line, message, lines_with_issues)
                 continue
 
             po_line = po_lines.first()
@@ -114,22 +125,22 @@ def get_invoice_lines(pdf_file, po):
             if not po_line.line_number:
                 po_line.line_number = line_info.line_number
             elif po_line.line_number != line_info.line_number:
-                print(f"{line}\n\tLine number differs!")
+                record_issue(line, "Line number differs!", lines_with_issues)
             if not po_line.expected_quantity:
                 po_line.expected_quantity = int(line_info.qty_unit)
             elif po_line.expected_quantity != int(line_info.qty_unit):
-                print(f"{line}\n\tExpected Quantity differs!")
+                record_issue(line, "Expected Quantity differs!", lines_with_issues)
             if not po_line.cost_per_item:
                 po_line.cost_per_item = Money(line_info.final_cost, "USD")
             elif po_line.cost_per_item != Money(line_info.final_cost, "USD"):
-                print(f"{line}\n\tCost differs! Calculated to be {line_info.final_cost}")
+                record_issue(line, f"Cost differs! Calculated to be {line_info.final_cost}", lines_with_issues)
             if not po_line.msrp_on_line:
                 po_line.msrp_on_line = Money(line_info.retail_price, "USD")
             elif po_line.msrp_on_line != Money(line_info.retail_price, "USD"):
-                print(f"{line}\n\tMSRP differs! Calculated to be {line_info.retail_price}")
+                record_issue(line, f"MSRP differs! Calculated to be {line_info.retail_price}", lines_with_issues)
 
             po_line.save()
-    return could_not_process_lines
+    return lines_with_issues
 
 
 def find_barcode_from_sku(mfc_code, sku):
@@ -147,6 +158,7 @@ class InvoiceLineInfo:
     qty_of_type = None
     qty_type = None
     qty_unit = None
+    qty_per_type = 1
     mfc_code = None
     sku = None
     abridged_name = None
@@ -167,30 +179,34 @@ class InvoiceLineInfo:
         self.sku = mfc_and_sku_and_abridged_name.split("/")[1].split(" ")[0]
 
         self.abridged_name = mfc_and_sku_and_abridged_name.split(self.dist_code)[1].strip()
-        qty_per_type = 1
+        self.qty_per_type = 1
         if self.qty_type == "BX":
             qty_text = self.abridged_name.split(" ")[-1]  # Last word is ideally a quantity marker
             if qty_text.endswith("p"):
-                qty_per_type = int(qty_text[:-1])  # 6p
+                self.qty_per_type = int(qty_text[:-1])  # 6p
             elif qty_text.endswith("pk"):
-                qty_per_type = int(qty_text[:-2])  # 6pk
+                self.qty_per_type = int(qty_text[:-2])  # 6pk
             elif "@" in qty_text[-1]:
-                qty_per_type = int(qty_text.split("@")[0])  # 6@$7.50
+                self.qty_per_type = int(qty_text.split("@")[0])  # 6@$7.50
             elif self.dist_code in ["GNZ/MC129", "TAM/87038", "TAM/87182"]:  # revert to hardcoded check
-                qty_per_type = 6
+                self.qty_per_type = 6
             else:
                 self.processing_error = f"Unable to determine quantity for line {self.line_number}"
                 return
-        if qty_per_type > 1:
-            print(f"We determined {self.abridged_name} has a quantity of {qty_per_type}")
-        self.qty_unit = int(self.qty_of_type) * qty_per_type
+        if self.qty_per_type > 1:
+            # This is an informational note, not necessarily an issue, but let's keep it as print for now.
+            # However, the user said "All the warnings that don't currently add to lines_with_issues should go into lines_with_issues as well."
+            # This is arguably a note about how we processed it.
+            # But line dict is not available here.
+            print(f"We determined {self.abridged_name} has a quantity of {self.qty_per_type}")
+        self.qty_unit = int(self.qty_of_type) * self.qty_per_type
 
-        self.ext_before_discount = Decimal(line[6]) / qty_per_type
+        self.ext_before_discount = Decimal(line[6]) / self.qty_per_type
 
         if self.ext_before_discount > 0:  # These could be empty, so check the subtotal first.
-            self.retail_price = Decimal(line[3]) / qty_per_type
-            self.first_cost = Decimal(line[4]) / qty_per_type
-            self.final_cost = Decimal(line[5]) / qty_per_type
+            self.retail_price = Decimal(line[3]) / self.qty_per_type
+            self.first_cost = Decimal(line[4]) / self.qty_per_type
+            self.final_cost = Decimal(line[5]) / self.qty_per_type
 
         if len(line) > 7:
             self.other_discount = line[7] == "*"
