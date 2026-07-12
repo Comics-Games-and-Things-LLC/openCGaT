@@ -63,6 +63,22 @@
         </nav>
         <nav class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true"
+               aria-expanded="false">Reports</a>
+            <div class="dropdown-menu">
+                <nav class="nav-item">
+                    <a class="nav-link" href="{% url 'in_store_sales_for_day' partner_slug=partner.slug %}">
+                        POS Items
+                    </a>
+                </nav>
+                <nav class="nav-item">
+                    <a class="nav-link" href="{% url 'partner_sales_overview' partner_slug=partner.slug %}">
+                        Daily Sales
+                    </a>
+                </nav>
+            </div>
+        </nav>
+        <nav class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true"
                aria-expanded="false">More</a>
             <div class="dropdown-menu">
                 {% if partner.retail_partner %}

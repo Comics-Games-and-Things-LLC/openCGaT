@@ -23,6 +23,7 @@ def sales_overview(request, partner_slug):
                                                                                              'final_tax')))
 
     context = {
+        "partner": partner,
         "gross_by_day": gross_by_day
     }
     return render(request, "partner_sales_overview.html", context)
