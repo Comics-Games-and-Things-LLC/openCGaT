@@ -433,9 +433,10 @@ class PoInvoiceFile(models.Model):
 
         if self.po is None:
             self.po = po
-            self.processing = False
-            self.processed = True
-            self.save()
+
+        self.processing = False
+        self.processed = True
+        self.save()
 
         if could_not_process_lines:
             report_path = 'reports/lines_that_could_not_be_processed.csv'
