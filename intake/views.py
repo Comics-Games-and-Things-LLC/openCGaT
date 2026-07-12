@@ -359,8 +359,7 @@ def po_details(request, partner_slug, po_id):
             po_file.save()
             processing_result = "File uploaded and will be processed soon."
     else:
-        if po.distributor.dist_name in ["Hobbytyme", "Kingsley", "Games Workshop"]:  # Distributors that support PDF import
-            form = UploadPoFileForm()
+        form = UploadPoFileForm()
     context = {
         'partner': partner,
         'po': po,
