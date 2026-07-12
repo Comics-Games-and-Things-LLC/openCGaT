@@ -8,7 +8,7 @@ from djmoney.forms import MoneyField
 from djmoney.money import Money
 
 from shop.forms import AddProductForm
-from .models import PricingRule, PurchaseOrder, POLine, DistributorInventoryFile
+from .models import PricingRule, PurchaseOrder, POLine, DistributorInventoryFile, PoInvoiceFile
 
 
 class RefreshForm(forms.Form):
@@ -129,5 +129,7 @@ class POLineForm(forms.ModelForm):
 FOUR_PLACES = decimal.Decimal("0.0001")
 
 
-class UploadPoFileForm(forms.Form):
-    file = forms.FileField()
+class UploadPoFileForm(forms.ModelForm):
+    class Meta:
+        model = PoInvoiceFile
+        fields = ['file']

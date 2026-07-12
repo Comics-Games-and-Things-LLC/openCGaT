@@ -24,3 +24,13 @@ admin.site.register(POLine, POLineAdmin)
 
 admin.site.register(DistributorWarehouse)
 admin.site.register(DistributorInventoryFile)
+
+
+class PoInvoiceFileAdmin(admin.ModelAdmin):
+    list_display = ('filename', 'distributor', 'po', 'status', 'update_date')
+    list_filter = ('distributor', 'processed', 'processing')
+    search_fields = ('filename', 'po__po_number')
+    readonly_fields = ('status',)
+
+
+admin.site.register(PoInvoiceFile, PoInvoiceFileAdmin)

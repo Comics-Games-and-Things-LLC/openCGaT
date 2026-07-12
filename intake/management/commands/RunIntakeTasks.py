@@ -2,7 +2,7 @@ import time
 
 from django.core.management.base import BaseCommand
 
-from intake.models import DistributorInventoryFile
+from intake.models import DistributorInventoryFile, PoInvoiceFile
 
 
 class Command(BaseCommand):
@@ -14,7 +14,13 @@ class Command(BaseCommand):
 
     @staticmethod
     def recurring_logic():
-        for inv in DistributorInventoryFile.objects.filter(processed=False):
+        for inv in DistributorInventoryFile.objects.filter(processed=False, processing=False):
+            inv.processing = True
+            inv.save()
             inv.run_import()
             inv.processed = True
+            inv.processing = False
+            inv.save()
+        for inv in PoInvoiceFile.objects.filter(processed=False, processing=False):
+            inv.process()
             inv.save()

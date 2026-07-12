@@ -353,9 +353,13 @@ def po_details(request, partner_slug, po_id):
     if request.method == "POST":
         form = UploadPoFileForm(request.POST, request.FILES)
         if form.is_valid():
-            processing_result = "Server can't process PDFs."
+            po_file = form.save(commit=False)
+            po_file.po = po
+            po_file.distributor = po.distributor
+            po_file.save()
+            processing_result = "File uploaded and will be processed soon."
     else:
-        if po.distributor.dist_name in ["Hobbytyme", "Kingsley"]:  # List of distributors that support PDF import
+        if po.distributor.dist_name in ["Hobbytyme", "Kingsley", "Games Workshop"]:  # Distributors that support PDF import
             form = UploadPoFileForm()
     context = {
         'partner': partner,
@@ -363,6 +367,7 @@ def po_details(request, partner_slug, po_id):
         'lines': po.lines.order_by('line_number', po.distributor.get_secondary_sort_key()).all(),
         'form': form,
         'processing_result': processing_result,
+        'uploaded_files': po.poinvoicefile_set.all(),
     }
     return TemplateResponse(request, "purchase_order/po_details.html", context)
 

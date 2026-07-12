@@ -14,6 +14,12 @@ Install the remaining dependencies:
 pip install -r requirements.txt
 yarn
 ```
+#### 2B: If you wish to read invoices
+Install additional dependencies:
+
+```sh
+pip install opencv-python
+```
 
 ### 3. Setup local `.env` file.
 

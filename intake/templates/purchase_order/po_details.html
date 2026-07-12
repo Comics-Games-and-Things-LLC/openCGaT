@@ -109,7 +109,7 @@
                 </script>
             </p>
         </div>
-        <div class="w-full">
+        <div class="w-full"> <!-- Invoice Upload form -->
             {% if form %}
                 <form action="." method="post" enctype="multipart/form-data">
                     {% csrf_token %}
@@ -117,6 +117,18 @@
                     <input type="submit" value="Submit">
                 </form>
                 <h3> {{ processing_result|linebreaks }} </h3>
+                {% if uploaded_files %}
+                    <h4>Previously uploaded invoices:</h4>
+                    <ul>
+                        {% for file in uploaded_files %}
+                            <li>
+                                <a href="{{ file.file.url }}">{{ file.filename }}</a>
+                                - Status: {{ file.status }}
+                                ({{ file.update_date }})
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
             {% endif %}
         </div>
     </div>

@@ -388,6 +388,65 @@ class POLine(models.Model):
 
         return super(POLine, self).save(*args, **kwargs)
 
+class PoInvoiceFile(models.Model):
+    distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
+    po = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, blank=True, null=True)
+    file = models.FileField(upload_to='media/', max_length=500)
+    filename = models.CharField(max_length=200)
+    processing = models.BooleanField(default=False)
+    update_date = models.DateTimeField(blank=True)
+    processed = models.BooleanField(default=False)
+    line_count = models.IntegerField(default=0)
+
+    @property
+    def status(self):
+        if self.processed:
+            return "Processed"
+        if self.processing:
+            return "Processing"
+        return "Unprocessed"
+
+    def save(self, *args, **kwargs):
+        if not self.update_date:
+            self.update_date = datetime.now()
+        if self.file is not None:
+            self.filename = os.path.basename(self.file.name)
+        return super(PoInvoiceFile, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.filename} ({self.distributor.dist_name})"
+
+    def process(self):
+        from intake.distributors import hobbytyme, kingsley, games_workshop
+        from openCGaT.management_util import email_report
+        import csv
+        self.processing = True
+        self.save()
+        if self.distributor == hobbytyme.get_dist_object():
+            po, could_not_process_lines = hobbytyme.read_pdf_invoice(self)
+        elif self.distributor == kingsley.get_dist_object():
+            po, could_not_process_lines = kingsley.read_pdf_invoice(self)
+        elif self.distributor == games_workshop.get_dist_object():
+            po, could_not_process_lines = games_workshop.read_pdf_invoice(self)
+        else:
+            return  # Not a supported distributor
+
+        if self.po is None:
+            self.po = po
+            self.processing = False
+            self.processed = True
+            self.save()
+
+        if could_not_process_lines:
+            report_path = 'reports/lines_that_could_not_be_processed.csv'
+            os.makedirs(os.path.dirname(report_path), exist_ok=True)
+            with open(report_path, 'w', newline='') as csvfile:
+                writer = csv.DictWriter(csvfile, could_not_process_lines[0].keys())
+                writer.writeheader()
+                writer.writerows(could_not_process_lines)
+
+            email_report(f"{self.po}: {len(could_not_process_lines)} lines that could not be processed",
+                         [report_path])
 
 class DistributorWarehouse(models.Model):
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
@@ -419,7 +478,8 @@ class DistributorInventoryFile(models.Model):
     def save(self, *args, **kwargs):
         if not self.update_date:
             self.update_date = datetime.now()
-        self.filename = os.path.basename(self.file.name)
+        if self.file is not None:
+            self.filename = os.path.basename(self.file.name)
         return super(DistributorInventoryFile, self).save(*args, **kwargs)
 
     def __str__(self):

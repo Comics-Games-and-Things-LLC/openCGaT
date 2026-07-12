@@ -600,14 +600,21 @@ def get_dist_object():
     return Distributor.objects.get(dist_name="Games Workshop")
 
 
-def read_pdf_invoice(pdf_path):
-    po_name = pdf_path.split("/")[-1].split(".")[0]  # Get file name without extension
-    po_name = po_name.split("_")[1]  # inv_####_date_time
-    po = PurchaseOrder.objects.get(po_number=po_name, distributor=get_dist_object())
+def read_pdf_invoice(invoice_source):
+    from intake.models import PoInvoiceFile
+    if isinstance(invoice_source, PoInvoiceFile):
+        pdf_file = invoice_source.file
+        po = invoice_source.po
+    else:
+        pdf_file = invoice_source
+        po_name = invoice_source.split("/")[-1].split(".")[0]  # Get file name without extension
+        po_name = po_name.split("_")[1]  # inv_####_date_time
+        po = PurchaseOrder.objects.get(po_number=po_name, distributor=get_dist_object())
+
     if not po:
         print("Could not find purchase order for this PDF, skipping.")
 
-    tables = pypdf_table_extraction.read_pdf(pdf_path,
+    tables = pypdf_table_extraction.read_pdf(pdf_file,
                                              flavor='stream',
                                              pages="1-end",
                                              row_tol=4,

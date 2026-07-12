@@ -14,8 +14,13 @@ def get_dist_object():
     return Distributor.objects.get(dist_name="Hobbytyme")
 
 
-def read_pdf_invoice(pdf_path):
-    info = get_invoice_summary(pdf_path)
+def read_pdf_invoice(invoice_source):
+    from intake.models import PoInvoiceFile
+    if isinstance(invoice_source, PoInvoiceFile):
+        pdf_file = invoice_source.file
+    else:
+        pdf_file = invoice_source
+    info = get_invoice_summary(pdf_file)
     # Not strictly necessary to use distributor here as po_number is our primary key, but we will likely want to change that in the future.
     print("Invoice number:", info.invoice_number)
     po = PurchaseOrder.objects.get(po_number=info.invoice_number, distributor=get_dist_object())
@@ -30,11 +35,11 @@ def read_pdf_invoice(pdf_path):
     print(po.subtotal)
     po.save()
 
-    return po, get_invoice_lines(pdf_path, po)
+    return po, get_invoice_lines(pdf_file, po)
 
 
-def get_invoice_lines(pdf_path, po):
-    tables = pypdf_table_extraction.read_pdf(pdf_path,
+def get_invoice_lines(pdf_file, po):
+    tables = pypdf_table_extraction.read_pdf(pdf_file,
                                              flavor='stream',
                                              pages="1-end"
                                              )
@@ -206,9 +211,9 @@ class InvoiceInfo:
     invoice_number = None
 
 
-def get_invoice_summary(pdf_path):
+def get_invoice_summary(pdf_file):
     customer_number = "039015"
-    reader = PdfReader(pdf_path)
+    reader = PdfReader(pdf_file)
     page = reader.pages[-1]
     text = page.extract_text()
     charge_information_index = 0
