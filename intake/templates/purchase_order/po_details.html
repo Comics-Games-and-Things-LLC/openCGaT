@@ -137,6 +137,25 @@
         </div>
     </div>
 
+    {% if po.shipments.exists %}
+        <div class="w-full">
+            <h4>Shipments:</h4>
+            <ul>
+                {% for shipment in po.shipments.all %}
+                    <li>
+                        {{ shipment.carrier }}:
+                        {% if shipment.carrier_link %}
+                            <a href="{{ shipment.carrier_link }}" target="_blank">{{ shipment.tracking_number }}</a>
+                        {% else %}
+                            {{ shipment.tracking_number }}
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <br>
+        </div>
+    {% endif %}
+
     <table class="table">
         <tr>
             <th></th>

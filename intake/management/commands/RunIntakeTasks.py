@@ -3,6 +3,7 @@ import time
 from django.core.management.base import BaseCommand
 
 from intake.models import DistributorInventoryFile, PoInvoiceFile
+from intake.distributors.nshift import update_tracking_from_nshift
 
 
 class Command(BaseCommand):
@@ -14,6 +15,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def recurring_logic():
+        update_tracking_from_nshift()
         for inv in DistributorInventoryFile.objects.filter(processed=False, processing=False):
             inv.processing = True
             inv.save()

@@ -190,6 +190,7 @@ class PurchaseOrder(models.Model):
 
     separate_invoice_number = models.CharField(max_length=200, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
+    last_nshift_check = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if self.subtotal:  # Subtotal stays in sync with distributor
@@ -448,6 +449,17 @@ class PoInvoiceFile(models.Model):
 
             email_report(f"{self.po}: {len(could_not_process_lines)} lines that could not be processed or have issues",
                          [report_path])
+
+class PoShipment(models.Model):
+    po = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, blank=True, null=True, related_name='shipments')
+    tracking_number = models.CharField(max_length=200, blank=True, null=True)
+    carrier = models.CharField(max_length=200, blank=True, null=True)
+    carrier_link = models.URLField(max_length=500, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.po} - {self.tracking_number}"
+
+
 
 class DistributorWarehouse(models.Model):
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
