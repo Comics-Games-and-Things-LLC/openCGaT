@@ -319,12 +319,24 @@ def product_details(request, product_slug, partner_slug=None):
 
     download_item = download_items.first()
 
+    replaced_products_info = []
+    for replaced_product in product.replaces.all():
+        if partner or (replaced_product.visible and replaced_product.in_stock):
+            stock = replaced_product.total_inventory
+            if partner:
+                stock = replaced_product.all_inventory_for_partner(partner)
+            replaced_products_info.append({
+                'product': replaced_product,
+                'stock': stock
+            })
+
     context = {
         'product': product,
         'inv_items': inv_items,
         'download_item': download_item,
         'mto_items': mto_items,
         'custom_items': custom_items,
+        'replaced_products': replaced_products_info,
     }
     if manage:
         context["partner"] = partner

@@ -459,6 +459,14 @@
 
 
             {% endif %}
+            {% for replaced_info in replaced_products %}
+                This product replaced
+                <a href="{% url 'product_detail' product_slug=replaced_info.product.slug %}">
+                    {{ replaced_info.product.name }}
+                </a>
+                ({{ replaced_info.stock }} in stock)
+                <br>
+            {% endfor %}
             <div class="row mb-3 p-0.5">
                 <p> {{ product.description|richtext }} </p>
             </div>

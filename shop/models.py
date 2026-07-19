@@ -334,7 +334,15 @@ class Product(PolymorphicModel):
 
     def all_inventory_for_partner(self, partner):
         return InventoryItem.objects.filter(product=self, partner=partner).aggregate(sum=Sum("current_inventory"))[
-            'sum']
+            'sum'] or 0
+
+    @property
+    def total_inventory(self):
+        return InventoryItem.objects.filter(product=self).aggregate(sum=Sum("current_inventory"))['sum'] or 0
+
+    @property
+    def in_stock(self):
+        return self.total_inventory > 0
 
     def lowest_price_for_type(self, item_model):
         lowest = None
