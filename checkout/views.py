@@ -628,10 +628,25 @@ def pos_add_item(request, partner_slug, cart_id, barcode):
         items = items.filter(partner=partner)
     items = items.order_by('price')
     in_stock = items.filter(current_inventory__gt=0)
-    if in_stock.exists():
-        cart.add_item(in_stock.first())
+    item = in_stock.first() if in_stock.exists() else items.last()
+
+    if cart.is_submitted:
+        old_at_pos = cart.at_pos
+        cart.at_pos = True
+        cart.save()
+        try:
+            cart.add_item(item)
+            if item:
+                note = f"{item.product.name} was added at the POS {datetime.datetime.now()}."
+                if cart.private_comments:
+                    cart.private_comments += "\n" + note
+                else:
+                    cart.private_comments = note
+        finally:
+            cart.at_pos = old_at_pos
+            cart.save()
     else:
-        cart.add_item(items.last())
+        cart.add_item(item)
 
     return HttpResponse(status=200)
 
