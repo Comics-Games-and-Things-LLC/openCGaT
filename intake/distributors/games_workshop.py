@@ -113,7 +113,8 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
         inv_file.items.add(dist_item)
         inv_file.line_count += 1
 
-        games, factions, categories = get_product_information_from_product_code(row.get('Global Pack Code'))
+        global_pack_code = row.get('Global Pack Code', "")
+        games, factions, categories = get_product_information_from_product_code(global_pack_code)
 
         # Check if the product already exists (shouldn't, but for testing runs)
         if barcode and Product.objects.filter(barcode=barcode).exists():
@@ -123,7 +124,7 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
             product = create_product(barcode, factions, games, name, short_code)
         set_product_dates_and_listed(product, row.get('Release Date'), row.get('Order From'))
         product.order_cutoff_for_shops_date = product.release_date - datetime.timedelta(days=18)
-        update_product_information(factions, games, maprice, msrp, product, publisher, short_code)  # Calls product.save
+        update_product_information(factions, games, maprice, msrp, product, publisher, short_code, global_pack_code)  # Calls product.save
         item = create_valhalla_item(product, price=maprice)
         item.enable_restock_alert = True
         item.low_inventory_alert_threshold = 0
@@ -363,7 +364,7 @@ def set_product_dates_and_listed(product, release_date, preorder_date):
 
 
 def update_product_information(factions: list[Any], games: list[Any], maprice: Money, msrp: Money,
-                               product: Product | Any, publisher: Publisher, short_code: Any | None):
+                               product: Product | Any, publisher: Publisher, short_code: Any | None, sku: str | None):
     if product.publisher_short_sku is None:
         product.publisher_short_sku = short_code
 
@@ -372,6 +373,7 @@ def update_product_information(factions: list[Any], games: list[Any], maprice: M
     product.publisher = publisher
     product.msrp = msrp
     product.map = maprice
+    product.publisher_sku = sku
     product.page_is_draft = False
 
     # Set these if they are blank but don't override any existing ones.
@@ -686,6 +688,16 @@ def read_pdf_invoice(invoice_source):
 
 def find_barcode_from_product(short_code):
     products = Product.objects.filter(publisher_short_sku=short_code)
+    if products.count() == 1:
+        product = products.first()
+        return product.barcode
+    if not products.exists():
+        return None
+    return products.order_by("-release_date").first().barcode
+
+
+def find_barcode_from_article(sku):
+    products = Product.objects.filter(publisher_sku=sku)
     if products.count() == 1:
         product = products.first()
         return product.barcode

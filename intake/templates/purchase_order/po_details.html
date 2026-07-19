@@ -149,6 +149,32 @@
                         {% else %}
                             {{ shipment.tracking_number }}
                         {% endif %}
+                        {% if shipment.lines.exists %}
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>SKU (Article)</th>
+                                    <th>Description</th>
+                                    <th>Qty</th>
+                                    <th>UoM</th>
+                                    <th>Unit Value</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for line in shipment.lines.all %}
+                                    <tr>
+                                        <td>{{ line.line_number }}</td>
+                                        <td>{{ line.sku }}</td>
+                                        <td>{{ line.description }}</td>
+                                        <td>{{ line.quantity }}</td>
+                                        <td>{{ line.unit_of_measure }}</td>
+                                        <td>{{ line.unit_value }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>

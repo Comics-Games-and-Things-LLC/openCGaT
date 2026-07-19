@@ -455,9 +455,23 @@ class PoShipment(models.Model):
     tracking_number = models.CharField(max_length=200, blank=True, null=True)
     carrier = models.CharField(max_length=200, blank=True, null=True)
     carrier_link = models.URLField(max_length=500, blank=True, null=True)
+    nshift_uuid = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return f"{self.po} - {self.tracking_number}"
+
+
+class PoShipmentLine(models.Model):
+    shipment = models.ForeignKey(PoShipment, on_delete=models.CASCADE, related_name='lines')
+    quantity = models.IntegerField(default=0, help_text="no units")
+    line_number = models.IntegerField(null=True, blank=True)
+    unit_of_measure = models.CharField(max_length=50, null=True, blank=True)
+    description = models.CharField(max_length=500, null=True, blank=True)
+    unit_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    sku = models.CharField(max_length=100, null=True, blank=True, help_text="article no")
+
+    def __str__(self):
+        return f"{self.shipment} - {self.sku} ({self.quantity})"
 
 
 
