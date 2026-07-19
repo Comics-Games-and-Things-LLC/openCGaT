@@ -1,6 +1,7 @@
 from django.contrib.postgres.search import SearchQuery
 from django.db.models import F, Q
 from moneyed import Money
+from dist_backorders.models import BackorderReport
 
 from shop.forms import FiltersForm
 from shop.models import Item
@@ -34,6 +35,7 @@ def item_list_filter(managing_partner=None,
                      max_qty=None,
                      min_date=None,
                      max_date=None,
+                     exclude_backorders=False,
                      ):
 
     if categories_to_include is None:
@@ -110,6 +112,13 @@ def item_list_filter(managing_partner=None,
         displayed_items = displayed_items.filter(product__release_date__gte=min_date)
     if max_date:
         displayed_items = displayed_items.filter(product__release_date__lte=max_date)
+
+    if exclude_backorders:
+        latest_report = BackorderReport.objects.filter(distributor__dist_name="Hobbytyme").order_by('-retrieved').first()
+        if latest_report:
+            backordered_product_ids = latest_report.lines.filter(product__isnull=False).values_list('product_id',
+                                                                                                   flat=True)
+            displayed_items = displayed_items.exclude(product_id__in=backordered_product_ids)
 
     displayed_items = displayed_items.distinct()
 

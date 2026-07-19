@@ -1,0 +1,21 @@
+{% extends 'filtered_table_list_view.html' %}
+
+{% block title %}Hobbytyme Backorder Reports{% endblock %}
+
+{% block content_header %}
+    <h1>Hobbytyme Backorder Reports</h1>
+{% endblock %}
+
+{% block header_columns %}
+    <th scope="col">Date</th>
+    <th scope="col">Lines</th>
+    <th scope="col">Actions</th>
+{% endblock %}
+
+{% block data_columns %}
+    <td>{{ entry.retrieved }}</td>
+    <td>{{ entry.lines.count }}</td>
+    <td>
+        <a href="{% url 'hobbytyme_backorder_report_detail' partner_slug=partner.slug report_id=entry.id %}" class="btn btn-primary btn-sm">View</a>
+    </td>
+{% endblock %}

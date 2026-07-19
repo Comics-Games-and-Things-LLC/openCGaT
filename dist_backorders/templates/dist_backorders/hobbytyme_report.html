@@ -1,0 +1,76 @@
+{% extends 'container.html' %}
+
+{% block title %}Hobbytyme Backorder Report{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Hobbytyme Backorder Report</h1>
+    <div>
+        {% if previous_report %}
+            <a href="{% url 'hobbytyme_backorder_report_detail' partner_slug=partner.slug report_id=previous_report.id %}" class="btn btn-secondary">
+                &larr; Previous
+            </a>
+        {% endif %}
+        <a href="{% url 'hobbytyme_backorder_list' partner_slug=partner.slug %}" class="btn btn-primary">
+            View All Reports
+        </a>
+        {% if next_report %}
+            <a href="{% url 'hobbytyme_backorder_report_detail' partner_slug=partner.slug report_id=next_report.id %}" class="btn btn-secondary">
+                Next &rarr;
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if report %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title">Report Details</h3>
+            <p class="card-subtitle text-muted">Retrieved on {{ report.retrieved }}</p>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-3 font-weight-bold">Distributor</div>
+                <div class="col-sm-9">{{ report.distributor.dist_name }}</div>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Manufacturer</th>
+                <th scope="col">Part Number</th>
+                <th scope="col">Description</th>
+                <th scope="col">Linked Product</th>
+                <th scope="col" class="text-center">Qty</th>
+                <th scope="col">Price</th>
+                <th scope="col">Date Ordered</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in report.lines.all %}
+            <tr>
+                <td>{{ line.manufacturer|default_if_none:"" }}</td>
+                <td>{{ line.item_number }}</td>
+                <td>{{ line.description }}</td>
+                <td>
+                    {% if line.product %}
+                        <a href="{% url 'manage_product_list' partner_slug=partner.slug %}?search={{ line.product.barcode }}">
+                            {{ line.product.name }}
+                        </a>
+                    {% else %}
+                        <span class="text-danger">Not Linked</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ line.quantity }}</td>
+                <td>${{ line.unit_price }}</td>
+                <td>{{ line.date_ordered|default_if_none:"" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p class="text-muted">No Hobbytyme backorder report found.</p>
+{% endif %}
+{% endblock %}

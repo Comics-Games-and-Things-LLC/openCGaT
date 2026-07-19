@@ -1,8 +1,12 @@
 import os
+import re
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.conf import settings
+from dist_backorders.models import BackorderReport, BackorderReportLine
+from intake.models import Distributor
 
 class Command(BaseCommand):
     help = 'Load backorders from Hobbytyme'
@@ -18,8 +22,6 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Authenticating as {username}...")
 
-        import re
-        
         session = requests.Session()
         # The base URL that redirects to login and provides the refresh key
         base_url = "https://hobbytyme.com/dealers/index.cfm"
@@ -95,12 +97,81 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING("No tables found on the page."))
                     return
 
+                distributor = Distributor.objects.get(dist_name="Hobbytyme")
+                report = BackorderReport.objects.create(distributor=distributor)
+                self.stdout.write(self.style.SUCCESS(f"Created report {report.id}"))
+
                 for i, table in enumerate(tables):
-                    self.stdout.write(self.style.SUCCESS(f"Table {i}:"))
-                    for row in table.find_all('tr'):
+                    rows = table.find_all('tr')
+                    if not rows:
+                        continue
+                    
+                    header = [ele.text.strip() for ele in rows[0].find_all(['th', 'td'])]
+                    
+                    # Normalize header for matching
+                    header_lower = [h.lower() for h in header]
+                    
+                    # Check if this is the backorders table
+                    if not any(h in header_lower for h in ["item #", "part number"]):
+                        continue
+                    
+                    self.stdout.write(self.style.SUCCESS(f"Processing backorders table..."))
+                    
+                    # Map header to indices with fallbacks
+                    def get_index(names):
+                        for name in names:
+                            if name.lower() in header_lower:
+                                return header_lower.index(name.lower())
+                        return None
+
+                    idx_mfc = get_index(["Manufacturer"])
+                    idx_item = get_index(["Part Number", "Item #"])
+                    idx_desc = get_index(["Product", "Description"])
+                    idx_qty = get_index(["Qty", "Quantity"])
+                    idx_price = get_index(["Price", "Unit Price"])
+                    idx_date = get_index(["Date Ordered"])
+
+                    if idx_item is None or idx_desc is None:
+                        self.stdout.write(self.style.ERROR(f"Could not find required columns (Part Number and Product) in header: {header}"))
+                        continue
+
+                    for row in rows[1:]: # Skip header
                         cols = [ele.text.strip() for ele in row.find_all(['td', 'th'])]
-                        if cols:
-                            self.stdout.write('\t'.join(cols))
+                        if len(cols) <= max(idx for idx in [idx_item, idx_desc, idx_price, idx_qty, idx_mfc, idx_date] if idx is not None):
+                            continue
+                        
+                        try:
+                            # Extract price
+                            price_val = None
+                            if idx_price is not None:
+                                price_val = re.sub(r'[^\d.]', '', cols[idx_price]) or None
+
+                            # Date Ordered parsing
+                            date_ordered = None
+                            if idx_date is not None:
+                                date_str = cols[idx_date]
+                                try:
+                                    # Expected format: MM/DD/YYYY
+                                    date_ordered = datetime.strptime(date_str, "%m/%d/%Y").date()
+                                except ValueError:
+                                    pass
+
+                            line = BackorderReportLine(
+                                report=report,
+                                manufacturer=cols[idx_mfc] if idx_mfc is not None else None,
+                                item_number=cols[idx_item],
+                                description=cols[idx_desc],
+                                unit_price=price_val,
+                                quantity=int(cols[idx_qty] or 0) if idx_qty is not None else 0,
+                                date_ordered=date_ordered,
+                            )
+                            line.set_product_from_item_number()
+                            line.save()
+                            self.stdout.write(f"Loaded {line.item_number} - {line.product}")
+                        except Exception as e:
+                            self.stdout.write(self.style.ERROR(f"Error processing row {cols}: {e}"))
+                
+                self.stdout.write(self.style.SUCCESS("Finished loading backorders."))
             else:
                 self.stdout.write(self.style.ERROR(f'Failed to fetch backorders: {response.status_code}'))
         except Exception as e:

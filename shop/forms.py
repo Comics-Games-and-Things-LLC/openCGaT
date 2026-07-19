@@ -177,6 +177,7 @@ class FiltersForm(forms.Form):
     is_draft = forms.NullBooleanField(required=False)
     has_barcode = forms.NullBooleanField(required=False)
     missing_image = forms.BooleanField(required=False)
+    exclude_backorders = forms.BooleanField(required=False, label="Exclude Hobbytyme backorders")
 
     price_not_default = forms.BooleanField(required=False)
     has_in_store_only_price = forms.BooleanField(required=False)

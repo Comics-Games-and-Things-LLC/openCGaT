@@ -12,6 +12,9 @@
         {% for dist in distributors %}
             <div class="col-md-3">
                 <h3><a href="{{dist.id}}">{{ dist }}</a></h3>
+                {% if dist.dist_name == "Hobbytyme" %}
+                    <a href="{% url 'hobbytyme_backorder_report' partner_slug=partner.slug %}" class="btn btn-info btn-sm">View Backorders</a>
+                {% endif %}
             </div>
 
         {% endfor %}

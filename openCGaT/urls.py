@@ -37,6 +37,7 @@ urlpatterns = [
                   path('download/', include('digitalitems.urls-download')),
                   path('admin/', admin.site.urls),
 
+                  path('partner/<slug:partner_slug>/backorders/', include('dist_backorders.urls')),
                   path('partner/<slug:partner_slug>/intake/', include('intake.urls')),
                   path('partner/<slug:partner_slug>/inv_report/', include('inventory_report.urls')),
                   path('partner/', include('user_list.urls-partner')),

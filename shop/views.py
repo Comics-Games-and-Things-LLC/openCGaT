@@ -27,6 +27,7 @@ from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm, ProductsForm
 from .models import Product, Item, InventoryItem, MadeToOrder, CustomChargeItem, ItemQuerySet
+from dist_backorders.models import BackorderReport
 from .serializers import ItemSerializer, ManageItemSerializer
 from .views_api import item_list_filter
 
@@ -111,6 +112,7 @@ def handle_items_form(form: FiltersForm, page_size: int | Any, partner: Partner 
             max_qty=form.cleaned_data.get('max_qty'),
             min_date=form.cleaned_data.get('min_date'),
             max_date=form.cleaned_data.get('max_date'),
+            exclude_backorders=form.cleaned_data.get('exclude_backorders'),
         )
     else:
         items = item_list_filter(partner)
@@ -202,6 +204,7 @@ def manage_product_list(request, partner_slug):
     missing_image = False
     collection = None
     products_with_no_items_only = False
+    exclude_backorders = False
 
     if form.is_valid():
         only_templates = form.cleaned_data.get('templates')
@@ -218,6 +221,7 @@ def manage_product_list(request, partner_slug):
         drafts_only = form.cleaned_data.get('drafts_only')
         missing_image = form.cleaned_data.get('missing_image')
         collection = form.cleaned_data.get('collection')
+        exclude_backorders = form.cleaned_data.get('exclude_backorders')
 
     displayed_products = Product.objects.filter()
 
@@ -258,6 +262,13 @@ def manage_product_list(request, partner_slug):
 
     if collection:
         displayed_products = displayed_products.filter(in_collection=collection)
+
+    if exclude_backorders:
+        latest_report = BackorderReport.objects.filter(distributor__dist_name="Hobbytyme").order_by('-retrieved').first()
+        if latest_report:
+            backordered_product_ids = latest_report.lines.filter(product__isnull=False).values_list('product_id',
+                                                                                                   flat=True)
+            displayed_products = displayed_products.exclude(id__in=backordered_product_ids)
 
     displayed_products = displayed_products.distinct()
 
@@ -892,6 +903,7 @@ def bulk_edit(request, partner_slug):
             max_qty=form.cleaned_data.get('max_qty'),
             min_date=form.cleaned_data.get('min_date'),
             max_date=form.cleaned_data.get('max_date'),
+            exclude_backorders=form.cleaned_data.get('exclude_backorders'),
         )
         # Update items if action tells us to.
         action = form.cleaned_data.get('action_to_take')

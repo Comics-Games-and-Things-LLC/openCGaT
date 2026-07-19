@@ -7,6 +7,9 @@
 
 {% endblock %}
 {% block content %}
+    {% if distributor.dist_name == "Hobbytyme" %}
+        <a href="{% url 'hobbytyme_backorder_report' partner_slug=partner.slug %}" class="btn btn-info mb-4">View Backorder Report</a>
+    {% endif %}
     <h2>Upload new data</h2>
     <form enctype="multipart/form-data" action="." method="post">
         {% csrf_token %}
