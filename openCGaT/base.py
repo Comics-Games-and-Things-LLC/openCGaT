@@ -32,6 +32,7 @@ apps_to_install = [
     'shop',
     'intake',
     'dist_requests',
+    'dist_backorders',
     'digitalitems',
     'checkout',
     'inventory_report',
