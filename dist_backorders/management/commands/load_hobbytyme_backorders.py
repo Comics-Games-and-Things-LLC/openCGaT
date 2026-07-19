@@ -1,45 +1,22 @@
-import json
 import os
 import requests
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
+from django.conf import settings
 
 class Command(BaseCommand):
     help = 'Load backorders from Hobbytyme'
 
     def handle(self, *args, **options):
-        har_path = os.path.expanduser('~/Downloads/hobbytyme.auth.har')
-        if not os.path.exists(har_path):
-            # Try current directory too in case we are in an environment where ~/Downloads is not accessible
-            # or it was copied there.
-            har_path = 'hobbytyme.auth.har'
-            if not os.path.exists(har_path):
-                self.stdout.write(self.style.ERROR(f'HAR file not found at ~/Downloads/hobbytyme.auth.har or current directory'))
-                return
-
-        with open(har_path, 'r') as f:
-            har_data = json.load(f)
-
-        # Extract credentials from HAR
-        credentials = {}
-        for entry in har_data['log']['entries']:
-            if entry['request']['method'] == 'POST' and 'hobbytyme.com/dealers/index.cfm' in entry['request']['url']:
-                post_data = entry['request'].get('postData', {})
-                if 'params' in post_data:
-                    for param in post_data['params']:
-                        credentials[param['name']] = param['value']
-                elif 'text' in post_data:
-                    from urllib.parse import parse_qs
-                    credentials = {k: v[0] for k, v in parse_qs(post_data['text']).items()}
-                
-                if 'loginUsername' in credentials and 'loginPassword' in credentials:
-                    break
+        # Extract credentials from environment variables
+        username = os.getenv('HOBBYTYME_USERNAME')
+        password = os.getenv('HOBBYTYME_PASSWORD')
         
-        if not credentials:
-            self.stdout.write(self.style.ERROR('Could not find credentials in HAR file'))
+        if not username or not password:
+            self.stdout.write(self.style.ERROR('HOBBYTYME_USERNAME and HOBBYTYME_PASSWORD must be set in the .env file'))
             return
 
-        self.stdout.write(f"Authenticating as {credentials.get('loginUsername')}...")
+        self.stdout.write(f"Authenticating as {username}...")
 
         import re
         
@@ -91,8 +68,8 @@ class Command(BaseCommand):
             post_data = {
                 'action': 'welcome',
                 'returnPath': f'/dealers/index.cfm?refresh={refresh}&',
-                'loginUsername': credentials.get('loginUsername'),
-                'loginPassword': credentials.get('loginPassword'),
+                'loginUsername': username,
+                'loginPassword': password,
                 'submit_btn': '.'
             }
 
