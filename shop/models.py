@@ -435,7 +435,6 @@ class Product(PolymorphicModel):
                 )
             ).order_by("-date")
         )
-        print(context["eoy_inventory"])
 
         return context
 
