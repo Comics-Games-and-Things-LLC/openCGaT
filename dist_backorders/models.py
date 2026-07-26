@@ -27,14 +27,9 @@ class BackorderReportLine(models.Model):
         return f"{self.item_number} in {self.report}"
 
     def set_product_from_item_number(self):
-        from intake.distributors.hobbytyme import find_barcode_from_sku
-        if "/" in self.item_number:
-            parts = self.item_number.split("/")
-            mfc_code = parts[0]
-            sku = parts[1].split(" ")[0]
-            barcode = find_barcode_from_sku(mfc_code, sku)
-            if barcode:
-                try:
-                    self.product = Product.objects.get(barcode=barcode)
-                except Product.DoesNotExist:
-                    pass
+        from intake.models import DistItem
+        dist_item, _ = DistItem.objects.get_or_create(distributor=self.report.distributor,
+                                                      dist_number=self.item_number)
+        dist_item.set_product_from_sku()
+        if dist_item.product:
+            self.product = dist_item.product

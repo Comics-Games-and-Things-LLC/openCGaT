@@ -154,13 +154,11 @@ def get_invoice_lines(pdf_file, po):
 
 
 def find_barcode_from_sku(mfc_code, sku):
-    if mfc_code == "VAL" and "EX" not in sku:  # Ignore racks, etc
-        return vallejo.get_barcode_from_sku(sku)
-    else:
-        products = Product.objects.filter(publisher_sku=sku)
-
-    if products.count() == 1:
-        return products.order_by("-release_date").first().barcode
+    from intake.models import DistItem
+    dist_item, _ = DistItem.objects.get_or_create(distributor=get_dist_object(), dist_number=f"{mfc_code}/{sku}")
+    dist_item.set_product_from_sku()
+    if dist_item.product:
+        return dist_item.product.barcode
 
 
 class InvoiceLineInfo:
@@ -436,9 +434,10 @@ def update_inventory(auth):
         return
 
     pages = [
-        "https://hobbytyme.com/dealers/index.cfm?action=products.justArrived",
-        "https://hobbytyme.com/dealers/index.cfm?action=products.justAnnounced",
-        "https://hobbytyme.com/dealers/index.cfm?action=products.preOrders"
+        ("Just Arrived", "https://hobbytyme.com/dealers/index.cfm?action=products.justArrived"),
+        ("Just Announced", "https://hobbytyme.com/dealers/index.cfm?action=products.justAnnounced"),
+        ("Pre-Orders", "https://hobbytyme.com/dealers/index.cfm?action=products.preOrders"),
+        ("In-Stock", "https://hobbytyme.com/dealers/index.cfm")
     ]
 
     inventory_file = DistributorInventoryFile.objects.create(
@@ -450,7 +449,8 @@ def update_inventory(auth):
     headers = DEFAULT_HEADERS.copy()
 
     collected_data = {}
-    for url in pages:
+    for page_name, url in pages:
+        print(f"Retrieving Hobbytyme page: {page_name}")
         for soup, current_url in fetch_hobbytyme_pages(session, url, headers):
             for data in scrape_hobbytyme_tables(soup):
                 item_number = data['item_number']
@@ -563,6 +563,7 @@ def update_inventory(auth):
             if in_stock is not None:
                 dist_item.in_stock = in_stock
             dist_item.save()
+        dist_item.set_product_from_sku()
 
         # Add to file items
         inventory_file.items.add(dist_item)

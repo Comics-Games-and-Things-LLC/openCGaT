@@ -6,7 +6,9 @@ from djmoney.money import Money
 
 from checkout.models import Cart
 from partner.models import Partner
-from shop.models import Product, InventoryItem
+from shop.models import Product, InventoryItem, Publisher
+from intake.models import Distributor, DistributorInventoryFile, DistributorInventoryLine, DistItem
+from shop.views_api import item_list_filter
 
 
 class StatusTestCases(TestCase):
@@ -105,3 +107,52 @@ class StatusTestCases(TestCase):
 
         # Assert
         self.assertEqual(line.status_text, "Submitted", "Text after submit")
+
+
+class FilterDistributorStockTest(TestCase):
+    def setUp(self):
+        self.partner = Partner.objects.create(name="Test Partner", slug="test-partner")
+        self.distributor = Distributor.objects.create(dist_name="Hobbytyme", currency='USD')
+        self.publisher = Publisher.objects.create(name="Test Publisher")
+        self.publisher.available_through_distributors.add(self.distributor)
+
+        self.product_in_stock = Product.objects.create(name="In Stock Product", barcode="12345",
+                                                       publisher=self.publisher)
+        self.item_in_stock = InventoryItem.objects.create(product=self.product_in_stock, partner=self.partner,
+                                                          price=Money(10, "USD"), default_price=Money(10, "USD"))
+
+        self.product_out_of_stock = Product.objects.create(name="Out of Stock Product", barcode="67890",
+                                                           publisher=self.publisher)
+        self.item_out_of_stock = InventoryItem.objects.create(product=self.product_out_of_stock, partner=self.partner,
+                                                              price=Money(10, "USD"), default_price=Money(10, "USD"))
+
+        self.dist_item_in_stock = DistItem.objects.create(distributor=self.distributor, dist_barcode="OTHER1",
+                                                          dist_number="D12345", in_stock=True,
+                                                          product=self.product_in_stock)
+        self.dist_item_out_of_stock = DistItem.objects.create(distributor=self.distributor, dist_barcode="OTHER2",
+                                                              dist_number="D67890", in_stock=False,
+                                                              product=self.product_out_of_stock)
+
+        self.inventory_file = DistributorInventoryFile.objects.create(distributor=self.distributor,
+                                                                      update_date=datetime.datetime.now())
+        DistributorInventoryLine.objects.create(inventory_file=self.inventory_file, dist_item=self.dist_item_in_stock,
+                                                in_stock=True)
+        DistributorInventoryLine.objects.create(inventory_file=self.inventory_file, dist_item=self.dist_item_out_of_stock,
+                                                in_stock=False)
+
+    def test_filter_in_stock_at_distributor(self):
+        # When filter is off, both items are returned
+        items = item_list_filter(managing_partner=self.partner)
+        self.assertEqual(items.count(), 2)
+
+        # When filter is on, only the in-stock item is returned
+        items = item_list_filter(managing_partner=self.partner, distributor=self.distributor,
+                                 in_stock_at_distributor=True)
+        self.assertEqual(items.count(), 1)
+        self.assertEqual(items.first().product, self.product_in_stock)
+
+    def test_filter_in_stock_at_distributor_default_hobbytyme(self):
+        # If no distributor is selected, it should default to Hobbytyme
+        items = item_list_filter(managing_partner=self.partner, in_stock_at_distributor=True)
+        self.assertEqual(items.count(), 1)
+        self.assertEqual(items.first().product, self.product_in_stock)

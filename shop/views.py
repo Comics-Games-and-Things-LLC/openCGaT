@@ -21,7 +21,7 @@ from digitalitems.models import DigitalItem
 from dist_requests.models import DistRequestLine
 from images.forms import UploadImage
 from images.models import Image
-from intake.models import DistItem, Distributor
+from intake.models import DistItem, Distributor, DistributorInventoryFile
 from partner.models import get_partner, get_partner_or_401, Partner
 from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
@@ -113,6 +113,7 @@ def handle_items_form(form: FiltersForm, page_size: int | Any, partner: Partner 
             min_date=form.cleaned_data.get('min_date'),
             max_date=form.cleaned_data.get('max_date'),
             exclude_backorders=form.cleaned_data.get('exclude_backorders'),
+            in_stock_at_distributor=form.cleaned_data.get('in_stock_at_distributor'),
         )
     else:
         items = item_list_filter(partner)
@@ -203,8 +204,8 @@ def manage_product_list(request, partner_slug):
     drafts_only = False
     missing_image = False
     collection = None
-    products_with_no_items_only = False
     exclude_backorders = False
+    in_stock_at_distributor = False
 
     if form.is_valid():
         only_templates = form.cleaned_data.get('templates')
@@ -222,6 +223,7 @@ def manage_product_list(request, partner_slug):
         missing_image = form.cleaned_data.get('missing_image')
         collection = form.cleaned_data.get('collection')
         exclude_backorders = form.cleaned_data.get('exclude_backorders')
+        in_stock_at_distributor = form.cleaned_data.get('in_stock_at_distributor')
 
     displayed_products = Product.objects.filter()
 
@@ -269,6 +271,18 @@ def manage_product_list(request, partner_slug):
             backordered_product_ids = latest_report.lines.filter(product__isnull=False).values_list('product_id',
                                                                                                    flat=True)
             displayed_products = displayed_products.exclude(id__in=backordered_product_ids)
+
+    if in_stock_at_distributor:
+        target_distributor = distributor
+        if not target_distributor:
+            target_distributor = Distributor.objects.filter(dist_name="Hobbytyme").first()
+        if target_distributor:
+            latest_inventory = DistributorInventoryFile.objects.filter(distributor=target_distributor).order_by(
+                '-update_date').first()
+            if latest_inventory:
+                in_stock_product_ids = latest_inventory.inventory_lines.filter(
+                    in_stock=True, dist_item__product__isnull=False).values_list('dist_item__product_id', flat=True)
+                displayed_products = displayed_products.filter(id__in=in_stock_product_ids)
 
     displayed_products = displayed_products.distinct()
 
@@ -358,8 +372,8 @@ def product_details(request, product_slug, partner_slug=None):
         if not product.visible:
             raise PermissionDenied
 
-    if manage and product.barcode:
-        context["dist_records"] = DistItem.objects.filter(dist_barcode=product.barcode)
+    if manage:
+        context["dist_records"] = DistItem.objects.filter(product=product)
 
     if download_item:
         purchased = download_item.user_already_owns(request.user)
@@ -904,6 +918,7 @@ def bulk_edit(request, partner_slug):
             min_date=form.cleaned_data.get('min_date'),
             max_date=form.cleaned_data.get('max_date'),
             exclude_backorders=form.cleaned_data.get('exclude_backorders'),
+            in_stock_at_distributor=form.cleaned_data.get('in_stock_at_distributor'),
         )
         # Update items if action tells us to.
         action = form.cleaned_data.get('action_to_take')

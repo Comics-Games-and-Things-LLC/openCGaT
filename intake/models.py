@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import Sum, F, Q, Value, OuterRef, Subquery
+from django.utils import timezone
 from djmoney.models.fields import MoneyField, CurrencyField
 from djmoney.money import Money
 
@@ -163,9 +164,42 @@ class DistItem(models.Model):
     expected = models.DateField(null=True, blank=True)
     in_stock = models.BooleanField(null=True, blank=True)
     trade_range = models.ManyToManyField(TradeRange, related_name="contains")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, blank=True, null=True)
+    product_last_refreshed = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.product:
+            self.set_product_from_sku(save=False)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return "{} {} {}".format(self.distributor, self.dist_number, self.dist_name)
+
+    def set_product_from_sku(self, save=True):
+        sku = self.dist_number
+        mfc_code = None
+        if self.dist_number and "/" in self.dist_number:
+            parts = self.dist_number.split("/")
+            mfc_code = parts[0]
+            sku = parts[1].split(" ")[0]
+
+        if mfc_code == "VAL" and "EX" not in sku:
+            from intake.distributors import vallejo
+            barcode = vallejo.get_barcode_from_sku(sku)
+            if barcode:
+                try:
+                    self.product = Product.objects.get(barcode=barcode)
+                except Product.DoesNotExist:
+                    pass
+        else:
+            products = Product.objects.filter(Q(publisher_sku=sku) | Q(publisher_short_sku=sku))
+            if self.manufacturer and self.manufacturer.publisher:
+                products = products.filter(publisher=self.manufacturer.publisher)
+            if products.exists():
+                self.product = products.order_by("-release_date").first()
+        self.product_last_refreshed = timezone.now()
+        if save:
+            self.save()
 
     @staticmethod
     def find_dist_items(barcode=None, dist_number=None):
@@ -543,12 +577,12 @@ class DistributorInventoryFile(models.Model):
             games_workshop.read_new_release_summary(self)
 
     def annotate_inventory(self):
-        matching_products = Product.objects.filter(barcode=OuterRef("dist_barcode"))
         return self.items.annotate(
-            product_id=Subquery(matching_products.values("id")[:1]),
-            product_name=Subquery(matching_products.values("name")[:1]),
-            product_msrp=Subquery(matching_products.values("msrp")[:1]),
-            product_map=Subquery(matching_products.values("map")[:1]),
+            annotated_product_id=F("product__id"),
+            product_name=F("product__name"),
+            product_slug=F("product__slug"),
+            product_msrp=F("product__msrp"),
+            product_map=F("product__map"),
         ).order_by("product_name")
 
 

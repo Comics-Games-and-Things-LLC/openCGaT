@@ -188,11 +188,24 @@
                                             {{ filters_form.exclude_backorders.label }}
                                         </label>
                                     {% endif %}
+                                    {% if filters_form.in_stock_at_distributor %}
+                                        <label for="{{ filters_form.in_stock_at_distributor.auto_id }}"
+                                               class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
+                                            <input class="mr-2 border-gray-400 group-hover:border-gray-700 rounded"
+                                                   id="{{ filters_form.in_stock_at_distributor.auto_id }}"
+                                                   name="{{ filters_form.in_stock_at_distributor.name }}" type="checkbox"
+                                                   {% if filters_form.in_stock_at_distributor.data %}checked="checked"{% endif %}>
+                                            {{ filters_form.in_stock_at_distributor.label }}
+                                        </label>
+                                    {% endif %}
                                 </div>
                                 {% list_append manual_form_fields "in_stock_only" as manual_form_fields %}
                                 {% list_append manual_form_fields "featured_products_only" as manual_form_fields %}
                                 {% if filters_form.exclude_backorders %}
                                     {% list_append manual_form_fields "exclude_backorders" as manual_form_fields %}
+                                {% endif %}
+                                {% if filters_form.in_stock_at_distributor %}
+                                    {% list_append manual_form_fields "in_stock_at_distributor" as manual_form_fields %}
                                 {% endif %}
                             {% endif %}
                             {% if filters_form.available_for_order_only and filters_form.allocated_only %}

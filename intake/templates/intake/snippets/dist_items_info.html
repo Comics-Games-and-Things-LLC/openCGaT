@@ -6,6 +6,9 @@
             {{ dist_item.distributor }}<br>
             MSRP: {{ dist_item.msrp }}<br>
             MAP: {{ dist_item.map }}<br>
+            {% if dist_item.in_stock is not None %}
+                In Stock: {{ dist_item.in_stock|yesno:"Yes,No" }}<br>
+            {% endif %}
             Imported on: {{ dist_item.import_timestamp }}
         </div>
     {% endfor %}

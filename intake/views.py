@@ -3,6 +3,7 @@ import datetime
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.template.response import TemplateResponse
@@ -244,6 +245,7 @@ def inventory_detail(request, partner_slug, distributor_id, inventory_id):
         ('map', 'MAP'),
         ('dist_price', 'Cost'),
         ('dist_barcode', 'Barcode'),
+        ('in_stock', 'In Stock'),
         ('dist_description', 'Description'),
         ('quantity_per_pack', 'Qty/Pack'),
         ('weight_lbs', 'Weight (lbs)'),
@@ -265,8 +267,21 @@ def inventory_detail(request, partner_slug, distributor_id, inventory_id):
     if items.filter(trade_range__isnull=False).exists():
         fields_to_show.append({'name': 'trade_range', 'label': 'Trade Range'})
 
+    items_queryset = inventory.annotate_inventory().all()
+    item_count = items_queryset.count()
+    print(f"DEBUG: item_count={item_count}")
+
+    if item_count > 5:
+        paginator = Paginator(items_queryset, 5)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        items_to_display = page_obj
+    else:
+        items_to_display = items_queryset
+        page_obj = None
+
     rows = []
-    for item in inventory.annotate_inventory().all():
+    for item in items_to_display:
         row = []
         for field in fields_to_show:
             val = getattr(item, field['name'])
@@ -286,6 +301,16 @@ def inventory_detail(request, partner_slug, distributor_id, inventory_id):
                     'color': color,
                     'is_mfc': True
                 }
+            elif field['name'] == 'dist_name' and item.annotated_product_id:
+                val = {
+                    'dist_name': val,
+                    'product_name': item.product_name,
+                    'product_url': reverse('manage_product', kwargs={'partner_slug': partner.slug,
+                                                                     'product_slug': item.product_slug}),
+                    'is_product': True
+                }
+            elif isinstance(val, bool):
+                val = "Yes" if val else "No"
             row.append(val)
         rows.append(row)
 
@@ -295,7 +320,9 @@ def inventory_detail(request, partner_slug, distributor_id, inventory_id):
         'inventory': inventory,
         'fields_to_show': fields_to_show,
         'rows': rows,
-        'item_count': len(rows),
+        'item_count': item_count,
+        'page_obj': page_obj,
+        'items_to_display': items_to_display,
     }
     return render(request, "intake/inventory_detail.html", context)
 

@@ -5,7 +5,8 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django.utils import timezone
 
-from intake.models import DistributorInventoryFile, PoInvoiceFile, Distributor
+from intake.models import DistributorInventoryFile, PoInvoiceFile, Distributor, DistItem
+from django.db.models import Q
 from intake.distributors.nshift import update_tracking_from_nshift
 from dist_backorders.models import BackorderReport
 
@@ -20,6 +21,14 @@ class Command(BaseCommand):
     @staticmethod
     def recurring_logic():
         update_tracking_from_nshift()
+
+        # Refresh DistItem products roughly once a day
+        items_to_refresh = DistItem.objects.filter(
+            Q(product_last_refreshed__isnull=True) |
+            Q(product_last_refreshed__lt=timezone.now() - timedelta(days=1))
+        ).order_by('product_last_refreshed')[:1000]
+        for item in items_to_refresh:
+            item.set_product_from_sku()
 
         # Retrieve Hobbytyme backorders once a day
         hobbytyme = Distributor.objects.filter(dist_name="Hobbytyme").first()

@@ -177,6 +177,7 @@ class FiltersForm(forms.Form):
     is_draft = forms.NullBooleanField(required=False)
     has_barcode = forms.NullBooleanField(required=False)
     missing_image = forms.BooleanField(required=False)
+    in_stock_at_distributor = forms.BooleanField(required=False, label="In stock at distributor")
     exclude_backorders = forms.BooleanField(required=False, label="Exclude Hobbytyme backorders")
 
     price_not_default = forms.BooleanField(required=False)
@@ -224,6 +225,7 @@ class FiltersForm(forms.Form):
             self.fields.pop('is_draft')
             self.fields.pop('has_barcode')
             self.fields.pop('missing_image')
+            self.fields.pop('in_stock_at_distributor')
             self.fields.pop('price_not_default')
             self.fields.pop('has_in_store_only_price')
             self.fields.pop('min_qty')
