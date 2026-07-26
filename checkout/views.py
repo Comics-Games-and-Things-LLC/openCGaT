@@ -7,6 +7,7 @@ from typing import Any
 import pytz
 import stripe
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -1208,3 +1209,17 @@ def product_open_lines(request, partner_slug, product_id):
         'partner': partner,
     }
     return TemplateResponse(request, "checkout/product_open_lines.html", context=context)
+
+
+@require_POST
+def clear_product_open_lines(request, partner_slug, product_id):
+    partner = get_partner_or_401(request, partner_slug)
+    product = get_object_or_404(Product, id=product_id)
+    lines = CheckoutLine.objects.filter(
+        item__product=product,
+        cart__status__in=[Cart.OPEN, Cart.FROZEN]
+    )
+    count = lines.count()
+    lines.delete()
+    messages.success(request, f"Removed {count} lines for {product.name} from open/frozen carts.")
+    return HttpResponseRedirect(reverse('product_open_lines', kwargs={'partner_slug': partner_slug, 'product_id': product_id}))

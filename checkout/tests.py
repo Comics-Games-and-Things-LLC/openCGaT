@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from djmoney.money import Money
 
-from checkout.models import Cart, ShippingAddress
+from checkout.models import Cart, ShippingAddress, CheckoutLine
 from partner.models import Partner
 from realaddress.models import RealCountry
 from shop.models import Product, InventoryItem
@@ -104,3 +104,20 @@ class CheckoutTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Product")
         self.assertContains(response, "Open")
+
+    def test_clear_product_open_lines_view(self):
+        product = Product.objects.get(name="Test Product")
+        partner = Partner.objects.get(name="Test Partner")
+        user = User.objects.create_user(username='testuser_clear', password='password')
+        partner.administrators.add(user)
+        self.client.login(username='testuser_clear', password='password')
+
+        # Check initial lines
+        self.assertTrue(CheckoutLine.objects.filter(item__product=product, cart__status=Cart.OPEN).exists())
+
+        url = reverse('clear_product_open_lines', kwargs={'partner_slug': partner.slug, 'product_id': product.id})
+        response = self.client.post(url)
+        self.assertRedirects(response, reverse('product_open_lines', kwargs={'partner_slug': partner.slug, 'product_id': product.id}))
+
+        # Check lines are gone
+        self.assertFalse(CheckoutLine.objects.filter(item__product=product, cart__status=Cart.OPEN).exists())
