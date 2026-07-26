@@ -1,9 +1,12 @@
 <div class="row mb-3 p-0.5">
     <div>
         <h2> Sales ({{ x_sold|default:0 }} Sold) {% if x_open %}({{ x_open }} Open){% endif %}
-            <a href="{% url 'product_open_lines' partner_slug=partner.slug product_id=product.id %}" class="btn btn-secondary btn-sm ml-2">
-                In Carts
-            </a>
+            {% if product %}
+                <a href="{% url 'product_open_lines' partner_slug=partner.slug product_id=product.id %}"
+                   class="btn btn-secondary btn-sm ml-2">
+                    In Carts
+                </a>
+            {% endif %}
         </h2>
         {% if sales %}
             <p>
