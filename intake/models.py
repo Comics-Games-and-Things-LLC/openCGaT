@@ -110,26 +110,19 @@ class Manufacturer(models.Model):
     """
     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE, blank=True, null=True)
     mfc_name = models.CharField(max_length=200)
+    # For now we'll assume that there are no abbreviation conflicts across distributors
+    abbreviation = models.CharField(max_length=10, blank=True, null=True)
 
     def __str__(self):
         return self.mfc_name
 
 
-class ManufacturerAbbreviation(models.Model):
-    mfc = models.ForeignKey(Manufacturer, on_delete=models.CASCADE)
-    distributor = models.ForeignKey(Distributor, on_delete=models.SET_NULL, blank=True, null=True)
-    abbreviation = models.CharField(max_length=10)
-
-    def __str__(self):
-        return self.mfc.mfc_name + " - " + self.abbreviation
-
-
-class ManufacturerBarcode(models.Model):
-    mfc = models.ForeignKey(Manufacturer, on_delete=models.CASCADE)
+class BarcodePrefix(models.Model):
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
     barcode_prefix = models.CharField(max_length=7)
 
     def __str__(self):
-        return self.mfc.mfc_name + " - " + self.barcode_prefix
+        return self.publisher.name + " - " + self.barcode_prefix
 
 
 class CategoryMap(models.Model):
