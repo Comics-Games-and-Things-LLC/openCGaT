@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import *
 
 admin.site.register(Distributor)
+admin.site.register(PartnerDistAuth)
 admin.site.register(DistributorDiscount)
 
 admin.site.register(DistItem)

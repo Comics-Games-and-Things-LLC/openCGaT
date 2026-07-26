@@ -264,7 +264,7 @@ def manage_product_list(request, partner_slug):
         displayed_products = displayed_products.filter(in_collection=collection)
 
     if exclude_backorders:
-        latest_report = BackorderReport.objects.filter(distributor__dist_name="Hobbytyme").order_by('-retrieved').first()
+        latest_report = BackorderReport.objects.filter(partner=partner, distributor__dist_name="Hobbytyme").order_by('-retrieved').first()
         if latest_report:
             backordered_product_ids = latest_report.lines.filter(product__isnull=False).values_list('product_id',
                                                                                                    flat=True)

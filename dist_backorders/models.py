@@ -1,13 +1,15 @@
 from django.db import models
 from intake.models import Distributor, PurchaseOrder
 from shop.models import Product
+from partner.models import Partner
 
 class BackorderReport(models.Model):
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE)
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
     retrieved = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.distributor} backorder report at {self.retrieved}"
+        return f"{self.partner} - {self.distributor} backorder report at {self.retrieved}"
 
 class BackorderReportLine(models.Model):
     report = models.ForeignKey(BackorderReport, on_delete=models.CASCADE, related_name='lines')

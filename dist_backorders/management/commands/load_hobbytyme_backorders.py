@@ -6,26 +6,43 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from dist_backorders.models import BackorderReport, BackorderReportLine
-from intake.models import Distributor
+from intake.models import Distributor, PartnerDistAuth
+from partner.models import Partner
 
 class Command(BaseCommand):
     help = 'Load backorders from Hobbytyme'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--partner', type=str, help='Partner slug to load backorders for')
+
     def handle(self, *args, **options):
-        # Extract credentials from environment variables
-        username = os.getenv('HOBBYTYME_USERNAME')
-        password = os.getenv('HOBBYTYME_PASSWORD')
+        partner_slug = options.get('partner')
         
-        if not username or not password:
-            self.stdout.write(self.style.ERROR('HOBBYTYME_USERNAME and HOBBYTYME_PASSWORD must be set in the .env file'))
+        distributor = Distributor.objects.get(dist_name="Hobbytyme")
+        
+        if partner_slug:
+            try:
+                partner = Partner.objects.get(slug=partner_slug)
+                auths = PartnerDistAuth.objects.filter(partner=partner, distributor=distributor)
+            except Partner.DoesNotExist:
+                self.stdout.write(self.style.ERROR(f"Partner with slug '{partner_slug}' not found."))
+                return
+        else:
+            auths = PartnerDistAuth.objects.filter(distributor=distributor)
+        
+        if not auths.exists():
+            self.stdout.write(self.style.WARNING(f"No authentication credentials found for Hobbytyme in PartnerDistAuth model."))
             return
 
-        self.stdout.write(f"Authenticating as {username}...")
+        for auth in auths:
+            self.process_partner(auth.partner, distributor, auth.username, auth.password)
+
+    def process_partner(self, partner, distributor, username, password):
+        self.stdout.write(f"Authenticating as {username} for partner {partner}...")
 
         session = requests.Session()
         # The base URL that redirects to login and provides the refresh key
         base_url = "https://hobbytyme.com/dealers/index.cfm"
-        login_page_url = "https://hobbytyme.com/dealers/index.cfm?action=login&msg=0"
         # The POST URL from the HAR
         login_post_url = "https://hobbytyme.com/dealers/index.cfm"
         
@@ -97,9 +114,8 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING("No tables found on the page."))
                     return
 
-                distributor = Distributor.objects.get(dist_name="Hobbytyme")
-                report = BackorderReport.objects.create(distributor=distributor)
-                self.stdout.write(self.style.SUCCESS(f"Created report {report.id}"))
+                report = BackorderReport.objects.create(partner=partner, distributor=distributor)
+                self.stdout.write(self.style.SUCCESS(f"Created report {report.id} for {partner}"))
 
                 for i, table in enumerate(tables):
                     rows = table.find_all('tr')
@@ -171,8 +187,8 @@ class Command(BaseCommand):
                         except Exception as e:
                             self.stdout.write(self.style.ERROR(f"Error processing row {cols}: {e}"))
                 
-                self.stdout.write(self.style.SUCCESS("Finished loading backorders."))
+                self.stdout.write(self.style.SUCCESS(f"Finished loading backorders for {partner}."))
             else:
-                self.stdout.write(self.style.ERROR(f'Failed to fetch backorders: {response.status_code}'))
+                self.stdout.write(self.style.ERROR(f'Failed to fetch backorders for {partner}: {response.status_code}'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"An error occurred: {e}"))
+            self.stdout.write(self.style.ERROR(f"An error occurred for {partner}: {e}"))

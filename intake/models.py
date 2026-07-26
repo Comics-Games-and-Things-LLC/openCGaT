@@ -53,6 +53,21 @@ class Distributor(models.Model):
                 return "barcode"
 
 
+class PartnerDistAuth(models.Model):
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE)
+    distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
+    username = models.CharField(max_length=200)
+    password = models.CharField(max_length=200)
+
+    class Meta:
+        unique_together = ('partner', 'distributor')
+        verbose_name = "Partner Distributor Authentication"
+        verbose_name_plural = "Partner Distributor Authentications"
+
+    def __str__(self):
+        return f"{self.partner} - {self.distributor} Auth"
+
+
 class DistributorDiscount(models.Model):
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
     discount_percentage = models.IntegerField(validators=PERCENTAGE_VALIDATOR)

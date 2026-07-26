@@ -7,11 +7,11 @@ from .forms import FiltersForm
 def hobbytyme_backorder_report(request, partner_slug, report_id=None):
     partner = get_object_or_404(Partner, slug=partner_slug)
     if report_id:
-        report = get_object_or_404(BackorderReport, id=report_id, distributor__dist_name="Hobbytyme")
+        report = get_object_or_404(BackorderReport, id=report_id, partner=partner, distributor__dist_name="Hobbytyme")
     else:
-        report = BackorderReport.objects.filter(distributor__dist_name="Hobbytyme").order_by('-retrieved').first()
+        report = BackorderReport.objects.filter(partner=partner, distributor__dist_name="Hobbytyme").order_by('-retrieved').first()
     
-    reports = BackorderReport.objects.filter(distributor__dist_name="Hobbytyme").order_by('-retrieved')
+    reports = BackorderReport.objects.filter(partner=partner, distributor__dist_name="Hobbytyme").order_by('-retrieved')
     
     # Simple previous/next navigation
     previous_report = None
@@ -29,7 +29,7 @@ def hobbytyme_backorder_report(request, partner_slug, report_id=None):
 
 def hobbytyme_backorder_list(request, partner_slug):
     partner = get_object_or_404(Partner, slug=partner_slug)
-    reports = BackorderReport.objects.filter(distributor__dist_name="Hobbytyme").order_by('-retrieved')
+    reports = BackorderReport.objects.filter(partner=partner, distributor__dist_name="Hobbytyme").order_by('-retrieved')
     
     form = FiltersForm(request.GET)
     if form.is_valid():

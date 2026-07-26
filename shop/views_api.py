@@ -114,7 +114,13 @@ def item_list_filter(managing_partner=None,
         displayed_items = displayed_items.filter(product__release_date__lte=max_date)
 
     if exclude_backorders:
-        latest_report = BackorderReport.objects.filter(distributor__dist_name="Hobbytyme").order_by('-retrieved').first()
+        latest_report_query = BackorderReport.objects.filter(distributor__dist_name="Hobbytyme").order_by('-retrieved')
+        if managing_partner:
+            latest_report_query = latest_report_query.filter(partner=managing_partner)
+        elif filter_partner_slug:
+            latest_report_query = latest_report_query.filter(partner__slug=filter_partner_slug)
+
+        latest_report = latest_report_query.first()
         if latest_report:
             backordered_product_ids = latest_report.lines.filter(product__isnull=False).values_list('product_id',
                                                                                                    flat=True)
