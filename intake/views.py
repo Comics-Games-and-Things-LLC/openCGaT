@@ -269,10 +269,9 @@ def inventory_detail(request, partner_slug, distributor_id, inventory_id):
 
     items_queryset = inventory.annotate_inventory().all()
     item_count = items_queryset.count()
-    print(f"DEBUG: item_count={item_count}")
 
-    if item_count > 5:
-        paginator = Paginator(items_queryset, 5)
+    if item_count > 500:
+        paginator = Paginator(items_queryset, 500)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         items_to_display = page_obj
