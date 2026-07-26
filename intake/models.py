@@ -11,7 +11,7 @@ from djmoney.money import Money
 from intake.distributors import acd
 from openCGaT.components.djmoney import CURRENCY_CHOICES_PURCHASING
 from partner.models import Partner
-from shop.models import Category, Product
+from shop.models import Category, Product, Publisher
 
 PERCENTAGE_VALIDATOR = [MinValueValidator(0), MaxValueValidator(100)]
 
@@ -106,9 +106,9 @@ class DistributorDiscount(models.Model):
 
 class Manufacturer(models.Model):
     """
-    Deprecated, would like to switch all usages to shop publisher
+    Map of distributor names to publisher objects.
     """
-
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE, blank=True, null=True)
     mfc_name = models.CharField(max_length=200)
 
     def __str__(self):
@@ -428,7 +428,7 @@ class PoInvoiceFile(models.Model):
     def save(self, *args, **kwargs):
         if not self.update_date:
             self.update_date = datetime.now()
-        if self.file is not None:
+        if self.file:
             self.filename = os.path.basename(self.file.name)
         return super(PoInvoiceFile, self).save(*args, **kwargs)
 
@@ -512,8 +512,8 @@ class ItemWarehouseAvailability(models.Model):
 class DistributorInventoryFile(models.Model):
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
     warehouse = models.ForeignKey(DistributorWarehouse, on_delete=models.CASCADE, blank=True, null=True)
-    file = models.FileField(upload_to='media/', max_length=500)
-    filename = models.CharField(max_length=200)
+    file = models.FileField(upload_to='media/', max_length=500, null=True, blank=True)
+    filename = models.CharField(max_length=200, null=True, blank=True)
     processing = models.BooleanField(default=False)
     update_date = models.DateTimeField(blank=True)
     processed = models.BooleanField(default=False)
@@ -523,7 +523,7 @@ class DistributorInventoryFile(models.Model):
     def save(self, *args, **kwargs):
         if not self.update_date:
             self.update_date = datetime.now()
-        if self.file is not None:
+        if self.file:
             self.filename = os.path.basename(self.file.name)
         return super(DistributorInventoryFile, self).save(*args, **kwargs)
 
@@ -555,6 +555,22 @@ class DistributorInventoryFile(models.Model):
             product_msrp=Subquery(matching_products.values("msrp")[:1]),
             product_map=Subquery(matching_products.values("map")[:1]),
         ).order_by("product_name")
+
+
+class DistributorInventoryLine(models.Model):
+    inventory_file = models.ForeignKey(DistributorInventoryFile, on_delete=models.CASCADE,
+                                       related_name='inventory_lines')
+    dist_item = models.ForeignKey(DistItem, on_delete=models.CASCADE)
+
+    msrp = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True)
+    dist_price = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True)
+    orders_due = models.DateField(null=True, blank=True)
+    announced = models.DateField(null=True, blank=True)
+    expected = models.DateField(null=True, blank=True)
+    quantity = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.dist_item} in {self.inventory_file}"
 
 
 class PricingRule(models.Model):

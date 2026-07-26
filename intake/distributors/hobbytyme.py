@@ -1,13 +1,22 @@
+import re
 from datetime import datetime
 from decimal import Decimal
 
 import pypdf_table_extraction
+import requests
+from bs4 import BeautifulSoup
+from django.utils import timezone
 from moneyed import Money
 from pypdf import PdfReader
 
 from intake.distributors import vallejo
 from intake.models import PurchaseOrder, Distributor, POLine
 from shop.models import Product
+
+DEFAULT_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                  'Chrome/150.0.0.0 Safari/537.36',
+}
 
 
 def get_dist_object():
@@ -58,7 +67,8 @@ def get_invoice_lines(pdf_file, po):
 
     columns = ["Line", "QTY/UM", "MFG / ITEM NO. and DESCRIPTION", "RETAIL PRICE", "FIRST COST", "FINAL COST",
                "EXT BEFORE DISCOUNT",
-               "Other Discount", "Processing Note"]  # Sometimes there's an extra blank column with a * indicating discount
+               "Other Discount",
+               "Processing Note"]  # Sometimes there's an extra blank column with a * indicating discount
 
     line_index = 0
     for table in tables:
@@ -85,7 +95,7 @@ def get_invoice_lines(pdf_file, po):
             try:  # Turn line into a dictionary for nice output
                 line = {columns[i]: line[i] for i in range(len(line))}
                 if "Other Discount" not in line.keys():
-                    line["Other Discount"] = "" # Populate this value by default if needed
+                    line["Other Discount"] = ""  # Populate this value by default if needed
             except Exception as e:
                 message = f"Could not parse line {line_number}: {line}: error: {e}"
                 record_issue(line, message, lines_with_issues)
@@ -258,3 +268,282 @@ def get_invoice_summary(pdf_file):
         if charge_information_index:
             charge_information_index += 1
     return info
+
+
+def get_hobbytyme_session(auth):
+    username = auth.username
+    password = auth.password
+    session = requests.Session()
+    # The base URL that redirects to login and provides the refresh key
+    base_url = "https://hobbytyme.com/dealers/index.cfm"
+
+    # Headers from HAR to be more realistic
+    headers = DEFAULT_HEADERS.copy()
+
+    try:
+        # Step 1: GET the base page to establish session cookies and get refresh key via redirect
+        response = session.get(base_url, headers=headers)
+        if response.status_code != 200:
+            return None
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        return_path_input = soup.find('input', {'name': 'returnPath'})
+        refresh = None
+        if return_path_input:
+            value = return_path_input.get('value', '')
+            refresh_match = re.search(r'refresh=(\d+)', value)
+            if refresh_match:
+                refresh = refresh_match.group(1)
+
+        if not refresh:
+            # Fallback to regex on whole page
+            refresh_match = re.search(r'refresh=(\d+)', response.text)
+            if refresh_match:
+                refresh = refresh_match.group(1)
+
+        if not refresh:
+            return None
+
+        # Update headers with Referer for POST
+        headers['Referer'] = response.url
+
+        # Prepare credentials
+        post_data = {
+            'action': 'welcome',
+            'returnPath': f'/dealers/index.cfm?refresh={refresh}&',
+            'loginUsername': username,
+            'loginPassword': password,
+            'submit_btn': '.'
+        }
+
+        # Step 2: POST credentials to authenticate
+        session.post(base_url, data=post_data, headers=headers)
+
+        # Check if we are authenticated
+        backorders_url = "https://hobbytyme.com/dealers/index.cfm?action=myAccount.backorders"
+        response = session.get(backorders_url, headers=headers)
+        if response.status_code == 200 and "loginPassword" not in response.text:
+            return session
+    except Exception:
+        pass
+    return None
+
+
+def fetch_hobbytyme_pages(session, url, headers):
+    current_url = url
+    while current_url:
+        print(f"Fetching {current_url}")
+        response = session.get(current_url, headers=headers)
+        if response.status_code != 200:
+            print(f"Failed to fetch {current_url}")
+            break
+        soup = BeautifulSoup(response.text, 'html.parser')
+        yield soup, current_url
+
+        # Look for next page
+        # Hobbytyme often uses "Next" text or a button with an arrow
+        next_link = soup.find('a', string="»")
+
+        if next_link and next_link.get('href'):
+            next_url = next_link.get('href')
+            if not next_url.startswith('http'):
+                from urllib.parse import urljoin
+                next_url = urljoin(current_url, next_url)
+
+            if next_url == current_url:  # Avoid infinite loops
+                break
+            current_url = next_url
+        else:
+            current_url = None
+
+
+def scrape_hobbytyme_tables(soup):
+    tables = soup.find_all('table')
+    for table in tables:
+        rows = table.find_all('tr')
+        if not rows:
+            continue
+
+        # Find the header row
+        header = None
+        header_row_idx = -1
+        for i, row in enumerate(rows):
+            potential_header = [ele.text.strip().lower() for ele in row.find_all(['th', 'td'])]
+            if any(h in potential_header for h in ["item #", "part number", "item no", "part #"]):
+                header = potential_header
+                header_row_idx = i
+                break
+
+        if header is None:
+            continue
+
+        def get_idx(names):
+            for name in names:
+                name_lower = name.lower()
+                # Try exact match first
+                if name_lower in header:
+                    return header.index(name_lower)
+                # Try partial match
+                for i, h in enumerate(header):
+                    if name_lower in h:
+                        return i
+            return None
+
+        idx_mfc = get_idx(["manufacturer", "mfg"])
+        idx_item = get_idx(["item #", "part number", "item no", "part #"])
+        idx_desc = get_idx(["product", "description", "item description", "name"])
+        idx_msrp = get_idx(["list price", "msrp"])
+        idx_price = get_idx(["net price"])
+        idx_qty = get_idx(["qty", "quantity"])
+        idx_orders_due = get_idx(["date guaranteed", "orders due", "date ordered"])
+        idx_announced = get_idx(["date announced", "announced"])
+        idx_expected = get_idx(["date expected", "expected"])
+
+        if idx_item is None:
+            continue
+
+        for row in rows[header_row_idx + 1:]:
+            cols = [ele.text.strip() for ele in row.find_all(['td', 'th'])]
+            if len(cols) <= idx_item:
+                continue
+
+            data = {
+                'manufacturer': cols[idx_mfc] if idx_mfc is not None else None,
+                'item_number': cols[idx_item] if idx_item is not None else None,
+                'description': cols[idx_desc] if idx_desc is not None else None,
+                'msrp': cols[idx_msrp] if idx_msrp is not None else None,
+                'price': cols[idx_price] if idx_price is not None else None,
+                'quantity': cols[idx_qty] if idx_qty is not None else None,
+                'orders_due': cols[idx_orders_due] if idx_orders_due is not None else None,
+                'date_announced': cols[idx_announced] if idx_announced is not None else None,
+                'date_expected': cols[idx_expected] if idx_expected is not None else None,
+            }
+            if data['item_number']:
+                yield data
+
+
+def update_inventory(auth):
+    from intake.models import DistributorInventoryFile, DistributorInventoryLine, DistItem, Manufacturer
+    username = auth.username
+    password = auth.password
+    distributor = auth.distributor
+
+    session = get_hobbytyme_session(auth)
+    if not session:
+        print(f"Failed to login to Hobbytyme for {auth.partner}")
+        return
+
+    pages = [
+        "https://hobbytyme.com/dealers/index.cfm?action=products.justArrived",
+        "https://hobbytyme.com/dealers/index.cfm?action=products.justAnnounced",
+        "https://hobbytyme.com/dealers/index.cfm?action=products.preOrders"
+    ]
+
+    inventory_file = DistributorInventoryFile.objects.create(
+        distributor=distributor,
+        processed=True,
+        update_date=timezone.now()
+    )
+
+    headers = DEFAULT_HEADERS.copy()
+
+    collected_data = {}
+    for url in pages:
+        for soup, current_url in fetch_hobbytyme_pages(session, url, headers):
+            for data in scrape_hobbytyme_tables(soup):
+                item_number = data['item_number']
+                if item_number not in collected_data:
+                    collected_data[item_number] = data
+                else:
+                    # Merge information from repeated items
+                    existing = collected_data[item_number]
+                    for key, value in data.items():
+                        if value and not existing.get(key):
+                            existing[key] = value
+
+    for item_number, data in collected_data.items():
+        msrp = None
+        if data['msrp']:
+            msrp_val = re.sub(r'[^\d.]', '', data['msrp'])
+            if msrp_val:
+                msrp = Decimal(msrp_val)
+
+        dist_price = None
+        if data['price']:
+            dist_price_val = re.sub(r'[^\d.]', '', data['price'])
+            if dist_price_val:
+                dist_price = Decimal(dist_price_val)
+
+        orders_due = None
+        if data['orders_due']:
+            try:
+                orders_due = datetime.strptime(data['orders_due'], "%m/%d/%Y").date()
+            except ValueError:
+                pass
+
+        announced = None
+        if data['date_announced']:
+            try:
+                announced = datetime.strptime(data['date_announced'], "%m/%d/%Y").date()
+            except ValueError:
+                pass
+
+        expected = None
+        if data['date_expected']:
+            try:
+                expected = datetime.strptime(data['date_expected'], "%m/%d/%Y").date()
+            except ValueError:
+                pass
+
+        mfc_name = data['manufacturer']
+        manufacturer = None
+        if mfc_name:
+            manufacturer, _ = Manufacturer.objects.get_or_create(mfc_name=mfc_name)
+
+        dist_item, created = DistItem.objects.get_or_create(
+            distributor=distributor,
+            dist_number=item_number,
+            defaults={
+                'dist_name': data['description'],
+                'msrp': Money(msrp, 'USD') if msrp else None,
+                'dist_price': Money(dist_price, 'USD') if dist_price else None,
+                'orders_due': orders_due,
+                'announced': announced,
+                'expected': expected,
+                'manufacturer': manufacturer,
+            }
+        )
+        if not created:
+            if data['description']:
+                dist_item.dist_name = data['description']
+            if msrp:
+                dist_item.msrp = Money(msrp, 'USD')
+            if dist_price:
+                dist_item.dist_price = Money(dist_price, 'USD')
+            if orders_due:
+                dist_item.orders_due = orders_due
+            if announced:
+                dist_item.announced = announced
+            if expected:
+                dist_item.expected = expected
+            if manufacturer:
+                dist_item.manufacturer = manufacturer
+            dist_item.save()
+
+        # Add to file items
+        inventory_file.items.add(dist_item)
+
+        # Create historical line
+        DistributorInventoryLine.objects.create(
+            inventory_file=inventory_file,
+            dist_item=dist_item,
+            msrp=Money(msrp, 'USD') if msrp else None,
+            dist_price=Money(dist_price, 'USD') if dist_price else None,
+            orders_due=orders_due,
+            announced=announced,
+            expected=expected,
+        )
+
+    inventory_file.line_count = inventory_file.inventory_lines.count()
+    inventory_file.save()
+    return inventory_file

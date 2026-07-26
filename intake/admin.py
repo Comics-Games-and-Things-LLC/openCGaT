@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import *
 
 admin.site.register(Distributor)
+admin.site.register(Manufacturer)
 admin.site.register(PartnerDistAuth)
 admin.site.register(DistributorDiscount)
 
@@ -25,6 +26,7 @@ admin.site.register(POLine, POLineAdmin)
 
 admin.site.register(DistributorWarehouse)
 admin.site.register(DistributorInventoryFile)
+admin.site.register(DistributorInventoryLine)
 
 
 class PoInvoiceFileAdmin(admin.ModelAdmin):
