@@ -8,7 +8,8 @@
 {% endblock %}
 {% block content %}
     {% if distributor.dist_name == "Hobbytyme" %}
-        <a href="{% url 'hobbytyme_backorder_report' partner_slug=partner.slug %}" class="btn btn-info mb-4">View Backorder Report</a>
+        <a href="{% url 'hobbytyme_backorder_report' partner_slug=partner.slug %}" class="btn btn-info mb-4">View
+            Backorder Report</a>
     {% endif %}
     <h2>Upload new data</h2>
     <form enctype="multipart/form-data" action="." method="post">
@@ -21,7 +22,11 @@
     <ul>
         {% for inventory in inventories %}
             <li>
-                <a href="{{ inventory.file.url }}">{{ inventory.filename }} {{ inventory.timestamp }}</a>
+                {% if inventory.file %}
+                    <a href="{{ inventory.file.url }}">{{ inventory.filename }} {{ inventory.timestamp }}</a>
+                {% else %}
+                    {{ inventory.timestamp }}
+                {% endif %}
                 <ul>
                     <li>Discord Template:
                         {% for item in inventory.annotate_inventory.all %}
