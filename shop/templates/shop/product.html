@@ -453,17 +453,29 @@
 
             {% if product.replaced_by %}
                 This product has been replaced by a newer version: <br>
-                <a href=" {% url  'product_detail' product_slug=product.replaced_by.slug %}">
-                    {{ product.replaced_by.name }}
-                </a>
+                {% if partner %}
+                    <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=product.replaced_by.slug %}">
+                        {{ product.replaced_by.name }}
+                    </a>
+                {% else %}
+                    <a href=" {% url  'product_detail' product_slug=product.replaced_by.slug %}">
+                        {{ product.replaced_by.name }}
+                    </a>
+                {% endif %}
 
 
             {% endif %}
             {% for replaced_info in replaced_products %}
                 This product replaced
-                <a href="{% url 'product_detail' product_slug=replaced_info.product.slug %}">
-                    {{ replaced_info.product.name }}
-                </a>
+                {% if partner %}
+                    <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=replaced_info.product.slug %}">
+                        {{ replaced_info.product.name }}
+                    </a>
+                {% else %}
+                    <a href="{% url 'product_detail' product_slug=replaced_info.product.slug %}">
+                        {{ replaced_info.product.name }}
+                    </a>
+                {% endif %}
                 ({{ replaced_info.stock }} in stock)
                 <br>
             {% endfor %}
