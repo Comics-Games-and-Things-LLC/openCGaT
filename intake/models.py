@@ -168,6 +168,7 @@ class DistItem(models.Model):
     orders_due = models.DateField(null=True, blank=True)
     announced = models.DateField(null=True, blank=True)
     expected = models.DateField(null=True, blank=True)
+    in_stock = models.BooleanField(null=True, blank=True)
     trade_range = models.ManyToManyField(TradeRange, related_name="contains")
 
     def __str__(self):
@@ -407,6 +408,7 @@ class POLine(models.Model):
 
         return super(POLine, self).save(*args, **kwargs)
 
+
 class PoInvoiceFile(models.Model):
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
     po = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, blank=True, null=True)
@@ -468,6 +470,7 @@ class PoInvoiceFile(models.Model):
             email_report(f"{self.po}: {len(could_not_process_lines)} lines that could not be processed or have issues",
                          [report_path])
 
+
 class PoShipment(models.Model):
     po = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, blank=True, null=True, related_name='shipments')
     tracking_number = models.CharField(max_length=200, blank=True, null=True)
@@ -490,7 +493,6 @@ class PoShipmentLine(models.Model):
 
     def __str__(self):
         return f"{self.shipment} - {self.sku} ({self.quantity})"
-
 
 
 class DistributorWarehouse(models.Model):
@@ -568,6 +570,7 @@ class DistributorInventoryLine(models.Model):
     announced = models.DateField(null=True, blank=True)
     expected = models.DateField(null=True, blank=True)
     quantity = models.IntegerField(null=True, blank=True)
+    in_stock = models.BooleanField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.dist_item} in {self.inventory_file}"

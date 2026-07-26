@@ -395,6 +395,7 @@ def scrape_hobbytyme_tables(soup):
         idx_msrp = get_idx(["list price", "msrp"])
         idx_price = get_idx(["net price"])
         idx_qty = get_idx(["qty", "quantity"])
+        idx_avail = get_idx(["avail", "avail."])
         idx_orders_due = get_idx(["date guaranteed", "orders due", "date ordered"])
         idx_announced = get_idx(["date announced", "announced"])
         idx_expected = get_idx(["date expected", "expected"])
@@ -414,6 +415,7 @@ def scrape_hobbytyme_tables(soup):
                 'msrp': cols[idx_msrp] if idx_msrp is not None else None,
                 'price': cols[idx_price] if idx_price is not None else None,
                 'quantity': cols[idx_qty] if idx_qty is not None else None,
+                'avail': cols[idx_avail] if idx_avail is not None else None,
                 'orders_due': cols[idx_orders_due] if idx_orders_due is not None else None,
                 'date_announced': cols[idx_announced] if idx_announced is not None else None,
                 'date_expected': cols[idx_expected] if idx_expected is not None else None,
@@ -462,6 +464,35 @@ def update_inventory(auth):
                             existing[key] = value
 
     for item_number, data in collected_data.items():
+        quantity = None
+        if data['quantity']:
+            try:
+                quantity_val = re.sub(r'[^\d.]', '', data['quantity'])
+                if quantity_val:
+                    quantity = int(float(quantity_val))
+            except (ValueError, TypeError):
+                pass
+
+        in_stock = None
+        if data.get('avail'):
+            avail = data['avail'].lower()
+            if avail in ["y", "yes"]:
+                in_stock = True
+            elif avail in ["n", "no", "0"]:
+                in_stock = False
+            else:
+                try:
+                    avail_val = re.sub(r'[^\d.]', '', avail)
+                    if avail_val:
+                        if int(float(avail_val)) > 0:
+                            in_stock = True
+                        else:
+                            in_stock = False
+                except (ValueError, TypeError):
+                    pass
+        if in_stock is None and quantity is not None:
+            in_stock = quantity > 0
+
         msrp = None
         if data['msrp']:
             msrp_val = re.sub(r'[^\d.]', '', data['msrp'])
@@ -511,6 +542,7 @@ def update_inventory(auth):
                 'announced': announced,
                 'expected': expected,
                 'manufacturer': manufacturer,
+                'in_stock': in_stock,
             }
         )
         if not created:
@@ -528,6 +560,8 @@ def update_inventory(auth):
                 dist_item.expected = expected
             if manufacturer:
                 dist_item.manufacturer = manufacturer
+            if in_stock is not None:
+                dist_item.in_stock = in_stock
             dist_item.save()
 
         # Add to file items
@@ -542,6 +576,8 @@ def update_inventory(auth):
             orders_due=orders_due,
             announced=announced,
             expected=expected,
+            quantity=quantity,
+            in_stock=in_stock,
         )
 
     inventory_file.line_count = inventory_file.inventory_lines.count()
