@@ -31,6 +31,13 @@ class Command(BaseCommand):
                 except Exception as e:
                     print(f"Error loading Hobbytyme backorders: {e}")
 
+            last_inventory = DistributorInventoryFile.objects.filter(distributor=hobbytyme).order_by('-update_date').first()
+            if not last_inventory or last_inventory.update_date < timezone.now() - timedelta(days=1):
+                try:
+                    call_command('update_hobbytyme_inventory')
+                except Exception as e:
+                    print(f"Error updating Hobbytyme inventory: {e}")
+
         for inv in DistributorInventoryFile.objects.filter(processed=False, processing=False):
             inv.processing = True
             inv.save()
