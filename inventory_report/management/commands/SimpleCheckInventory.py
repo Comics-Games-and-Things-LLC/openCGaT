@@ -73,8 +73,7 @@ class Command(BaseCommand):
 
 
             if report_discrepancy != 0:
-                print(f"\tPurchased: {x_purchased}, ", po_lines)
-                print(f"\tSold: {x_sold}, ", cart_lines)
+                print(f"\tCount from log: {count_from_log}")
                 print(f"\tOn inventory report: {count_from_inventory_report}")
                 link = "https://valhallahobby.com" + reverse('manage_product', kwargs={'partner_slug': partner.slug,
                                                                                        'product_slug': product.slug})
