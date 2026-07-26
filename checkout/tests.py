@@ -2,8 +2,10 @@ import os
 import datetime
 from unittest import mock
 
+from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.test import TestCase
+from django.urls import reverse
 from djmoney.money import Money
 
 from checkout.models import Cart, ShippingAddress
@@ -89,3 +91,16 @@ class CheckoutTestCase(TestCase):
                 self.assertEqual(cart.status, Cart.PAID)
                 self.assertEqual(cart.final_ship, Money("5.50", 'USD'))
                 self.assertEqual(cart.final_total, Money("11.50", 'USD'))
+
+    def test_product_open_lines_view(self):
+        product = Product.objects.get(name="Test Product")
+        partner = Partner.objects.get(name="Test Partner")
+        user = User.objects.create_user(username='testuser', password='password')
+        partner.administrators.add(user)
+        self.client.login(username='testuser', password='password')
+
+        url = reverse('product_open_lines', kwargs={'partner_slug': partner.slug, 'product_id': product.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Product")
+        self.assertContains(response, "Open")

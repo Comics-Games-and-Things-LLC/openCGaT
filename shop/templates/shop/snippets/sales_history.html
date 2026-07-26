@@ -1,12 +1,18 @@
-{% if sales %}
-    <div class="row mb-3 p-0.5">
-        <div>
-            <h2> Sales ({{ x_sold }} Sold) {% if x_open %}({{ x_open }} Open){% endif %}</h2>
+<div class="row mb-3 p-0.5">
+    <div>
+        <h2> Sales ({{ x_sold|default:0 }} Sold) {% if x_open %}({{ x_open }} Open){% endif %}
+            <a href="{% url 'product_open_lines' partner_slug=partner.slug product_id=product.id %}" class="btn btn-secondary btn-sm ml-2">
+                In Carts
+            </a>
+        </h2>
+        {% if sales %}
             <p>
                 Last 12 months: {{ x_sold_last_12_months|default_if_none:0 }}
                 After release sales: {{ x_sold_post_release|default_if_none:0 }}
             </p>
-        </div>
+        {% endif %}
+    </div>
+    {% if sales %}
         <table class="table">
             <tr>
                 <th scope="col">ID</th>
@@ -63,9 +69,9 @@
 
             {% endfor %}
         </table>
+    {% endif %}
 
-    </div>
-{% endif %}
+</div>
 {% if po_lines %}
     <div class="row mb-3 p-0.5">
         <h2> Purchase Order Lines ({{ x_purchased }} Purchased)</h2>
@@ -128,7 +134,6 @@
                 {% endif %}
             {% endfor %}
         </table>
-        </div>
     {% endif %}
 </div>
 {% if inventory_log %}

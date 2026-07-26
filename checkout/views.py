@@ -1193,3 +1193,18 @@ def in_store_sales_for_day(request, partner_slug):
         'sold_out': sold_out,
     }
     return TemplateResponse(request, "partner/in_store_sales_for_day.html", context)
+
+
+def product_open_lines(request, partner_slug, product_id):
+    partner = get_partner_or_401(request, partner_slug)
+    product = get_object_or_404(Product, id=product_id)
+    lines = CheckoutLine.objects.filter(
+        item__product=product,
+        cart__status__in=[Cart.OPEN, Cart.FROZEN]
+    ).select_related('cart', 'item', 'cart__owner', 'item__partner')
+    context = {
+        'product': product,
+        'lines': lines,
+        'partner': partner,
+    }
+    return TemplateResponse(request, "checkout/product_open_lines.html", context=context)

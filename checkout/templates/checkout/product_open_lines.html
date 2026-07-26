@@ -1,0 +1,44 @@
+{% extends 'container.html' %}
+{% block title %}Open Cart Lines for {{ product.name }}{% endblock %}
+
+{% block content %}
+    <h1>Open/Frozen Cart Lines for {{ product.name }}</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Cart ID</th>
+                <th>Line ID</th>
+                <th>User</th>
+                <th>Quantity</th>
+                <th>Partner</th>
+                <th>Cart Status</th>
+                <th>Date Added</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in lines %}
+                <tr>
+                    <td>
+                        {{ line.cart.id }}
+                    </td>
+                    <td>{{ line.id }}</td>
+                    <td>
+                        {% if line.cart.owner %}
+                            {{ line.cart.owner.username }} ({{ line.cart.owner.email }})
+                        {% else %}
+                            {{ line.cart.email }}
+                        {% endif %}
+                    </td>
+                    <td>{{ line.quantity }}</td>
+                    <td>{{ line.item.partner }}</td>
+                    <td>{{ line.cart.status }}</td>
+                    <td>{{ line.date_added }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">No open or frozen cart lines found for this product.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
