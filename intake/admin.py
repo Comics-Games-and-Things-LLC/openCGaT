@@ -7,7 +7,11 @@ admin.site.register(Manufacturer)
 admin.site.register(PartnerDistAuth)
 admin.site.register(DistributorDiscount)
 
-admin.site.register(DistItem)
+class DistItemAdmin(admin.ModelAdmin):
+    search_fields = ['dist_number', 'dist_name', 'dist_barcode']
+
+
+admin.site.register(DistItem, DistItemAdmin)
 
 
 class PurchaseOrderAdmin(admin.ModelAdmin):
@@ -25,8 +29,27 @@ class POLineAdmin(admin.ModelAdmin):
 admin.site.register(POLine, POLineAdmin)
 
 admin.site.register(DistributorWarehouse)
-admin.site.register(DistributorInventoryFile)
-admin.site.register(DistributorInventoryLine)
+
+
+class ItemWarehouseAvailabilityAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['dist_item']
+
+
+admin.site.register(ItemWarehouseAvailability, ItemWarehouseAvailabilityAdmin)
+
+
+class DistributorInventoryFileAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['items']
+
+
+admin.site.register(DistributorInventoryFile, DistributorInventoryFileAdmin)
+
+
+class DistributorInventoryLineAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['dist_item']
+
+
+admin.site.register(DistributorInventoryLine, DistributorInventoryLineAdmin)
 
 
 class PoInvoiceFileAdmin(admin.ModelAdmin):
