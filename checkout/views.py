@@ -27,7 +27,7 @@ from box_counter.models import BoxInventory
 from digitalitems.models import DigitalItem
 from discount_codes.models import DiscountCode
 from partner.models import get_partner_or_401, Partner
-from shop.models import CustomChargeItem, Product, Item, InventoryItem
+from shop.models import CustomChargeItem, Product, Item, InventoryItem, Category
 from shop.serializers import ItemSerializer
 from .forms import PickupForm, EmailForm, BillingAddressForm, PaymentMethodForm, ShippingAddressForm, FiltersForm, \
     TrackingInfoForm, PartnerCommentsForm
@@ -1105,6 +1105,8 @@ def annotate_items_with_open_orders(partner: Partner, items=None, filter=False) 
 
 def tasks(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
+    events_category = Category.objects.filter(name='Events').first()
+
     lines_to_pick = CheckoutLine.objects.filter(
         item__partner=partner,
         cart__status__in=[Cart.PAID, Cart.SUBMITTED],
@@ -1120,9 +1122,11 @@ def tasks(request, partner_slug):
     all_item_ready_carts = (Cart.submitted.exclude(status__in=[Cart.COMPLETED, Cart.CANCELLED])
                             # Carts composed only of lines that are either ready or cancelled, and none that are neither
                             .exclude(Exists(not_ready_lines))
-                            .annotate(latest_release_date=Max('lines__item__product__release_date')
-                                      ).order_by('latest_release_date')
                             )
+    if events_category:
+        all_item_ready_carts = all_item_ready_carts.exclude(lines__item__product__categories=events_category)
+    all_item_ready_carts = all_item_ready_carts.annotate(latest_release_date=Max('lines__item__product__release_date')
+                                                         ).order_by('latest_release_date')
     send_ready_for_pickup_email_order_list = all_item_ready_carts.filter(delivery_method=Cart.PICKUP_ALL,
                                                                          ready_for_pickup=False,
                                                                          # ^ ensure email hasn't been sent
@@ -1222,4 +1226,5 @@ def clear_product_open_lines(request, partner_slug, product_id):
     count = lines.count()
     lines.delete()
     messages.success(request, f"Removed {count} lines for {product.name} from open/frozen carts.")
-    return HttpResponseRedirect(reverse('product_open_lines', kwargs={'partner_slug': partner_slug, 'product_id': product_id}))
+    return HttpResponseRedirect(
+        reverse('product_open_lines', kwargs={'partner_slug': partner_slug, 'product_id': product_id}))
