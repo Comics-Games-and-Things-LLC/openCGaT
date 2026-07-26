@@ -26,19 +26,8 @@
             <div id="discordTemplate" class="{% if item_count > 30 %}collapse{% endif %}">
                 {% for item in items_to_display %}
                     <div>
-                        {% if item.manufacturer %}
-                            <a href="{% if not item.manufacturer.publisher %}{% url 'admin:intake_manufacturer_change' item.manufacturer.id %}{% else %}javascript:void(0){% endif %}"
-                               style="color: {% if not item.manufacturer.publisher %}red{% else %}blue{% endif %};">
-                                {{ item.manufacturer }}
-                            </a> |
-                        {% endif %}
-                        {% if item.annotated_product_id %}
-                            <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=item.product_slug %}">{{ item.product_name }}</a>
-                        {% else %}
-                            {{ item.product_name }}
-                        {% endif %}
-                        | MSRP: ${{ item.product_msrp }} | Our Price: ${{ item.product_map }}
-                        {% if item.in_stock is not None %} | In Stock: {{ item.in_stock|yesno:"Yes,No" }}{% endif %}
+                        {{ item.product_name }} | MSRP: ${{ item.product_msrp }} | Our Price:
+                        ${{ item.product_map }}
                     </div>
                 {% endfor %}
             </div>
@@ -55,19 +44,7 @@
             <div id="orderFormTemplate" class="{% if item_count > 30 %}collapse{% endif %}">
                 {% for item in items_to_display %}
                     <div>
-                        {% if item.manufacturer %}
-                            <a href="{% if not item.manufacturer.publisher %}{% url 'admin:intake_manufacturer_change' item.manufacturer.id %}{% else %}javascript:void(0){% endif %}"
-                               style="color: {% if not item.manufacturer.publisher %}red{% else %}blue{% endif %};">
-                                {{ item.manufacturer }}
-                            </a>:
-                        {% endif %}
-                        {{ item.dist_number }} {{ item.dist_name }} aka
-                        {% if item.annotated_product_id %}
-                            <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=item.product_slug %}">{{ item.product_name }}</a>
-                        {% else %}
-                            {{ item.product_name }}
-                        {% endif %}
-                        {% if item.in_stock is not None %} | In Stock: {{ item.in_stock|yesno:"Yes,No" }}{% endif %}
+                        {{ item.dist_number }} {{ item.dist_name }} aka {{ item.product_name }}
                     </div>
                 {% endfor %}
             </div>
