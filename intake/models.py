@@ -165,6 +165,9 @@ class DistItem(models.Model):
     quantity_per_pack = models.IntegerField(blank=True, null=True)
     weight_lbs = models.DecimalField(decimal_places=3, max_digits=4, null=True)
     manually_entered = models.BooleanField(default=False)
+    orders_due = models.DateField(null=True, blank=True)
+    announced = models.DateField(null=True, blank=True)
+    expected = models.DateField(null=True, blank=True)
     trade_range = models.ManyToManyField(TradeRange, related_name="contains")
 
     def __str__(self):
