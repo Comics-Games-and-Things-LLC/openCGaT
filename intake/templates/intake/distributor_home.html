@@ -22,28 +22,12 @@
     <ul>
         {% for inventory in inventories %}
             <li>
+                <a href="{% url 'inventory_detail' partner_slug=partner.slug distributor_id=distributor.id inventory_id=inventory.id %}">
+                    {{ inventory.filename }} ({{ inventory.update_date }})
+                </a>
                 {% if inventory.file %}
-                    <a href="{{ inventory.file.url }}">{{ inventory.filename }} {{ inventory.timestamp }}</a>
-                {% else %}
-                    {{ inventory.timestamp }}
+                    [<a href="{{ inventory.file.url }}">Download File</a>]
                 {% endif %}
-                <ul>
-                    <li>Discord Template:
-                        {% for item in inventory.annotate_inventory.all %}
-                            <div>
-                                {{ item.product_name }} | MSRP: ${{ item.product_msrp }} | Our Price:
-                                ${{ item.product_map }}
-                            </div>
-                        {% endfor %}
-                    </li>
-                    <li>Order Form Template:
-                        {% for item in inventory.annotate_inventory.all %}
-                            <div>
-                                {{ item.dist_number }} {{ item.dist_name }} aka {{ item.product_name }}
-                            </div>
-                        {% endfor %}
-                    </li>
-                </ul>
             </li>
         {% endfor %}
     </ul>

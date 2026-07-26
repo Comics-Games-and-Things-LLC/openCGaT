@@ -1,0 +1,85 @@
+{% extends 'container.html' %}
+{% load static %}
+
+{% block title %}Inventory Details: {{ inventory.filename }}{% endblock %}
+
+{% block content %}
+    <h1>Inventory Details: {{ inventory.filename }}</h1>
+    <p>Distributor: {{ distributor.dist_name }}</p>
+    <p>Update Date: {{ inventory.update_date }}</p>
+    {% if inventory.file %}
+        <p><a href="{{ inventory.file.url }}" class="btn btn-primary">Download File</a></p>
+    {% endif %}
+
+    <a href="{% url 'distributor_home' partner_slug=partner.slug distributor_id=distributor.id %}" class="btn btn-secondary mb-3">Back to Distributor</a>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Discord Template
+                {% if item_count > 30 %}
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse"
+                            data-target="#discordTemplate" aria-expanded="false" aria-controls="discordTemplate">
+                        Show/Hide
+                    </button>
+                {% endif %}
+            </h3>
+            <div id="discordTemplate" class="{% if item_count > 30 %}collapse{% endif %}">
+                {% for item in inventory.annotate_inventory.all %}
+                    <div>
+                        {{ item.product_name }} | MSRP: ${{ item.product_msrp }} | Our Price:
+                        ${{ item.product_map }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h3>Order Form Template
+                {% if item_count > 30 %}
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse"
+                            data-target="#orderFormTemplate" aria-expanded="false" aria-controls="orderFormTemplate">
+                        Show/Hide
+                    </button>
+                {% endif %}
+            </h3>
+            <div id="orderFormTemplate" class="{% if item_count > 30 %}collapse{% endif %}">
+                {% for item in inventory.annotate_inventory.all %}
+                    <div>
+                        {{ item.dist_number }} {{ item.dist_name }} aka {{ item.product_name }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mt-4">All Items
+        {% if item_count > 30 %}
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse"
+                    data-target="#allItemsTable" aria-expanded="false" aria-controls="allItemsTable">
+                Show/Hide
+            </button>
+        {% endif %}
+    </h3>
+    <div id="allItemsTable" class="{% if item_count > 30 %}collapse{% endif %}">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover table-sm">
+                <thead class="thead-dark">
+                <tr>
+                    {% for field in fields_to_show %}
+                        <th>{{ field.label }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        {% for value in row %}
+                            <td>{{ value|default_if_none:"" }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}

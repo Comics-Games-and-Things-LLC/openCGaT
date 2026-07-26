@@ -229,6 +229,66 @@ def distributor_home(request, partner_slug, distributor_id):
 
 
 @login_required
+def inventory_detail(request, partner_slug, distributor_id, inventory_id):
+    partner = get_partner_or_401(request, partner_slug)
+    distributor = get_object_or_404(Distributor, id=distributor_id)
+    inventory = get_object_or_404(DistributorInventoryFile, id=inventory_id, distributor=distributor)
+
+    items = inventory.items.all()
+
+    potential_fields = [
+        ('dist_number', 'Dist Number'),
+        ('manufacturer', 'Manufacturer'),
+        ('dist_name', 'Name'),
+        ('msrp', 'MSRP'),
+        ('map', 'MAP'),
+        ('dist_price', 'Cost'),
+        ('dist_barcode', 'Barcode'),
+        ('dist_description', 'Description'),
+        ('quantity_per_pack', 'Qty/Pack'),
+        ('weight_lbs', 'Weight (lbs)'),
+        ('manually_entered', 'Manual'),
+        ('orders_due', 'Orders Due'),
+        ('announced', 'Announced'),
+        ('expected', 'Expected'),
+        ('import_timestamp', 'Imported At'),
+    ]
+
+    fields_to_show = []
+    for field_name, label in potential_fields:
+        queryset = items.exclude(**{f"{field_name}__isnull": True})
+        if field_name in ['dist_number', 'dist_name', 'dist_barcode', 'dist_description']:
+            queryset = queryset.exclude(**{field_name: ""})
+        if queryset.exists():
+            fields_to_show.append({'name': field_name, 'label': label})
+
+    if items.filter(trade_range__isnull=False).exists():
+        fields_to_show.append({'name': 'trade_range', 'label': 'Trade Range'})
+
+    rows = []
+    for item in inventory.annotate_inventory().all():
+        row = []
+        for field in fields_to_show:
+            val = getattr(item, field['name'])
+            if field['name'] == 'trade_range':
+                val = ", ".join([str(tr) for tr in val.all()])
+            elif field['name'] == 'manufacturer' and val:
+                val = str(val)
+            row.append(val)
+        rows.append(row)
+
+    context = {
+        'partner': partner,
+        'distributor': distributor,
+        'inventory': inventory,
+        'fields_to_show': fields_to_show,
+        'rows': rows,
+        'item_count': len(rows),
+    }
+    return render(request, "intake/inventory_detail.html", context)
+
+
+@login_required
 def get_image(request, partner_slug, item_id):
     item = get_object_or_404(InventoryItem, id=item_id)
     image = generate_product_sticker(item)
