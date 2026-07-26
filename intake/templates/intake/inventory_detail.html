@@ -26,6 +26,12 @@
             <div id="discordTemplate" class="{% if item_count > 30 %}collapse{% endif %}">
                 {% for item in inventory.annotate_inventory.all %}
                     <div>
+                        {% if item.manufacturer %}
+                            <a href="{% if not item.manufacturer.publisher %}{% url 'admin:intake_manufacturer_change' item.manufacturer.id %}{% else %}javascript:void(0){% endif %}"
+                               style="color: {% if not item.manufacturer.publisher %}red{% else %}blue{% endif %};">
+                                {{ item.manufacturer }}
+                            </a> |
+                        {% endif %}
                         {{ item.product_name }} | MSRP: ${{ item.product_msrp }} | Our Price:
                         ${{ item.product_map }}
                     </div>
@@ -44,6 +50,12 @@
             <div id="orderFormTemplate" class="{% if item_count > 30 %}collapse{% endif %}">
                 {% for item in inventory.annotate_inventory.all %}
                     <div>
+                        {% if item.manufacturer %}
+                            <a href="{% if not item.manufacturer.publisher %}{% url 'admin:intake_manufacturer_change' item.manufacturer.id %}{% else %}javascript:void(0){% endif %}"
+                               style="color: {% if not item.manufacturer.publisher %}red{% else %}blue{% endif %};">
+                                {{ item.manufacturer }}
+                            </a>:
+                        {% endif %}
                         {{ item.dist_number }} {{ item.dist_name }} aka {{ item.product_name }}
                     </div>
                 {% endfor %}
@@ -73,7 +85,13 @@
                 {% for row in rows %}
                     <tr>
                         {% for value in row %}
-                            <td>{{ value|default_if_none:"" }}</td>
+                            <td>
+                                {% if value.is_mfc %}
+                                    <a href="{{ value.url }}" style="color: {{ value.color }};">{{ value.display }}</a>
+                                {% else %}
+                                    {{ value|default_if_none:"" }}
+                                {% endif %}
+                            </td>
                         {% endfor %}
                     </tr>
                 {% endfor %}

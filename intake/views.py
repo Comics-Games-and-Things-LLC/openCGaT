@@ -273,7 +273,19 @@ def inventory_detail(request, partner_slug, distributor_id, inventory_id):
             if field['name'] == 'trade_range':
                 val = ", ".join([str(tr) for tr in val.all()])
             elif field['name'] == 'manufacturer' and val:
-                val = str(val)
+                mfc = val
+                if mfc.publisher:
+                    color = "blue"
+                    url = "javascript:void(0)"
+                else:
+                    color = "red"
+                    url = reverse('admin:intake_manufacturer_change', args=[mfc.id])
+                val = {
+                    'display': str(mfc),
+                    'url': url,
+                    'color': color,
+                    'is_mfc': True
+                }
             row.append(val)
         rows.append(row)
 
