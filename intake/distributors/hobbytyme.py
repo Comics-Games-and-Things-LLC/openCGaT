@@ -504,20 +504,10 @@ def update_inventory(auth):
         in_stock = None
         if data.get('avail'):
             avail = data['avail'].lower()
-            if avail in ["y", "yes"]:
+            if avail =="in":
                 in_stock = True
-            elif avail in ["n", "no", "0"]:
+            elif avail=="out":
                 in_stock = False
-            else:
-                try:
-                    avail_val = re.sub(r'[^\d.]', '', avail)
-                    if avail_val:
-                        if int(float(avail_val)) > 0:
-                            in_stock = True
-                        else:
-                            in_stock = False
-                except (ValueError, TypeError):
-                    pass
         if in_stock is None and quantity is not None:
             in_stock = quantity > 0
 
