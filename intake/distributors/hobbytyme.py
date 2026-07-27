@@ -9,9 +9,7 @@ from django.utils import timezone
 from moneyed import Money
 from pypdf import PdfReader
 
-from intake.distributors import vallejo
 from intake.models import PurchaseOrder, Distributor, POLine
-from shop.models import Product
 
 DEFAULT_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -327,16 +325,22 @@ def get_hobbytyme_session(auth):
     return None
 
 
-def fetch_hobbytyme_pages(session, url, headers):
+def fetch_hobbytyme_pages(session, url, headers, post_data=None):
     current_url = url
     while current_url:
-        print(f"Fetching {current_url}")
-        response = session.get(current_url, headers=headers)
+        if post_data:
+            print(f"POSTing to {current_url}")
+            response = session.post(current_url, data=post_data, headers=headers)
+            post_data = None  # Only POST for the first page
+        else:
+            print(f"Fetching {current_url}")
+            response = session.get(current_url, headers=headers)
+
         if response.status_code != 200:
             print(f"Failed to fetch {current_url}")
             break
         soup = BeautifulSoup(response.text, 'html.parser')
-        yield soup, current_url
+        yield soup, response.url
 
         # Look for next page
         # Hobbytyme often uses "Next" text or a button with an arrow
@@ -433,13 +437,6 @@ def update_inventory(auth):
         print(f"Failed to login to Hobbytyme for {auth.partner}")
         return
 
-    pages = [
-        ("Just Arrived", "https://hobbytyme.com/dealers/index.cfm?action=products.justArrived"),
-        ("Just Announced", "https://hobbytyme.com/dealers/index.cfm?action=products.justAnnounced"),
-        ("Pre-Orders", "https://hobbytyme.com/dealers/index.cfm?action=products.preOrders"),
-        ("In-Stock", "https://hobbytyme.com/dealers/index.cfm")
-    ]
-
     inventory_file = DistributorInventoryFile.objects.create(
         distributor=distributor,
         processed=True,
@@ -448,10 +445,41 @@ def update_inventory(auth):
 
     headers = DEFAULT_HEADERS.copy()
 
+    # Get searchID for the full item list
+    search_id = None
+    try:
+        search_page_url = "https://hobbytyme.com/dealers/index.cfm?action=products.search"
+        response = session.get(search_page_url, headers=headers)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        search_id_input = soup.find('input', {'name': 'searchID'})
+        if search_id_input:
+            search_id = search_id_input.get('value')
+    except Exception as e:
+        print(f"Failed to get searchID: {e}")
+
+    pages = []
+    if search_id:
+        pages.append(("All", "https://hobbytyme.com/dealers/index.cfm", {
+            'action': 'products.search.save',
+            'searchID': search_id,
+            'available': '1',
+            'itemsPerPage': '1000',
+            'submit_btn': 'SEARCH'
+        }))
+
+    pages.extend([
+        ("Just Arrived", "https://hobbytyme.com/dealers/index.cfm?action=products.justArrived"),
+        ("Just Announced", "https://hobbytyme.com/dealers/index.cfm?action=products.justAnnounced"),
+        ("Pre-Orders", "https://hobbytyme.com/dealers/index.cfm?action=products.preOrders"),
+    ])
+
     collected_data = {}
-    for page_name, url in pages:
+    for page_info in pages:
+        page_name = page_info[0]
+        url = page_info[1]
+        post_data = page_info[2] if len(page_info) > 2 else None
         print(f"Retrieving Hobbytyme page: {page_name}")
-        for soup, current_url in fetch_hobbytyme_pages(session, url, headers):
+        for soup, current_url in fetch_hobbytyme_pages(session, url, headers, post_data=post_data):
             for data in scrape_hobbytyme_tables(soup):
                 item_number = data['item_number']
                 if item_number not in collected_data:
