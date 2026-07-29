@@ -162,52 +162,38 @@
                             {% if filters_form.in_stock_only and filters_form.featured_products_only %}
                                 <!-- In stock only and featured products -->
                                 <div class="col-span-2 flex flex-row gap-4 flex-wrap">
-                                    <label for="{{ filters_form.in_stock_only.auto_id }}"
-                                           class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
-                                        <input class="mr-2 border-gray-400 group-hover:border-gray-700 rounded"
-                                               id="{{ filters_form.in_stock_only.auto_id }}"
-                                               name="{{ filters_form.in_stock_only.name }}" type="checkbox"
-                                               {% if filters_form.in_stock_only.data %}checked="checked"{% endif %}>
-                                        {{ filters_form.in_stock_only.label }}
-                                    </label>
-                                    <label for="{{ filters_form.featured_products_only.auto_id }}"
-                                           class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
-                                        <input class="mr-2 border-gray-400 group-hover:border-gray-700 rounded"
-                                               id="{{ filters_form.featured_products_only.auto_id }}"
-                                               name="{{ filters_form.featured_products_only.name }}" type="checkbox"
-                                               {% if filters_form.featured_products_only.data %}checked="checked"{% endif %}>
-                                        {{ filters_form.featured_products_only.label }}
-                                    </label>
-                                    {% if filters_form.exclude_backorders %}
-                                        <label for="{{ filters_form.exclude_backorders.auto_id }}"
-                                               class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
-                                            <input class="mr-2 border-gray-400 group-hover:border-gray-700 rounded"
-                                                   id="{{ filters_form.exclude_backorders.auto_id }}"
-                                                   name="{{ filters_form.exclude_backorders.name }}" type="checkbox"
-                                                   {% if filters_form.exclude_backorders.data %}checked="checked"{% endif %}>
-                                            {{ filters_form.exclude_backorders.label }}
-                                        </label>
-                                    {% endif %}
-                                    {% if filters_form.in_stock_at_distributor %}
-                                        <label for="{{ filters_form.in_stock_at_distributor.auto_id }}"
-                                               class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
-                                            <input class="mr-2 border-gray-400 group-hover:border-gray-700 rounded"
-                                                   id="{{ filters_form.in_stock_at_distributor.auto_id }}"
-                                                   name="{{ filters_form.in_stock_at_distributor.name }}" type="checkbox"
-                                                   {% if filters_form.in_stock_at_distributor.data %}checked="checked"{% endif %}>
-                                            {{ filters_form.in_stock_at_distributor.label }}
-                                        </label>
-                                    {% endif %}
-                                </div>
-                                {% list_append manual_form_fields "in_stock_only" as manual_form_fields %}
-                                {% list_append manual_form_fields "featured_products_only" as manual_form_fields %}
+                                <label for="{{ filters_form.in_stock_only.auto_id }}"
+                                       class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
+                                    <input class="mr-2 border-gray-400 group-hover:border-gray-700 rounded"
+                                           id="{{ filters_form.in_stock_only.auto_id }}"
+                                           name="{{ filters_form.in_stock_only.name }}" type="checkbox"
+                                           {% if filters_form.in_stock_only.data %}checked="checked"{% endif %}>
+                                    {{ filters_form.in_stock_only.label }}
+                                    {% list_append manual_form_fields "in_stock_only" as manual_form_fields %}
+                                </label>
+                                <label for="{{ filters_form.featured_products_only.auto_id }}"
+                                       class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
+                                    <input class="mr-2 border-gray-400 group-hover:border-gray-700 rounded"
+                                           id="{{ filters_form.featured_products_only.auto_id }}"
+                                           name="{{ filters_form.featured_products_only.name }}" type="checkbox"
+                                           {% if filters_form.featured_products_only.data %}checked="checked"{% endif %}>
+                                    {{ filters_form.featured_products_only.label }}
+                                    {% list_append manual_form_fields "featured_products_only" as manual_form_fields %}
+
+                                </label>
                                 {% if filters_form.exclude_backorders %}
-                                    {% list_append manual_form_fields "exclude_backorders" as manual_form_fields %}
-                                {% endif %}
-                                {% if filters_form.in_stock_at_distributor %}
-                                    {% list_append manual_form_fields "in_stock_at_distributor" as manual_form_fields %}
+                                    <label for="{{ filters_form.exclude_backorders.auto_id }}"
+                                           class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
+                                        <input class="mr-2 border-gray-400 group-hover:border-gray-700 rounded"
+                                               id="{{ filters_form.exclude_backorders.auto_id }}"
+                                               name="{{ filters_form.exclude_backorders.name }}" type="checkbox"
+                                               {% if filters_form.exclude_backorders.data %}checked="checked"{% endif %}>
+                                        {{ filters_form.exclude_backorders.label }}
+                                        {% list_append manual_form_fields "exclude_backorders" as manual_form_fields %}
+                                    </label>
                                 {% endif %}
                             {% endif %}
+                            </div>
                             {% if filters_form.available_for_order_only and filters_form.allocated_only %}
                                 <!-- In stock only and featured products -->
                                 <div class="col-span-2 flex flex-row gap-4">
@@ -218,6 +204,7 @@
                                                name="{{ filters_form.available_for_order_only.name }}" type="checkbox"
                                                {% if filters_form.available_for_order_only.data %}checked="checked"{% endif %}>
                                         {{ filters_form.available_for_order_only.label }}
+                                        {% list_append manual_form_fields "available_for_order_only" as manual_form_fields %}
                                     </label>
                                     <label for="{{ filters_form.allocated_only.auto_id }}"
                                            class="text-gray-500 group hover:text-gray-700 inline-flex flex-row items-center">
@@ -226,10 +213,9 @@
                                                name="{{ filters_form.allocated_only.name }}" type="checkbox"
                                                {% if filters_form.allocated_only.data %}checked="checked"{% endif %}>
                                         {{ filters_form.allocated_only.label }}
+                                        {% list_append manual_form_fields "allocated_only" as manual_form_fields %}
                                     </label>
                                 </div>
-                                {% list_append manual_form_fields "available_for_order_only" as manual_form_fields %}
-                                {% list_append manual_form_fields "allocated_only" as manual_form_fields %}
                             {% endif %}
                             {% if filters_form.partner %}
                                 <!-- Do not render the partner field because there's only one partner now -->

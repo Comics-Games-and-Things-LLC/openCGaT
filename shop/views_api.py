@@ -1,11 +1,11 @@
 from django.contrib.postgres.search import SearchQuery
 from django.db.models import F, Q
 from moneyed import Money
-from dist_backorders.models import BackorderReport
 
-from shop.forms import FiltersForm
-from shop.models import Item, Product
+from dist_backorders.models import BackorderReport
 from intake.models import Distributor, DistributorInventoryFile
+from shop.forms import FiltersForm
+from shop.models import Item
 
 
 def item_list_filter(managing_partner=None,
@@ -37,9 +37,8 @@ def item_list_filter(managing_partner=None,
                      min_date=None,
                      max_date=None,
                      exclude_backorders=False,
-                     in_stock_at_distributor=False,
+                     in_stock_at_distributor=None,
                      ):
-
     if categories_to_include is None:
         categories_to_include = []
     if order_by is None or order_by == "":
@@ -125,7 +124,7 @@ def item_list_filter(managing_partner=None,
         latest_report = latest_report_query.first()
         if latest_report:
             backordered_product_ids = latest_report.lines.filter(product__isnull=False).values_list('product_id',
-                                                                                                   flat=True)
+                                                                                                    flat=True)
             displayed_items = displayed_items.exclude(product_id__in=backordered_product_ids)
 
     if in_stock_at_distributor:
@@ -136,9 +135,16 @@ def item_list_filter(managing_partner=None,
             latest_inventory = DistributorInventoryFile.objects.filter(distributor=target_distributor).order_by(
                 '-update_date').first()
             if latest_inventory:
-                in_stock_product_ids = latest_inventory.inventory_lines.filter(
-                    in_stock=True, dist_item__product__isnull=False).values_list('dist_item__product_id', flat=True)
-                displayed_items = displayed_items.filter(product_id__in=in_stock_product_ids)
+                if in_stock_at_distributor == FiltersForm.IN_STOCK_AND_UNKNOWN:
+                    out_of_stock_product_ids = latest_inventory.inventory_lines.filter(
+                        in_stock=False, dist_item__product__isnull=False).values_list('dist_item__product_id',
+                                                                                      flat=True)
+                    displayed_items = displayed_items.exclude(product_id__in=out_of_stock_product_ids)
+                elif in_stock_at_distributor == FiltersForm.CONFIRMED_IN_STOCK:
+                    in_stock_product_ids = latest_inventory.inventory_lines.filter(
+                        in_stock=True, dist_item__product__isnull=False).values_list('dist_item__product_id',
+                                                                                     flat=True)
+                    displayed_items = displayed_items.filter(product_id__in=in_stock_product_ids)
 
     displayed_items = displayed_items.distinct()
 

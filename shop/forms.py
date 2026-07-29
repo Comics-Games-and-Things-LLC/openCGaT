@@ -177,8 +177,17 @@ class FiltersForm(forms.Form):
     is_draft = forms.NullBooleanField(required=False)
     has_barcode = forms.NullBooleanField(required=False)
     missing_image = forms.BooleanField(required=False)
-    in_stock_at_distributor = forms.BooleanField(required=False, label="In stock at distributor")
     exclude_backorders = forms.BooleanField(required=False, label="Exclude backorders")
+
+    IN_STOCK_AND_UNKNOWN = 'in-stock-and-unknown'
+    CONFIRMED_IN_STOCK = 'confirmed-in-stock'
+    IN_STOCK_AT_DISTRO_OPTIONS = (
+        ('', '---------'),
+        (IN_STOCK_AND_UNKNOWN, 'In Stock and Unknown'),
+        (CONFIRMED_IN_STOCK, 'Confirmed In stock'),
+    )
+    in_stock_at_distributor = forms.ChoiceField(
+        choices=IN_STOCK_AT_DISTRO_OPTIONS, required=False, label="In stock at distributor")
 
     price_not_default = forms.BooleanField(required=False)
     has_in_store_only_price = forms.BooleanField(required=False)
