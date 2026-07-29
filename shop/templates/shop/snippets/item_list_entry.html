@@ -111,6 +111,17 @@
                         Released on <span class="font-bold text-gray-500">{{ item.product.release_date }}</span>
                     </p>
                 {% endif %}
+                {% if partner %}
+                    {% if item.dist_in_stock %}
+                        <p>
+                            <span class="font-bold text-primary-500">In Stock with Distributor</span>
+                        </p>
+                    {% elif item.dist_out_of_stock %}
+                        <p>
+                            <span class="font-bold text-gray-500">Out of Stock with Distributor</span>
+                        </p>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
         <div class="w-full lg:w-72 flex flex-col gap-2 py-3 bg-gray-100 p-4 flex-shrink-0 rounded-b-md lg:rounded-b-none text-3xl font-semibold">

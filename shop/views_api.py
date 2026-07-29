@@ -1,9 +1,9 @@
 from django.contrib.postgres.search import SearchQuery
-from django.db.models import F, Q
+from django.db.models import F, Q, Exists, OuterRef
 from moneyed import Money
 
 from dist_backorders.models import BackorderReport
-from intake.models import Distributor, DistributorInventoryFile
+from intake.models import Distributor, DistributorInventoryFile, DistributorInventoryLine
 from shop.forms import FiltersForm
 from shop.models import Item
 
@@ -127,24 +127,29 @@ def item_list_filter(managing_partner=None,
                                                                                                     flat=True)
             displayed_items = displayed_items.exclude(product_id__in=backordered_product_ids)
 
-    if in_stock_at_distributor:
-        target_distributor = distributor
-        if not target_distributor:
-            target_distributor = Distributor.objects.filter(dist_name="Hobbytyme").first()
-        if target_distributor:
-            latest_inventory = DistributorInventoryFile.objects.filter(distributor=target_distributor).order_by(
-                '-update_date').first()
-            if latest_inventory:
-                if in_stock_at_distributor == FiltersForm.IN_STOCK_AND_UNKNOWN:
-                    out_of_stock_product_ids = latest_inventory.inventory_lines.filter(
-                        in_stock=False, dist_item__product__isnull=False).values_list('dist_item__product_id',
-                                                                                      flat=True)
-                    displayed_items = displayed_items.exclude(product_id__in=out_of_stock_product_ids)
-                elif in_stock_at_distributor == FiltersForm.CONFIRMED_IN_STOCK:
-                    in_stock_product_ids = latest_inventory.inventory_lines.filter(
-                        in_stock=True, dist_item__product__isnull=False).values_list('dist_item__product_id',
-                                                                                     flat=True)
-                    displayed_items = displayed_items.filter(product_id__in=in_stock_product_ids)
+    target_distributor = distributor
+    if not target_distributor:
+        target_distributor = Distributor.objects.filter(dist_name="Hobbytyme").first()
+    if target_distributor:
+        latest_inventory = DistributorInventoryFile.objects.filter(distributor=target_distributor).order_by(
+            '-update_date').first()
+        if latest_inventory:
+            displayed_items = displayed_items.annotate(
+                dist_in_stock=Exists(DistributorInventoryLine.objects.filter(
+                    inventory_file=latest_inventory,
+                    dist_item__product_id=OuterRef('product_id'),
+                    in_stock=True
+                )),
+                dist_out_of_stock=Exists(DistributorInventoryLine.objects.filter(
+                    inventory_file=latest_inventory,
+                    dist_item__product_id=OuterRef('product_id'),
+                    in_stock=False
+                ))
+            )
+            if in_stock_at_distributor == FiltersForm.IN_STOCK_AND_UNKNOWN:
+                displayed_items = displayed_items.filter(dist_out_of_stock=False)
+            elif in_stock_at_distributor == FiltersForm.CONFIRMED_IN_STOCK:
+                displayed_items = displayed_items.filter(dist_in_stock=True)
 
     displayed_items = displayed_items.distinct()
 
