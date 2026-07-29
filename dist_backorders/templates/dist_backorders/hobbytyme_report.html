@@ -64,7 +64,7 @@
                     {% endif %}
                 </td>
                 <td class="text-center">{{ line.quantity }}</td>
-                <td>${{ line.unit_price }}</td>
+                <td>${{ line.msrp }}</td>
                 <td>{{ line.date_ordered|default_if_none:"" }}</td>
             </tr>
             {% endfor %}

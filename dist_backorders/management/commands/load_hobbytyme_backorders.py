@@ -69,9 +69,9 @@ class Command(BaseCommand):
                 for data in scrape_hobbytyme_tables(soup):
                     try:
                         # Extract price
-                        price_val = None
-                        if data['price']:
-                            price_val = re.sub(r'[^\d.]', '', data['price']) or None
+                        msrp = None
+                        if data['msrp']:
+                            msrp = re.sub(r'[^\d.]', '', data['msrp']) or None
 
                         # Date Ordered parsing
                         date_ordered = None
@@ -86,7 +86,7 @@ class Command(BaseCommand):
                             manufacturer=data['manufacturer'],
                             item_number=data['item_number'],
                             description=data['description'],
-                            unit_price=price_val,
+                            msrp=msrp,
                             quantity=int(data['quantity'] or 0) if data['quantity'] is not None else 0,
                             date_ordered=date_ordered,
                         )

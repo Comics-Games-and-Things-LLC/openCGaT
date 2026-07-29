@@ -19,7 +19,7 @@ class BackorderReportLine(models.Model):
     manufacturer = models.CharField(max_length=200, blank=True, null=True)
     item_number = models.CharField(max_length=200) # e.g. VAL/72001 (Part Number)
     description = models.CharField(max_length=500, blank=True, null=True) # (Product)
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) # (Price)
+    msrp = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True) # (Price)
     quantity = models.IntegerField(default=0) # (Qty)
     date_ordered = models.DateField(blank=True, null=True)
 

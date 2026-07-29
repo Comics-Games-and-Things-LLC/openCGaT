@@ -394,7 +394,7 @@ def scrape_hobbytyme_tables(soup):
         idx_mfc = get_idx(["manufacturer", "mfg"])
         idx_item = get_idx(["item #", "part number", "item no", "part #"])
         idx_desc = get_idx(["product", "description", "item description", "name"])
-        idx_msrp = get_idx(["list price", "msrp"])
+        idx_msrp = get_idx(["list price", "price"])
         idx_price = get_idx(["net price"])
         idx_qty = get_idx(["qty", "quantity"])
         idx_avail = get_idx(["avail", "avail."])
