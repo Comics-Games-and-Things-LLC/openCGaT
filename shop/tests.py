@@ -6,6 +6,7 @@ from djmoney.money import Money
 
 from checkout.models import Cart
 from partner.models import Partner
+from shop.forms import FiltersForm
 from shop.models import Product, InventoryItem, Publisher
 from intake.models import Distributor, DistributorInventoryFile, DistributorInventoryLine, DistItem
 from shop.views_api import item_list_filter
@@ -147,12 +148,12 @@ class FilterDistributorStockTest(TestCase):
 
         # When filter is on, only the in-stock item is returned
         items = item_list_filter(managing_partner=self.partner, distributor=self.distributor,
-                                 in_stock_at_distributor=True)
+                                 in_stock_at_distributor=FiltersForm.CONFIRMED_IN_STOCK)
         self.assertEqual(items.count(), 1)
         self.assertEqual(items.first().product, self.product_in_stock)
 
     def test_filter_in_stock_at_distributor_default_hobbytyme(self):
         # If no distributor is selected, it should default to Hobbytyme
-        items = item_list_filter(managing_partner=self.partner, in_stock_at_distributor=True)
+        items = item_list_filter(managing_partner=self.partner, in_stock_at_distributor=FiltersForm.CONFIRMED_IN_STOCK)
         self.assertEqual(items.count(), 1)
         self.assertEqual(items.first().product, self.product_in_stock)
