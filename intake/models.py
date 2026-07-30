@@ -178,25 +178,40 @@ class DistItem(models.Model):
     def set_product_from_sku(self, save=True):
         sku = self.dist_number
         mfc_code = None
+        #Split hobbytyme at /
         if self.dist_number and "/" in self.dist_number:
             parts = self.dist_number.split("/")
             mfc_code = parts[0]
             sku = parts[1].split(" ")[0]
 
-        if mfc_code == "VAL" and "EX" not in sku:
+        #Vallejo specific handling.
+        if mfc_code == "VAL" and "EX":
             from intake.distributors import vallejo
             barcode = vallejo.get_barcode_from_sku(sku)
             if barcode:
                 try:
                     self.product = Product.objects.get(barcode=barcode)
+                    self.save()
                 except Product.DoesNotExist:
                     pass
-        else:
-            products = Product.objects.filter(Q(publisher_sku=sku) | Q(publisher_short_sku=sku))
-            if self.manufacturer and self.manufacturer.publisher:
-                products = products.filter(publisher=self.manufacturer.publisher)
-            if products.exists():
-                self.product = products.order_by("-release_date").first()
+            return
+
+        # Look up manufacturer by code if not already set.
+        if not self.manufacturer and mfc_code:
+            self.manufacturer = Manufacturer.objects.filter(abbreviation=mfc_code).first()
+            save = True
+
+        # Find a product by SKU
+        products = Product.objects.filter(Q(publisher_sku=sku) | Q(publisher_short_sku=sku))
+
+        # Filter by manufacturer
+        if self.manufacturer and self.manufacturer.publisher:
+            products = products.filter(publisher=self.manufacturer.publisher)
+
+        if products.exists():
+            self.product = products.order_by("-release_date").first()
+            save = True
+
         self.product_last_refreshed = timezone.now()
         if save:
             self.save()
