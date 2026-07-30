@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
-from intake.distributors import parabellum, wyrd, games_workshop, gw_paints, vallejo, asmodee, steamforged, warlord
+from intake.distributors import parabellum, wyrd, games_workshop, gw_paints, vallejo, asmodee, steamforged, warlord, \
+    huge
 from intake.models import Distributor
 
 
@@ -47,5 +48,7 @@ class Command(BaseCommand):
             asmodee.import_records()
         elif name == steamforged.dist_name:
             steamforged.import_records()
+        elif name == huge.dist_name:
+            huge.import_records()
         else:
             print("Import not set up for that distributor")
