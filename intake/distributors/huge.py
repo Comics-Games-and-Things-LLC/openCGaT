@@ -40,7 +40,7 @@ def import_records():
         try:
             name = row.get(product_name_column, "")
             category = row.get('CATEGORY',"")
-            name = category + " - " + name
+            name = "Huge " + category + " - " + name
             barcode = row.get('UPC')
             if "." in barcode:
                 barcode = barcode.split('.')[0]
