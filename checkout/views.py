@@ -1117,6 +1117,9 @@ def tasks(request, partner_slug):
         cart__at_pos=False,
     ).order_by('item__product__name').prefetch_related('item', 'item__product', 'cart')
 
+    if events_category:
+        lines_to_pick = lines_to_pick.exclude(item__product__categories=events_category)
+
     not_ready_lines = CheckoutLine.objects.filter(cart=OuterRef("pk"), ready=False, cancelled=False)
 
     all_item_ready_carts = (Cart.submitted.exclude(status__in=[Cart.COMPLETED, Cart.CANCELLED])
