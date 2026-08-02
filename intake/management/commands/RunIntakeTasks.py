@@ -1,14 +1,14 @@
 import time
 from datetime import timedelta
 
-from django.core.management.base import BaseCommand
 from django.core.management import call_command
+from django.core.management.base import BaseCommand
+from django.db.models import Q
 from django.utils import timezone
 
-from intake.models import DistributorInventoryFile, PoInvoiceFile, Distributor, DistItem
-from django.db.models import Q
-from intake.distributors.nshift import update_tracking_from_nshift
 from dist_backorders.models import BackorderReport
+from intake.distributors.nshift import update_tracking_from_nshift
+from intake.models import DistributorInventoryFile, PoInvoiceFile, Distributor, DistItem
 
 
 class Command(BaseCommand):
@@ -20,6 +20,17 @@ class Command(BaseCommand):
 
     @staticmethod
     def recurring_logic():
+        for inv in DistributorInventoryFile.objects.filter(processed=False, processing=False):
+            inv.processing = True
+            inv.save()
+            inv.run_import()
+            inv.processed = True
+            inv.processing = False
+            inv.save()
+        for inv in PoInvoiceFile.objects.filter(processed=False, processing=False):
+            inv.process()
+            inv.save()
+
         update_tracking_from_nshift()
 
         # Refresh DistItem products roughly once a day
@@ -40,20 +51,10 @@ class Command(BaseCommand):
                 except Exception as e:
                     print(f"Error loading Hobbytyme backorders: {e}")
 
-            last_inventory = DistributorInventoryFile.objects.filter(distributor=hobbytyme).order_by('-update_date').first()
+            last_inventory = DistributorInventoryFile.objects.filter(distributor=hobbytyme).order_by(
+                '-update_date').first()
             if not last_inventory or last_inventory.update_date < timezone.now() - timedelta(days=1):
                 try:
                     call_command('update_hobbytyme_inventory')
                 except Exception as e:
                     print(f"Error updating Hobbytyme inventory: {e}")
-
-        for inv in DistributorInventoryFile.objects.filter(processed=False, processing=False):
-            inv.processing = True
-            inv.save()
-            inv.run_import()
-            inv.processed = True
-            inv.processing = False
-            inv.save()
-        for inv in PoInvoiceFile.objects.filter(processed=False, processing=False):
-            inv.process()
-            inv.save()
