@@ -176,6 +176,11 @@ class DistItem(models.Model):
         return "{} {} {}".format(self.distributor, self.dist_number, self.dist_name)
 
     def set_product_from_sku(self, save=True):
+        """
+
+        :param save: Save the model after setting the product.
+        :return:
+        """
         sku = self.dist_number
         mfc_code = None
         #Split hobbytyme at /
@@ -185,13 +190,12 @@ class DistItem(models.Model):
             sku = parts[1].split(" ")[0]
 
         #Vallejo specific handling.
-        if mfc_code == "VAL" and "EX":
+        if mfc_code == "VAL" and sku.isnumeric():
             from intake.distributors import vallejo
             barcode = vallejo.get_barcode_from_sku(sku)
             if barcode:
                 try:
                     self.product = Product.objects.get(barcode=barcode)
-                    self.save()
                 except Product.DoesNotExist:
                     pass
             return
@@ -199,7 +203,6 @@ class DistItem(models.Model):
         # Look up manufacturer by code if not already set.
         if not self.manufacturer and mfc_code:
             self.manufacturer = Manufacturer.objects.filter(abbreviation=mfc_code).first()
-            save = True
 
         # Find a product by SKU
         products = Product.objects.filter(Q(publisher_sku=sku) | Q(publisher_short_sku=sku))
@@ -210,10 +213,9 @@ class DistItem(models.Model):
 
         if products.exists():
             self.product = products.order_by("-release_date").first()
-            save = True
 
         self.product_last_refreshed = timezone.now()
-        if save:
+        if save: # Do not set this locally, since we should not call this in set_product_from_sku
             self.save()
 
     @staticmethod
