@@ -122,9 +122,13 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
         else:
             # Try creating the product.
             product = create_product(barcode, factions, games, name, short_code)
+
+        dist_item.product = product
+        dist_item.save()
         set_product_dates_and_listed(product, row.get('Release Date'), row.get('Order From'))
         product.order_cutoff_for_shops_date = product.release_date - datetime.timedelta(days=18)
-        update_product_information(factions, games, maprice, msrp, product, publisher, short_code, global_pack_code)  # Calls product.save
+        update_product_information(factions, games, maprice, msrp, product, publisher, short_code,
+                                   global_pack_code)  # Calls product.save
         item = create_valhalla_item(product, price=maprice)
         item.enable_restock_alert = True
         item.low_inventory_alert_threshold = 0
@@ -146,8 +150,11 @@ def create_dist_item(barcode: Any | None, distributor: Distributor, maprice: Mon
     item, created = DistItem.objects.get_or_create(
         distributor=distributor,
         dist_barcode=barcode,
-        dist_number=short_code,
+        defaults={
+            "dist_number": short_code,
+        }
     )
+    item.dist_number = short_code
     item.dist_name = name
     item.dist_barcode = barcode
     item.msrp = msrp
