@@ -18,6 +18,7 @@ from django.urls import reverse
 from checkout.models import Cart
 from checkout.views import annotate_items_with_open_orders
 from digitalitems.models import DigitalItem
+from dist_backorders.models import BackorderReport
 from dist_requests.models import DistRequestLine
 from images.forms import UploadImage
 from images.models import Image
@@ -27,7 +28,6 @@ from userinfo.forms import UserSelectForm
 from .forms import AddProductForm, FiltersForm, AddMTOItemForm, AddInventoryItemForm, \
     CreateCustomChargeForm, RelatedProductsForm, BulkEditItemsForm, ProductsForm
 from .models import Product, Item, InventoryItem, MadeToOrder, CustomChargeItem, ItemQuerySet
-from dist_backorders.models import BackorderReport
 from .serializers import ItemSerializer, ManageItemSerializer
 from .views_api import item_list_filter
 
@@ -266,10 +266,11 @@ def manage_product_list(request, partner_slug):
         displayed_products = displayed_products.filter(in_collection=collection)
 
     if exclude_backorders:
-        latest_report = BackorderReport.objects.filter(partner=partner, distributor__dist_name="Hobbytyme").order_by('-retrieved').first()
+        latest_report = BackorderReport.objects.filter(partner=partner, distributor__dist_name="Hobbytyme").order_by(
+            '-retrieved').first()
         if latest_report:
             backordered_product_ids = latest_report.lines.filter(product__isnull=False).values_list('product_id',
-                                                                                                   flat=True)
+                                                                                                    flat=True)
             displayed_products = displayed_products.exclude(id__in=backordered_product_ids)
 
     if in_stock_at_distributor:
@@ -958,6 +959,21 @@ def bulk_edit(request, partner_slug):
         if action == BulkEditItemsForm.SET_DRAFT:
             for item in items:
                 item.product.page_is_draft = form.cleaned_data.get("new_value_for_bool")
+                item.product.save()
+                item.save()
+        if action == BulkEditItemsForm.SET_VISIBLE:
+            for item in items:
+                item.product.visible_on_release = form.cleaned_data.get("new_value_for_bool")
+                item.product.save()
+                item.save()
+        if action == BulkEditItemsForm.SET_PURCHASABLE:
+            for item in items:
+                item.product.purchasable_on_release = form.cleaned_data.get("new_value_for_bool")
+                item.product.save()
+                item.save()
+        if action == BulkEditItemsForm.SET_LISTED:
+            for item in items:
+                item.product.listed_on_release = form.cleaned_data.get("new_value_for_bool")
                 item.product.save()
                 item.save()
 

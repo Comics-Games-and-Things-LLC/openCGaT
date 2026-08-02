@@ -284,6 +284,9 @@ class BulkEditItemsForm(FiltersForm):
     SET_IN_STORE_PRICE = "Set In-Store Price"
     CLEAR_IN_STORE_PRICE = "Clear In-Store Price"
     SET_DRAFT = "Set as Draft"
+    SET_VISIBLE = "Set Visible"
+    SET_PURCHASABLE = "Set Purchasable"
+    SET_LISTED = "Set Listed"
 
     ACTION_OPTIONS = (
         (NO_ACTION, NO_ACTION),
@@ -295,6 +298,9 @@ class BulkEditItemsForm(FiltersForm):
         (SET_IN_STORE_PRICE, SET_IN_STORE_PRICE),
         (CLEAR_IN_STORE_PRICE, CLEAR_IN_STORE_PRICE),
         (SET_DRAFT, SET_DRAFT),
+        (SET_VISIBLE, SET_VISIBLE),
+        (SET_PURCHASABLE, SET_PURCHASABLE),
+        (SET_LISTED, SET_LISTED),
     )
 
     action_to_take = forms.ChoiceField(choices=ACTION_OPTIONS, required=False)
