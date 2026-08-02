@@ -587,6 +587,8 @@ class DistributorInventoryFile(models.Model):
         availability.save()
 
     def run_import(self):
+        if not self.file:
+            return
         if self.distributor.dist_name == "Games Workshop":
             import intake.distributors.games_workshop as games_workshop
             games_workshop.read_new_release_summary(self)
