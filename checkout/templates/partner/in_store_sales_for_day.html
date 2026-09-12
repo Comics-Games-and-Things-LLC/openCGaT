@@ -11,12 +11,6 @@
                     {
                         quantity: "{{ sale.quantity }}",
                         product: "{% if sale.item.product %}{{ sale.item.product.name|escapejs }}{% else %}{{ sale.item|escapejs }}{% endif %}"
-                    }{% if not forloop.last or sold_out %},{% endif %}
-                {% endfor %}
-                {% for sale in sold_out %}
-                    {
-                        quantity: "{{ sale.quantity }}",
-                        product: "{% if sale.item.product %}{{ sale.item.product.name|escapejs }}{% else %}{{ sale.item|escapejs }}{% endif %}"
                     }{% if not forloop.last %},{% endif %}
                 {% endfor %}
             ];

@@ -147,6 +147,38 @@ class POSSalesDayTest(TestCase):
         self.assertLess(idx_catan_exp, idx_space_marine)
         self.assertLess(idx_catan_base, idx_space_marine)
 
+    def test_sold_out_items_not_in_print_script(self):
+        # Create a sold out product with inventory = 0
+        sold_out_product = Product.objects.create(name="Sold Out Item")
+        sold_out_item = InventoryItem.objects.create(
+            product=sold_out_product,
+            partner=self.partner,
+            price=Money(15, "USD"),
+            default_price=Money(15, "USD"),
+            current_inventory=0
+        )
+        CheckoutLine.objects.create(
+            cart=self.cart,
+            item=sold_out_item,
+            quantity=1,
+        )
+
+        url = reverse('in_store_sales_for_day', kwargs={'partner_slug': self.partner.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # In HTML table, sold out product is displayed
+        self.assertContains(response, "Sold Out Item")
+        self.assertContains(response, "Sold out items")
+
+        # In the print script, only in-stock sales should be present
+        content = response.content.decode('utf-8')
+        start_idx = content.find("function print_daily_sales()")
+        end_idx = content.find("</script>", start_idx)
+        script_part = content[start_idx:end_idx]
+        self.assertIn("Test Product", script_part)
+        self.assertNotIn("Sold Out Item", script_part)
+
 
 def wrap_in_td(text):
     return f"""<td>{text}</td>"""
