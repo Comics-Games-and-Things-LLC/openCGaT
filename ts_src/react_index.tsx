@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import ReceiptPrinterEncoder from '@point-of-sale/receipt-printer-encoder';
 
 import {Provider} from "react-redux";
 import store from "./cart/store";
@@ -46,6 +47,7 @@ Object.assign(window, {
     // React
     React,
     ReactDOM,
+    ReceiptPrinterEncoder,
 
     // components not using redux
     ProductListPageSort,

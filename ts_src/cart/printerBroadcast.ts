@@ -12,18 +12,17 @@ export type PrintTableColumn = {
 
 export type PrintTableRow = (string | number)[];
 
+export interface IPrintTable {
+    columns?: PrintTableColumn[];
+    rows: PrintTableRow[];
+}
+
 export interface ICustomPrintPayload {
     title?: string;
     subtitle?: string;
     lines?: string[];
-    table?: {
-        columns?: PrintTableColumn[];
-        rows: PrintTableRow[];
-    };
-    tables?: {
-        columns?: PrintTableColumn[];
-        rows: PrintTableRow[];
-    }[];
+    table?: IPrintTable;
+    tables?: IPrintTable[];
     footer?: string;
     cut?: boolean;
     barcode?: {
@@ -75,6 +74,67 @@ export type IPrinterBroadcastMessage =
     | { type: string; payload?: any; [key: string]: any };
 
 /**
+ * Helper to encode receipt title and subtitle.
+ */
+export function encodeHeader(
+    title?: string,
+    subtitle?: string,
+    encoder: any = new ReceiptPrinterEncoder()
+): any {
+    if (title) {
+        encoder.align('center').size(2, 2).line(title).size(1, 1);
+    }
+    if (subtitle) {
+        encoder.align('center').line(subtitle).align('left');
+    }
+    return encoder;
+}
+
+/**
+ * Calculates default column configurations based on column count and printer width.
+ */
+export function getDefaultTableColumns(numCols: number, totalColumns: number): PrintTableColumn[] {
+    if (numCols === 2) {
+        const firstCol = Math.max(4, Math.round(totalColumns * 0.15));
+        const secondCol = totalColumns - firstCol - 1;
+        return [
+            {width: firstCol, marginRight: 1, align: 'right'},
+            {width: secondCol, align: 'left'},
+        ];
+    }
+    if (numCols === 3) {
+        const firstCol = Math.max(3, Math.round(totalColumns * 0.1));
+        const thirdCol = Math.max(6, Math.round(totalColumns * 0.2));
+        const secondCol = totalColumns - firstCol - thirdCol - 2;
+        return [
+            {width: firstCol, marginRight: 1, align: 'right'},
+            {width: secondCol, marginRight: 1, align: 'left'},
+            {width: thirdCol, align: 'right'},
+        ];
+    }
+    const colWidth = Math.floor(totalColumns / numCols);
+    return Array.from({length: numCols}, () => ({
+        width: colWidth,
+        align: 'left' as const,
+    }));
+}
+
+/**
+ * Encodes a table onto the receipt printer encoder.
+ */
+export function encodeTable(
+    table: IPrintTable,
+    encoder: any = new ReceiptPrinterEncoder()
+): any {
+    if (!table.rows || table.rows.length === 0) {
+        return encoder;
+    }
+    const columns = table.columns || getDefaultTableColumns(table.rows[0]?.length || 1, encoder.columns);
+    encoder.table(columns, table.rows);
+    return encoder;
+}
+
+/**
  * Encodes a cart into receipt printer encoder commands.
  */
 export function encodeCartReceipt(
@@ -84,12 +144,7 @@ export function encodeCartReceipt(
     const firstColumnWidth = Math.round(encoder.columns * 0.1);
     const secondColumnWidth = Math.round(encoder.columns * 0.7);
 
-    if (cart.payment_partner?.name) {
-        encoder.align('center').size(2, 2).line(cart.payment_partner.name).size(1, 1);
-    }
-    if (cart.id) {
-        encoder.align('center').line(`Order ${cart.id}`).align('left');
-    }
+    encodeHeader(cart.payment_partner?.name, cart.id ? `Order ${cart.id}` : undefined, encoder);
     encoder.rule();
 
     if (cart.lines && cart.lines.length > 0) {
@@ -149,13 +204,8 @@ export function encodeCustomPayload(
     payload: ICustomPrintPayload,
     encoder: any = new ReceiptPrinterEncoder()
 ): any {
-    if (payload.title) {
-        encoder.align('center').size(2, 2).line(payload.title).size(1, 1);
-    }
-    if (payload.subtitle) {
-        encoder.align('center').line(payload.subtitle).align('left');
-    }
     if (payload.title || payload.subtitle) {
+        encodeHeader(payload.title, payload.subtitle, encoder);
         encoder.rule();
     }
     if (payload.lines && payload.lines.length > 0) {
@@ -163,34 +213,12 @@ export function encodeCustomPayload(
             encoder.line(line);
         });
     }
-    if (payload.table && payload.table.rows && payload.table.rows.length > 0) {
-        if (payload.table.columns) {
-            encoder.table(payload.table.columns, payload.table.rows);
-        } else {
-            const numCols = payload.table.rows[0]?.length || 1;
-            const colWidth = Math.floor(encoder.columns / numCols);
-            const cols = Array.from({length: numCols}, () => ({
-                width: colWidth,
-                align: 'left' as const,
-            }));
-            encoder.table(cols, payload.table.rows);
-        }
+    if (payload.table) {
+        encodeTable(payload.table, encoder);
     }
     if (payload.tables && payload.tables.length > 0) {
         payload.tables.forEach((tbl) => {
-            if (tbl.rows && tbl.rows.length > 0) {
-                if (tbl.columns) {
-                    encoder.table(tbl.columns, tbl.rows);
-                } else {
-                    const numCols = tbl.rows[0]?.length || 1;
-                    const colWidth = Math.floor(encoder.columns / numCols);
-                    const cols = Array.from({length: numCols}, () => ({
-                        width: colWidth,
-                        align: 'left' as const,
-                    }));
-                    encoder.table(cols, tbl.rows);
-                }
-            }
+            encodeTable(tbl, encoder);
         });
     }
     if (payload.barcode && payload.barcode.value) {
@@ -240,75 +268,6 @@ export function getPrintBroadcastChannel(
 }
 
 /**
- * Broadcast a cart print request to other tabs.
- */
-export function broadcastPrintCart(
-    cart: ICart,
-    channelName = POS_PRINT_CHANNEL_NAME
-): boolean {
-    const channel = getPrintBroadcastChannel(channelName);
-    if (!channel) return false;
-    channel.postMessage({
-        type: 'PRINT_CART',
-        payload: {cart},
-    });
-    channel.close();
-    return true;
-}
-
-/**
- * Broadcast a custom print payload to other tabs.
- */
-export function broadcastPrintCustom(
-    payload: ICustomPrintPayload,
-    channelName = POS_PRINT_CHANNEL_NAME
-): boolean {
-    const channel = getPrintBroadcastChannel(channelName);
-    if (!channel) return false;
-    channel.postMessage({
-        type: 'PRINT_CUSTOM',
-        payload,
-    });
-    channel.close();
-    return true;
-}
-
-/**
- * Broadcast raw bytes to other tabs.
- */
-export function broadcastPrintRaw(
-    data: Uint8Array | number[],
-    channelName = POS_PRINT_CHANNEL_NAME
-): boolean {
-    const channel = getPrintBroadcastChannel(channelName);
-    if (!channel) return false;
-    channel.postMessage({
-        type: 'PRINT_RAW',
-        payload: {data},
-    });
-    channel.close();
-    return true;
-}
-
-/**
- * Broadcast encoder commands to other tabs.
- */
-export function broadcastPrintCommands(
-    commands: PrintCommand[],
-    cut = true,
-    channelName = POS_PRINT_CHANNEL_NAME
-): boolean {
-    const channel = getPrintBroadcastChannel(channelName);
-    if (!channel) return false;
-    channel.postMessage({
-        type: 'PRINT_COMMANDS',
-        payload: {commands, cut},
-    });
-    channel.close();
-    return true;
-}
-
-/**
  * Broadcast an arbitrary print message to other tabs.
  */
 export function broadcastPrint(
@@ -320,4 +279,69 @@ export function broadcastPrint(
     channel.postMessage(message);
     channel.close();
     return true;
+}
+
+/**
+ * Broadcast a cart print request to other tabs.
+ */
+export function broadcastPrintCart(
+    cart: ICart,
+    channelName = POS_PRINT_CHANNEL_NAME
+): boolean {
+    return broadcastPrint(
+        {
+            type: 'PRINT_CART',
+            payload: {cart},
+        },
+        channelName
+    );
+}
+
+/**
+ * Broadcast a custom print payload to other tabs.
+ */
+export function broadcastPrintCustom(
+    payload: ICustomPrintPayload,
+    channelName = POS_PRINT_CHANNEL_NAME
+): boolean {
+    return broadcastPrint(
+        {
+            type: 'PRINT_CUSTOM',
+            payload,
+        },
+        channelName
+    );
+}
+
+/**
+ * Broadcast raw bytes to other tabs.
+ */
+export function broadcastPrintRaw(
+    data: Uint8Array | number[],
+    channelName = POS_PRINT_CHANNEL_NAME
+): boolean {
+    return broadcastPrint(
+        {
+            type: 'PRINT_RAW',
+            payload: {data},
+        },
+        channelName
+    );
+}
+
+/**
+ * Broadcast encoder commands to other tabs.
+ */
+export function broadcastPrintCommands(
+    commands: PrintCommand[],
+    cut = true,
+    channelName = POS_PRINT_CHANNEL_NAME
+): boolean {
+    return broadcastPrint(
+        {
+            type: 'PRINT_COMMANDS',
+            payload: {commands, cut},
+        },
+        channelName
+    );
 }

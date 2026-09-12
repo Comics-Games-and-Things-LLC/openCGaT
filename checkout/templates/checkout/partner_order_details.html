@@ -139,31 +139,80 @@
             }
 
             function print_pick_slip() {
-                let encoder = new ReceiptPrinterEncoder()
-                const firstColumnWidth = Math.round(encoder.columns * 0.1);
-                const secondColumnWidth = Math.round(encoder.columns * 0.9);
-                encoder
-                    .align('center').size(2, 2).line(`Order {{ past_cart.id }}`)
-                    .size(1, 1).line('{{ past_cart.delivery_method }}').align('left')
-                {% if past_cart.owner %}
-                    encoder.align('center').line('{{ past_cart.owner.email }}').align('left')
-                {% elif past_cart.email %}
-                    encoder.align('center').line('{{ past_cart.email }}').align('left')
-                {% endif %}
-                encoder.rule()
-                encoder.table(
-                    [
-                        {width: firstColumnWidth, marginRight: 1, align: "right"},
-                        {width: secondColumnWidth, align: "left"},
-                    ],
-                    [
-                        {% for line in past_cart.lines.all %}
-                            ["{{ line.quantity }}", "{{ line.item.product.name }}"],
-                        {% endfor %}
-                    ]
-                );
-                encoder.rule()
-                document.dispatchEvent(new CustomEvent("rPrint", {detail: {encoder: encoder}}))
+                if (window.posPrinter && typeof window.posPrinter.broadcastPrintCustom === 'function') {
+                    window.posPrinter.broadcastPrintCustom({
+                        title: `Order {{ past_cart.id }}`,
+                        subtitle: '{{ past_cart.delivery_method }}',
+                        lines: [
+                            {% if past_cart.owner %}
+                                'Customer: {{ past_cart.owner.email }}',
+                            {% elif past_cart.email %}
+                                'Customer: {{ past_cart.email }}',
+                            {% endif %}
+                        ],
+                        table: {
+                            rows: [
+                                {% for line in past_cart.lines.all %}
+                                    ["{{ line.quantity }}", "{{ line.item.product.name|escapejs }}"],
+                                {% endfor %}
+                            ]
+                        },
+                        cut: true
+                    });
+                } else if (typeof BroadcastChannel !== 'undefined') {
+                    var channel = new BroadcastChannel('pos_print_channel');
+                    channel.postMessage({
+                        type: 'PRINT_CUSTOM',
+                        payload: {
+                            title: `Order {{ past_cart.id }}`,
+                            subtitle: '{{ past_cart.delivery_method }}',
+                            lines: [
+                                {% if past_cart.owner %}
+                                    'Customer: {{ past_cart.owner.email }}',
+                                {% elif past_cart.email %}
+                                    'Customer: {{ past_cart.email }}',
+                                {% endif %}
+                            ],
+                            table: {
+                                rows: [
+                                    {% for line in past_cart.lines.all %}
+                                        ["{{ line.quantity }}", "{{ line.item.product.name|escapejs }}"],
+                                    {% endfor %}
+                                ]
+                            },
+                            cut: true
+                        }
+                    });
+                    channel.close();
+                }
+
+                if (typeof ReceiptPrinterEncoder !== 'undefined') {
+                    let encoder = new ReceiptPrinterEncoder()
+                    const firstColumnWidth = Math.round(encoder.columns * 0.1);
+                    const secondColumnWidth = Math.round(encoder.columns * 0.9);
+                    encoder
+                        .align('center').size(2, 2).line(`Order {{ past_cart.id }}`)
+                        .size(1, 1).line('{{ past_cart.delivery_method }}').align('left')
+                    {% if past_cart.owner %}
+                        encoder.align('center').line('{{ past_cart.owner.email }}').align('left')
+                    {% elif past_cart.email %}
+                        encoder.align('center').line('{{ past_cart.email }}').align('left')
+                    {% endif %}
+                    encoder.rule()
+                    encoder.table(
+                        [
+                            {width: firstColumnWidth, marginRight: 1, align: "right"},
+                            {width: secondColumnWidth, align: "left"},
+                        ],
+                        [
+                            {% for line in past_cart.lines.all %}
+                                ["{{ line.quantity }}", "{{ line.item.product.name }}"],
+                            {% endfor %}
+                        ]
+                    );
+                    encoder.rule()
+                    document.dispatchEvent(new CustomEvent("rPrint", {detail: {encoder: encoder}}))
+                }
             }
         </script>
 
