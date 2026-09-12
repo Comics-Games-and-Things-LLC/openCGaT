@@ -4,6 +4,87 @@
 {% block title %}POS Sales for {{ date }}{% endblock %}
 
 {% block content %}
+    <script>
+        function print_daily_sales() {
+            var items = [
+                {% for sale in sales %}
+                    {
+                        quantity: "{{ sale.quantity }}",
+                        product: "{% if sale.item.product %}{{ sale.item.product.name|escapejs }}{% else %}{{ sale.item|escapejs }}{% endif %}"
+                    }{% if not forloop.last or sold_out %},{% endif %}
+                {% endfor %}
+                {% for sale in sold_out %}
+                    {
+                        quantity: "{{ sale.quantity }}",
+                        product: "{% if sale.item.product %}{{ sale.item.product.name|escapejs }}{% else %}{{ sale.item|escapejs }}{% endif %}"
+                    }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            // 1. Broadcast via BroadcastChannel (for other tabs / POS receipt printer)
+            if (window.posPrinter && typeof window.posPrinter.broadcastPrintCustom === 'function') {
+                window.posPrinter.broadcastPrintCustom({
+                    title: 'POS Sales',
+                    subtitle: '{{ date }}',
+                    table: {
+                        columns: [
+                            { width: 4, marginRight: 1, align: 'right' },
+                            { width: 35, align: 'left' }
+                        ],
+                        rows: items.map(function(item) {
+                            return [item.quantity, item.product];
+                        })
+                    },
+                    cut: true
+                });
+            } else if (typeof BroadcastChannel !== 'undefined') {
+                var channel = new BroadcastChannel('pos_print_channel');
+                channel.postMessage({
+                    type: 'PRINT_CUSTOM',
+                    payload: {
+                        title: 'POS Sales',
+                        subtitle: '{{ date }}',
+                        table: {
+                            columns: [
+                                { width: 4, marginRight: 1, align: 'right' },
+                                { width: 35, align: 'left' }
+                            ],
+                            rows: items.map(function(item) {
+                                return [item.quantity, item.product];
+                            })
+                        },
+                        cut: true
+                    }
+                });
+                channel.close();
+            }
+
+            // 2. Dispatch rPrint locally if ReceiptPrinterEncoder & listener is in same document
+            if (typeof ReceiptPrinterEncoder !== 'undefined') {
+                var encoder = new ReceiptPrinterEncoder();
+                var qtyWidth = Math.max(4, Math.round(encoder.columns * 0.15));
+                var nameWidth = encoder.columns - qtyWidth - 1;
+
+                encoder
+                    .align('center').size(2, 2).line('POS Sales').size(1, 1)
+                    .line('{{ date }}')
+                    .align('left')
+                    .rule();
+
+                encoder.table(
+                    [
+                        { width: qtyWidth, marginRight: 1, align: 'right' },
+                        { width: nameWidth, align: 'left' }
+                    ],
+                    items.map(function(item) {
+                        return [item.quantity, item.product];
+                    })
+                );
+                encoder.rule();
+                document.dispatchEvent(new CustomEvent("rPrint", { detail: { encoder: encoder, cut: true } }));
+            }
+        }
+    </script>
     <h1>POS Sales for {{ date }}</h1>
 
     <div>
@@ -15,6 +96,7 @@
     </div>
     <br>
     {% if sales %}
+        <button class="btn btn-secondary mb-2" onclick="print_daily_sales()">Print Daily Sales</button>
         {% include 'partner/snippets/daily_sales_table.html' with sales=sales %}
     {% else %}
         <p>No POS sales found for this day.</p>

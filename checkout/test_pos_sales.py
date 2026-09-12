@@ -58,6 +58,8 @@ class POSSalesDayTest(TestCase):
         self.assertContains(response, "Test Product")
         self.assertContains(response, wrap_in_td("2"))  # Quantity sold
         self.assertContains(response, wrap_in_td("50"))  # Inventory
+        self.assertContains(response, "Print Daily Sales")
+        self.assertContains(response, "print_daily_sales()")
 
     def test_in_store_sales_for_day_filter(self):
         # Create a sale for yesterday
