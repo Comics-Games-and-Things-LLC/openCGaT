@@ -14,7 +14,14 @@ const primary = {
 };
 
 module.exports = {
-    content: ["../**/*.{html,tsx}"],
+    content: [
+        "../templates/**/*.html",
+        "../**/templates/**/*.html",
+        "../ts_src/**/*.{js,jsx,ts,tsx}",
+        "!../node_modules/**",
+        "!../.venv/**",
+        "!../venv/**",
+    ],
     theme: {
         // screens: {
         //   tw: "0px",

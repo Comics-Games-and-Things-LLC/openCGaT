@@ -5,6 +5,12 @@ const output =
 
 console.log(output);
 
+mix.webpackConfig({
+    watchOptions: {
+        ignored: ['**/node_modules/**', '**/.git/**', '**/.venv/**'],
+    },
+});
+
 mix.setPublicPath(output);
 mix.postCss("src/stylesheets/default.css", "default.css", [
     require("postcss-import"),
