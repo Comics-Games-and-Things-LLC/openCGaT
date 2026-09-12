@@ -4,6 +4,12 @@ import ReceiptPrinterEncoder from '@point-of-sale/receipt-printer-encoder';
 import WebUSBReceiptPrinter from '@point-of-sale/webusb-receipt-printer';
 import WebSerialReceiptPrinter from './WebSerialReceiptPrinter/WebSerialReceiptPrinter';
 import WebBluetoothReceiptPrinter from '@point-of-sale/webbluetooth-receipt-printer';
+import {
+    POS_PRINT_CHANNEL_NAME,
+    encodeCartReceipt,
+    encodeCustomPayload,
+    encodeCommands
+} from "../printerBroadcast";
 
 interface IConnectResult {
     productId?: string;
@@ -113,8 +119,6 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
             console.log(`Attempting to reconnect to ${JSON.stringify(reconnect)}`)
             tempPrinter.reconnect(reconnect)
         }
-        document.removeEventListener("rPrint", rPrint);
-        document.addEventListener("rPrint", rPrint);
     };
 
     const disconnect = () => {
@@ -134,12 +138,14 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
             console.log("Was not passed an encoder")
             return
         }
-        encoder
-            .newline()
-            .newline()
-            .newline()
-            .newline()
-            .cut()
+        if (event.detail?.cut !== false) {
+            encoder
+                .newline()
+                .newline()
+                .newline()
+                .newline()
+                .cut()
+        }
         if (!receiptPrinterRef.current) {
             console.log("Printer object not initialized")
             return
@@ -147,6 +153,87 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
             receiptPrinterRef.current.print(encoder.encode())
         }
     }, [])
+
+    const handleBroadcastMessage = useCallback((data: any) => {
+        if (!data) return;
+        console.log("Received broadcast message for printer:", data);
+
+        const type = data.type || (data.cart ? 'PRINT_CART' : (data.commands ? 'PRINT_COMMANDS' : (data.lines || data.title ? 'PRINT_CUSTOM' : 'UNKNOWN')));
+        const payload = data.payload !== undefined ? data.payload : data;
+
+        if (type === 'PRINT_RAW') {
+            const rawBytes = payload.data || payload;
+            const uint8Array = rawBytes instanceof Uint8Array ? rawBytes : new Uint8Array(rawBytes);
+            if (!receiptPrinterRef.current) {
+                console.log("Printer object not initialized for raw print");
+                return;
+            }
+            receiptPrinterRef.current.print(uint8Array);
+            return;
+        }
+
+        let encoder: any = null;
+        let shouldCut = true;
+
+        if (type === 'PRINT_CART') {
+            const cart = payload.cart || payload;
+            encoder = encodeCartReceipt(cart);
+        } else if (type === 'PRINT_CUSTOM' || type === 'PRINT_FORMATTED' || type === 'PRINT_TEXT') {
+            encoder = encodeCustomPayload(payload);
+            if (payload.cut !== undefined) {
+                shouldCut = payload.cut;
+            }
+        } else if (type === 'PRINT_COMMANDS') {
+            const commands = payload.commands || payload;
+            encoder = encodeCommands(commands);
+            if (payload.cut !== undefined) {
+                shouldCut = payload.cut;
+            }
+        } else if (payload.encoder) {
+            encoder = payload.encoder;
+            if (payload.cut !== undefined) {
+                shouldCut = payload.cut;
+            }
+        } else if (typeof data === 'string') {
+            encoder = encodeCustomPayload({ lines: [data] });
+        }
+
+        if (encoder) {
+            if (shouldCut) {
+                encoder
+                    .newline()
+                    .newline()
+                    .newline()
+                    .newline()
+                    .cut();
+            }
+            if (!receiptPrinterRef.current) {
+                console.log("Printer object not initialized");
+                return;
+            } else {
+                receiptPrinterRef.current.print(encoder.encode());
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        document.addEventListener("rPrint", rPrint);
+
+        let channel: BroadcastChannel | null = null;
+        if (typeof BroadcastChannel !== 'undefined') {
+            channel = new BroadcastChannel(POS_PRINT_CHANNEL_NAME);
+            channel.onmessage = (event: MessageEvent) => {
+                handleBroadcastMessage(event.data);
+            };
+        }
+
+        return () => {
+            document.removeEventListener("rPrint", rPrint);
+            if (channel) {
+                channel.close();
+            }
+        };
+    }, [rPrint, handleBroadcastMessage]);
 
     const testPrint = () => {
         let encoder = new ReceiptPrinterEncoder();

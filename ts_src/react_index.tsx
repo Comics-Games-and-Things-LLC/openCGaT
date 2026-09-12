@@ -14,6 +14,7 @@ import CheckoutUI from "./checkout/CheckoutUI";
 import {loadDownloads} from "./digital_files/download";
 import {configUploadButtons} from "./digital_files/upload";
 import {configureImageUploadButtons} from "./images/ImageUploader";
+import * as printerBroadcast from "./cart/printerBroadcast";
 
 function wrapWithProviders(components: {
     [componentName: string]: React.FunctionComponent;
@@ -51,6 +52,10 @@ Object.assign(window, {
 
     // components using redux
     ...wrapWithProviders(componentsUsingRedux),
+
+    // Printer BroadcastChannel helpers
+    posPrinter: printerBroadcast,
+    ...printerBroadcast,
 });
 
 document.addEventListener("DOMContentLoaded", function () {
