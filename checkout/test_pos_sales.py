@@ -10,7 +10,7 @@ from djmoney.money import Money
 
 from checkout.models import Cart, CheckoutLine
 from partner.models import Partner
-from shop.models import Product, InventoryItem
+from shop.models import Product, InventoryItem, Category
 
 
 class POSSalesDayTest(TestCase):
@@ -90,6 +90,60 @@ class POSSalesDayTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, wrap_in_td("5"))
         self.assertNotContains(response, wrap_in_td("2"))
+
+    def test_in_store_sales_sorted_by_top_level_categories(self):
+        # Setup category hierarchy:
+        # Miniatures (top-level) -> Warhammer (sub)
+        # Board Games (top-level) -> Strategy (sub)
+        cat_miniatures = Category.objects.create(name="Miniatures")
+        cat_warhammer = Category.objects.create(name="Warhammer", parent=cat_miniatures)
+        cat_boardgames = Category.objects.create(name="Board Games")
+        cat_strategy = Category.objects.create(name="Strategy", parent=cat_boardgames)
+
+        prod_mini_sub = Product.objects.create(name="Space Marine Box")
+        prod_mini_sub.categories.add(cat_warhammer)
+        item_mini_sub = InventoryItem.objects.create(
+            product=prod_mini_sub, partner=self.partner,
+            price=Money(30, "USD"), default_price=Money(30, "USD"), current_inventory=10
+        )
+
+        prod_board_sub = Product.objects.create(name="Catan Expansion")
+        prod_board_sub.categories.add(cat_strategy)
+        item_board_sub = InventoryItem.objects.create(
+            product=prod_board_sub, partner=self.partner,
+            price=Money(40, "USD"), default_price=Money(40, "USD"), current_inventory=5
+        )
+
+        prod_board_root = Product.objects.create(name="Base Catan")
+        prod_board_root.categories.add(cat_boardgames)
+        item_board_root = InventoryItem.objects.create(
+            product=prod_board_root, partner=self.partner,
+            price=Money(50, "USD"), default_price=Money(50, "USD"), current_inventory=8
+        )
+
+        # Add lines to today's cart
+        CheckoutLine.objects.create(cart=self.cart, item=item_mini_sub, quantity=1)
+        CheckoutLine.objects.create(cart=self.cart, item=item_board_sub, quantity=1)
+        CheckoutLine.objects.create(cart=self.cart, item=item_board_root, quantity=1)
+
+        url = reverse('in_store_sales_for_day', kwargs={'partner_slug': self.partner.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        sales = response.context['sales']
+        product_names = [s['item'].product.name for s in sales]
+
+        # Product without category ("Test Product") has top-level category ""
+        # "Board Games" products should come before "Miniatures" products
+        # Verify relative ordering
+        idx_uncategorized = product_names.index("Test Product")
+        idx_catan_exp = product_names.index("Catan Expansion")
+        idx_catan_base = product_names.index("Base Catan")
+        idx_space_marine = product_names.index("Space Marine Box")
+
+        self.assertLess(idx_uncategorized, idx_catan_exp)
+        self.assertLess(idx_catan_exp, idx_space_marine)
+        self.assertLess(idx_catan_base, idx_space_marine)
 
 
 def wrap_in_td(text):

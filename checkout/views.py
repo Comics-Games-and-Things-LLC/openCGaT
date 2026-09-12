@@ -1144,6 +1144,29 @@ def tasks(request, partner_slug):
     return TemplateResponse(request, "partner/tasks.html", context)
 
 
+def get_top_level_category_name(item, category_root_cache=None):
+    if not item or not item.product:
+        return ""
+    categories = item.product.categories.all()
+    if not categories:
+        return ""
+    root_names = []
+    for c in categories:
+        if not c:
+            continue
+        if category_root_cache is not None:
+            if c.id not in category_root_cache:
+                category_root_cache[c.id] = c.get_root()
+            root = category_root_cache[c.id]
+        else:
+            root = c.get_root()
+        if root and root.name:
+            root_names.append(root.name)
+    if not root_names:
+        return ""
+    return sorted(root_names)[0]
+
+
 def in_store_sales_for_day(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
     date_str = request.GET.get('date')
@@ -1177,8 +1200,9 @@ def in_store_sales_for_day(request, partner_slug):
 
     # Prefetch items and products
     item_ids = [s['item'] for s in item_sales]
-    items_dict = {item.id: item for item in Item.objects.filter(id__in=item_ids).select_related('product')}
+    items_dict = {item.id: item for item in Item.objects.filter(id__in=item_ids).select_related('product').prefetch_related('product__categories')}
 
+    category_root_cache = {}
     results = []
     sold_out = []
     for s in item_sales:
@@ -1194,6 +1218,10 @@ def in_store_sales_for_day(request, partner_slug):
                 results.append(data)
             else:
                 sold_out.append(data)
+
+    results.sort(key=lambda s: get_top_level_category_name(s['item'], category_root_cache))
+    sold_out.sort(key=lambda s: get_top_level_category_name(s['item'], category_root_cache))
+
     context = {
         'partner': partner,
         'date': date,
