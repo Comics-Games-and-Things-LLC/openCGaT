@@ -253,7 +253,7 @@ def manage_product_list(request, partner_slug):
         displayed_products = displayed_products.filter(games=game)
     if faction:
         displayed_products = displayed_products.filter(factions=faction)
-    if distributor:
+    if distributor and not in_stock_at_distributor:
         displayed_products = displayed_products.filter(publisher__available_through_distributors=distributor)
 
     if drafts_only:

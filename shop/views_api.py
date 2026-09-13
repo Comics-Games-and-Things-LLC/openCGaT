@@ -85,7 +85,7 @@ def item_list_filter(managing_partner=None,
         displayed_items = displayed_items.filter(product__games=game)
     if faction:
         displayed_items = displayed_items.filter(product__factions=faction)
-    if distributor:
+    if distributor and not in_stock_at_distributor:
         displayed_items = displayed_items.filter(product__publisher__available_through_distributors=distributor)
 
     if is_draft is not None:
