@@ -205,14 +205,20 @@ class DistItem(models.Model):
             self.manufacturer = Manufacturer.objects.filter(abbreviation=mfc_code).first()
 
         # Find a product by SKU
-        products = Product.objects.filter(Q(publisher_sku=sku) | Q(publisher_short_sku=sku))
+        products = Product.objects.none()
+        if sku:
+            products = Product.objects.filter(Q(publisher_sku=sku) | Q(publisher_short_sku=sku))
 
-        # Filter by manufacturer
-        if self.manufacturer and self.manufacturer.publisher:
-            products = products.filter(publisher=self.manufacturer.publisher)
+            # Filter by manufacturer
+            if self.manufacturer and self.manufacturer.publisher:
+                products = products.filter(publisher=self.manufacturer.publisher)
 
         if products.exists():
             self.product = products.order_by("-release_date").first()
+        elif self.dist_barcode:
+            barcode_products = Product.objects.filter(barcode=self.dist_barcode)
+            if barcode_products.exists():
+                self.product = barcode_products.order_by("-release_date").first()
 
         self.product_last_refreshed = timezone.now()
         if save: # Do not set this locally, since we should not call this in set_product_from_sku
@@ -582,7 +588,7 @@ class DistributorInventoryFile(models.Model):
     def set_availability(self, item, warehouse, y_or_n, key="y"):
         availability, created = ItemWarehouseAvailability.objects.get_or_create(dist_item=item,
                                                                                 warehouse=warehouse)
-        if y_or_n == key:  # Item available in east warehouse
+        if y_or_n is not None and str(y_or_n).strip().lower() == str(key).strip().lower():  # Item available in warehouse
             availability.in_stock = True
         else:
             availability.in_stock = False

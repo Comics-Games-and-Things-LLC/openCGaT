@@ -58,3 +58,14 @@ class Command(BaseCommand):
                     call_command('update_hobbytyme_inventory')
                 except Exception as e:
                     print(f"Error updating Hobbytyme inventory: {e}")
+
+        # Retrieve ACD inventory once a day
+        acd = Distributor.objects.filter(dist_name="ACD").first()
+        if acd:
+            last_inventory = DistributorInventoryFile.objects.filter(distributor=acd).order_by(
+                '-update_date').first()
+            if not last_inventory or last_inventory.update_date < timezone.now() - timedelta(days=1):
+                try:
+                    call_command('update_acd_inventory')
+                except Exception as e:
+                    print(f"Error updating ACD inventory: {e}")

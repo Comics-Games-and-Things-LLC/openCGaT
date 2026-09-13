@@ -278,8 +278,10 @@ def get_hobbytyme_session(auth):
 
     try:
         # Step 1: GET the base page to establish session cookies and get refresh key via redirect
+        print(f"Connecting to Hobbytyme login page for {auth.partner} as {username}...")
         response = session.get(base_url, headers=headers)
         if response.status_code != 200:
+            print(f"Failed to load Hobbytyme login page (status code {response.status_code})")
             return None
 
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -298,6 +300,7 @@ def get_hobbytyme_session(auth):
                 refresh = refresh_match.group(1)
 
         if not refresh:
+            print("Failed to find refresh token on Hobbytyme login page")
             return None
 
         # Update headers with Referer for POST
@@ -313,15 +316,19 @@ def get_hobbytyme_session(auth):
         }
 
         # Step 2: POST credentials to authenticate
+        print(f"Submitting credentials for {username}...")
         session.post(base_url, data=post_data, headers=headers)
 
         # Check if we are authenticated
         backorders_url = "https://hobbytyme.com/dealers/index.cfm?action=myAccount.backorders"
         response = session.get(backorders_url, headers=headers)
         if response.status_code == 200 and "loginPassword" not in response.text:
+            print(f"Successfully authenticated with Hobbytyme for {auth.partner}.")
             return session
-    except Exception:
-        pass
+        else:
+            print(f"Failed to authenticate with Hobbytyme for {auth.partner}.")
+    except Exception as e:
+        print(f"Error authenticating with Hobbytyme for {auth.partner}: {e}")
     return None
 
 
@@ -432,6 +439,7 @@ def update_inventory(auth):
     password = auth.password
     distributor = auth.distributor
 
+    print(f"Starting Hobbytyme inventory update for {auth.partner}...")
     session = get_hobbytyme_session(auth)
     if not session:
         print(f"Failed to login to Hobbytyme for {auth.partner}")
@@ -449,6 +457,7 @@ def update_inventory(auth):
     search_id = None
     try:
         search_page_url = "https://hobbytyme.com/dealers/index.cfm?action=products.search"
+        print("Retrieving searchID for full item catalog...")
         response = session.get(search_page_url, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
         search_id_input = soup.find('input', {'name': 'searchID'})
@@ -491,6 +500,7 @@ def update_inventory(auth):
                         if value and not existing.get(key):
                             existing[key] = value
 
+    print(f"Scraped {len(collected_data)} items from Hobbytyme. Saving to database...")
     for item_number, data in collected_data.items():
         quantity = None
         if data['quantity']:
@@ -601,4 +611,5 @@ def update_inventory(auth):
 
     inventory_file.line_count = inventory_file.inventory_lines.count()
     inventory_file.save()
+    print(f"Finished Hobbytyme inventory update. Processed and saved {inventory_file.line_count} items into {inventory_file}.")
     return inventory_file
