@@ -7,6 +7,10 @@ from django.test import TestCase
 from django.utils import timezone
 from djmoney.money import Money
 
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+
+from partner.models import Partner
 from intake.distributors import acd
 from intake.management.commands.RunIntakeTasks import Command as RunIntakeTasksCommand
 from intake.models import (
@@ -137,3 +141,35 @@ class ACDInventoryTestCase(TestCase):
         RunIntakeTasksCommand.recurring_logic()
         calls = [c[0][0] for c in mock_call_command.call_args_list]
         self.assertNotIn("update_acd_inventory", calls)
+
+
+class IntakeDistItemsTestCase(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username="admin", password="password")
+        self.partner = Partner.objects.create(name="Test Partner", slug="test-partner")
+        self.partner.administrators.add(self.user)
+        self.distributor = Distributor.objects.create(dist_name="ACD")
+        self.client.force_login(self.user)
+
+    def test_intake_view_loads_dist_records_by_product(self):
+        product = Product.objects.create(name="Awesome Board Game", barcode="123456789012")
+        dist_item = DistItem.objects.create(
+            distributor=self.distributor,
+            dist_number="ABG-001",
+            dist_name="Awesome Board Game (Dist)",
+            msrp=Money(Decimal("49.99"), "USD"),
+            map=Money(Decimal("39.99"), "USD"),
+            product=product,
+            dist_barcode="different-or-none"
+        )
+
+        response = self.client.get(
+            reverse("intake_item", kwargs={"partner_slug": self.partner.slug, "barcode": "123456789012"})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("dist_items", response.context)
+        self.assertIn(dist_item, response.context["dist_items"])
+        self.assertContains(response, "Awesome Board Game (Dist)")
+        self.assertContains(response, "Distributor Records:")
+        self.assertContains(response, "$49.99")

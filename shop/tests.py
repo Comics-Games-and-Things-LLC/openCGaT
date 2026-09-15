@@ -1,7 +1,9 @@
 import datetime
 
+from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.test import TestCase
+from django.urls import reverse
 from djmoney.money import Money
 
 from checkout.models import Cart
@@ -208,3 +210,36 @@ class FilterDistributorStockTest(TestCase):
         )
         self.assertEqual(items_unknown.count(), 1)
         self.assertEqual(items_unknown.first().product, self.product_in_stock)
+
+
+class ProductDistItemsTemplateTestCase(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username="admin", password="password")
+        self.partner = Partner.objects.create(name="Test Partner", slug="test-partner")
+        self.partner.administrators.add(self.user)
+        self.distributor = Distributor.objects.create(dist_name="ACD")
+        self.client.force_login(self.user)
+
+    def test_manage_product_renders_dist_item_info_template(self):
+        product = Product.objects.create(name="Awesome Board Game", slug="awesome-board-game", barcode="123456789012")
+        dist_item = DistItem.objects.create(
+            distributor=self.distributor,
+            dist_number="ABG-001",
+            dist_name="Awesome Board Game (Dist)",
+            msrp=Money(49.99, "USD"),
+            map=Money(39.99, "USD"),
+            product=product,
+            in_stock=True,
+        )
+
+        response = self.client.get(
+            reverse("manage_product", kwargs={"partner_slug": self.partner.slug, "product_slug": product.slug})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("dist_items", response.context)
+        self.assertIn(dist_item, response.context["dist_items"])
+        self.assertContains(response, "Distributor Records:")
+        self.assertContains(response, "Awesome Board Game (Dist)")
+        self.assertContains(response, "In Stock: Yes")
+        self.assertContains(response, "$49.99")

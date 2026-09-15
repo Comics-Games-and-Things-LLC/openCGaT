@@ -73,7 +73,6 @@ def intake_item_view(request, barcode, partner_slug):
     if barcode:
         count = 0
 
-        dist_items = DistItem.objects.filter(dist_barcode=barcode)
         try:
             local_product = Product.objects.get(barcode=barcode)
             local_item = InventoryItem.objects.filter(partner=partner, product=local_product).first()
@@ -81,6 +80,11 @@ def intake_item_view(request, barcode, partner_slug):
             pass
         except InventoryItem.DoesNotExist:
             pass
+
+        if local_product:
+            dist_items = DistItem.objects.filter(product=local_product)
+        else: # If we have no product, check to see if any exist via barcode.
+            dist_items = DistItem.objects.filter(dist_barcode=barcode)
 
         if local_item:
             reason = "Intake (no purchase order)"

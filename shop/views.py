@@ -374,7 +374,7 @@ def product_details(request, product_slug, partner_slug=None):
             raise PermissionDenied
 
     if manage:
-        context["dist_records"] = DistItem.objects.filter(product=product)
+        context["dist_items"] = DistItem.objects.filter(product=product)
 
     if download_item:
         purchased = download_item.user_already_owns(request.user)
