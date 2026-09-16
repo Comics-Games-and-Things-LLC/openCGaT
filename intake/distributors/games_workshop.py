@@ -5,7 +5,6 @@ from decimal import ROUND_UP, Decimal
 from typing import Any
 
 import pandas
-import pypdf_table_extraction
 from django.db.models import Sum
 from django.utils.text import slugify
 from djmoney.money import Money
@@ -611,6 +610,7 @@ def get_dist_object():
 
 
 def read_pdf_invoice(invoice_source):
+    import pypdf_table_extraction
     from intake.models import PoInvoiceFile
     if isinstance(invoice_source, PoInvoiceFile):
         pdf_file = invoice_source.file

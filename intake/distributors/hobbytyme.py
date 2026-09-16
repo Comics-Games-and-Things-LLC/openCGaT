@@ -2,7 +2,6 @@ import re
 import datetime
 from decimal import Decimal
 
-import pypdf_table_extraction
 import requests
 from bs4 import BeautifulSoup
 from django.utils import timezone
@@ -57,6 +56,7 @@ def record_issue(line, message, lines_with_issues):
 
 
 def get_invoice_lines(pdf_file, po):
+    import pypdf_table_extraction
     tables = pypdf_table_extraction.read_pdf(pdf_file,
                                              flavor='stream',
                                              pages="1-end"
