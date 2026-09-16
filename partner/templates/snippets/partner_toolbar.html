@@ -110,6 +110,11 @@
                             Inventory report
                         </a>
                     </nav>
+                    <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'print_queue_list' partner_slug=partner.slug %}">
+                            Print Queue
+                        </a>
+                    </nav>
                 {% endif %}
                 <nav class="nav-item">
                     <a class="nav-link"

@@ -33,5 +33,9 @@
   python manage.py runserver
   ```
 
-## Partner Toolbar
-New management pages should be added to the partner toolbar in `partner/templates/snippets/partner_toolbar.html` to ensure they are easily accessible to partners.
+## Partner Management Pages
+Management pages for partners should follow these conventions:
+- **URL Pattern**: Include `partner/<slug:partner_slug>/` in the URL path.
+- **View Logic**: Use `partner.models.get_partner_or_401(request, partner_slug)` to retrieve the partner object and verify the user has access.
+- **Template Context**: Always include `'partner': partner` in the template context. This is required for the partner toolbar and other navigation elements to function correctly.
+- **Toolbar Integration**: Add new management pages to the partner toolbar in `partner/templates/snippets/partner_toolbar.html`.
