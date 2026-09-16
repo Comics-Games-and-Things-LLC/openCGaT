@@ -267,7 +267,7 @@ def import_records():
     inventories_path = './intake/inventories/'
     if trade_range_name is None:
         for file in os.listdir(inventories_path):
-            if "Trade Range" in file or "USA PRICE RISE" in file:
+            if "Trade Range" in file or "USA PRICE RISE" or "US Price Adjustment" in file:
                 trade_range_name = file
     if trade_range_name is None:
         print("Please have a file with 'Trade Range' or 'USA Price Rise' in the inventories folder")
