@@ -339,7 +339,8 @@ def import_records():
                     products = [create_product(barcode, factions, games, name, short_code)]
 
                 for product in products:
-                    update_product_information(factions, games, maprice, msrp, product, publisher, short_code)
+                    update_product_information(factions, games, maprice, msrp, product, publisher, short_code,
+                                               product_code)
 
                     create_valhalla_item(product, f=f, only_adjust_default_price=True,
                                          price_adjustment_csv=price_adjustment_csv)

@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from partner.models import Partner
-from intake.distributors import acd
+from intake.distributors import acd, games_workshop
 from intake.management.commands.RunIntakeTasks import Command as RunIntakeTasksCommand
 from intake.models import (
     Distributor,
@@ -21,7 +21,8 @@ from intake.models import (
     DistributorInventoryLine,
     ItemWarehouseAvailability,
 )
-from shop.models import Product
+from shop.models import Product, Publisher
+from game_info.models import Game
 
 SAMPLE_ACD_HTML = """<!DOCTYPE html>
 <html>
@@ -173,3 +174,39 @@ class IntakeDistItemsTestCase(TestCase):
         self.assertContains(response, "Awesome Board Game (Dist)")
         self.assertContains(response, "Distributor Records:")
         self.assertContains(response, "$49.99")
+
+
+class GamesWorkshopTestCase(TestCase):
+    def test_update_product_information(self):
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        game, _ = Game.objects.get_or_create(name="Warhammer 40k")
+        faction, _ = game.factions.get_or_create(name="Space Marines")
+        product = Product.objects.create(name="Space Marine Intercessors", barcode="5011921123456",
+                                         release_date=datetime.date.today())
+
+        msrp = Money(Decimal("60.00"), "USD")
+        maprice = Money(Decimal("51.00"), "USD")
+        short_code = "48-75"
+        sku = "99120101190"
+
+        games_workshop.update_product_information(
+            factions=[faction],
+            games=[game],
+            maprice=maprice,
+            msrp=msrp,
+            product=product,
+            publisher=publisher,
+            short_code=short_code,
+            sku=sku,
+        )
+
+        product.refresh_from_db()
+        self.assertEqual(product.publisher, publisher)
+        self.assertEqual(product.publisher_short_sku, short_code)
+        self.assertEqual(product.publisher_sku, sku)
+        self.assertEqual(product.msrp, msrp)
+        self.assertEqual(product.map, maprice)
+        self.assertTrue(product.all_retail)
+        self.assertFalse(product.page_is_draft)
+        self.assertIn(game, product.games.all())
+        self.assertIn(faction, product.factions.all())
