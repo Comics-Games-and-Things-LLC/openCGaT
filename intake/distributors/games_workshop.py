@@ -265,19 +265,24 @@ def import_records():
     trade_range_name = None
     # trade_range_name = "US Price Adjustment File - 09.08.xlsx"
     inventories_path = './intake/inventories/'
-    if trade_range_name is None:
+    if trade_range_name is None and os.path.exists(inventories_path):
         for file in os.listdir(inventories_path):
             if "Trade Range" in file or "USA PRICE RISE" or "US Price Adjustment" in file:
                 trade_range_name = file
     if trade_range_name is None:
         print("Please have a file with 'Trade Range' or 'USA Price Rise' in the inventories folder")
-        exit()
+        return
     file = pandas.ExcelFile(os.path.join(inventories_path, trade_range_name))
-    dataframe = pandas.read_excel(file, header=0, sheet_name='USA', converters={'Product': str, 'Barcode': str})
-    # dataframe = pandas.read_excel(file, header=3, sheet_name='USD Pricelist',
-    #                               converters={'Product': str, 'Barcode': str, 'Product Code': str})
+    sheet_name = 'USA' if 'USA' in file.sheet_names else 0
+    if "US Price Adjustment" in file:
+        dataframe = pandas.read_excel(file, header=3, sheet_name='USD Pricelist',
+                                      converters={'Product': str, 'Barcode': str, 'Product Code': str})
+    else:
+        dataframe = pandas.read_excel(file, header=0, sheet_name=sheet_name,
+                                      converters={'Product': str, 'Barcode': str})
 
     records = dataframe.to_dict(orient='records')
+    os.makedirs("reports", exist_ok=True)
     created_products_list = open(f"reports/created_products_{datetime.datetime.now()}.txt", "w")
 
     checked_short_codes = []
@@ -290,52 +295,112 @@ def import_records():
         # print(row)
         try:
             product_code = row.get('Product', row.get("Product Code"))
-            short_code = row.get('Short Code', row.get("SS Code"))
-            checked_short_codes.append(short_code)
-            name = row.get('Description')
-            barcode = row.get('Barcode')
-            msrp = Money(row.get('US/$ Retail', row.get("New US Retail Price")), currency='USD', decimal_places=2)
+            if pandas.isna(product_code) or str(product_code).lower() == 'nan':
+                product_code = None
+            else:
+                product_code = str(product_code).strip()
+
+            short_code = row.get('Short Code', row.get("SS Code", row.get("Short Sales Code", row.get("Short"))))
+            if pandas.isna(short_code) or str(short_code).lower() == 'nan':
+                short_code = None
+            else:
+                short_code = str(short_code).strip()
+
+            if short_code:
+                checked_short_codes.append(short_code)
+
+            name = row.get('Description', row.get('Product Name', row.get('Name')))
+            if pandas.isna(name) or str(name).lower() == 'nan':
+                name = None
+            else:
+                name = str(name).strip()
+
+            barcode = row.get('Barcode', row.get('Complete Barcode'))
+            if pandas.isna(barcode) or str(barcode).lower() == 'nan':
+                barcode = None
+            else:
+                barcode = str(barcode).strip().replace('-', '').split('.')[0]
+                if barcode == '':
+                    barcode = None
+
+            msrp_val = row.get('US/$ Retail', row.get("New US Retail Price", row.get("US/$", row.get("Retail Price",
+                                                                                                     row.get("MSRP",
+                                                                                                             row.get(
+                                                                                                                 "US Retail"))))))
+            if pandas.isna(msrp_val) or msrp_val is None or str(msrp_val).strip() == '':
+                continue
+            msrp = Money(msrp_val, currency='USD', decimal_places=2)
             maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01'), rounding=ROUND_UP),
                             currency='USD', decimal_places=2)
-            dist_price = Money(row.get('US/$ Trade', row.get("New US Trade Price")), currency='USD')
+
+            dist_price_val = row.get('US/$ Trade',
+                                     row.get("New US Trade Price", row.get("US Trade", row.get("Trade Price"))))
+            if dist_price_val is not None and not pandas.isna(dist_price_val) and str(dist_price_val).strip() != '':
+                dist_price = Money(dist_price_val, currency='USD')
+            else:
+                dist_price = None
+
             games, factions, categories = get_product_information_from_product_code(product_code)
             range_code = row.get("Module")
+            if pandas.isna(range_code):
+                range_code = None
             trade_range = None
             if range_code:
                 trade_range, _ = TradeRange.objects.get_or_create(code=range_code, distributor=distributor,
                                                                   defaults={'name': range_code})
 
-            if name and name.strip() != '' and (
-                    (barcode and barcode.strip() != '') or (short_code and short_code.strip() != '')
-            ):
-                DistItem.objects.filter(distributor=distributor, dist_barcode=barcode).delete()
-                item, created = DistItem.objects.get_or_create(
-                    distributor=distributor,
-                    dist_barcode=barcode,
-                    dist_number=short_code,
-                )
-                item.dist_name = name
-                item.dist_barcode = barcode
-                item.dist_price = dist_price
-                item.msrp = msrp
-                item.map = maprice
-                item.trade_range.clear()
-                if range_code:
-                    item.trade_range.add(trade_range)
-                item.quantity_per_pack = row.get("Pack Qty")
-                item.save()
+            if (name and name.strip() != '') or (barcode and barcode.strip() != '') or (
+                    short_code and short_code.strip() != ''):
+                if barcode:
+                    DistItem.objects.filter(distributor=distributor, dist_barcode=barcode).delete()
+                    item, created = DistItem.objects.get_or_create(
+                        distributor=distributor,
+                        dist_barcode=barcode,
+                        defaults={
+                            "dist_number": short_code,
+                        }
+                    )
+                    item.dist_number = short_code
+                    item.dist_barcode = barcode
+                elif short_code:
+                    DistItem.objects.filter(distributor=distributor, dist_number=short_code).delete()
+                    item, created = DistItem.objects.get_or_create(
+                        distributor=distributor,
+                        dist_number=short_code,
+                    )
+                    item.dist_number = short_code
+                    item.dist_barcode = barcode
+                else:
+                    item = None
 
                 created = False
                 products = []
                 if barcode and Product.objects.filter(barcode=barcode).exists():
-                    products = [Product.objects.get(barcode=barcode)]
-                elif Product.objects.filter(publisher_short_sku=short_code).exists():
-                    products = Product.objects.filter(publisher_short_sku=short_code)
+                    products = list(Product.objects.filter(barcode=barcode))
+                elif short_code and Product.objects.filter(publisher_short_sku=short_code).exists():
+                    products = list(Product.objects.filter(publisher_short_sku=short_code))
                 else:
-                    continue  # Don't create products right now
+                    if not name:
+                        continue
+                    # Don't create products right now
+                    continue
                     # Create the new product
                     created = True
                     products = [create_product(barcode, factions, games, name, short_code)]
+
+                if item:
+                    item.dist_name = name or (products[0].name if products else None)
+                    item.dist_barcode = barcode
+                    item.dist_price = dist_price
+                    item.msrp = msrp
+                    item.map = maprice
+                    item.trade_range.clear()
+                    if trade_range:
+                        item.trade_range.add(trade_range)
+                    item.quantity_per_pack = row.get("Pack Qty") if not pandas.isna(row.get("Pack Qty")) else None
+                    if products:
+                        item.product = products[0]
+                    item.save()
 
                 for product in products:
                     update_product_information(factions, games, maprice, msrp, product, publisher, short_code,
@@ -371,8 +436,9 @@ def set_product_dates_and_listed(product, release_date, preorder_date):
 
 
 def update_product_information(factions: list[Any], games: list[Any], maprice: Money, msrp: Money,
-                               product: Product | Any, publisher: Publisher, short_code: Any | None, sku: str | None):
-    if product.publisher_short_sku is None:
+                               product: Product | Any, publisher: Publisher, short_code: Any | None,
+                               sku: str | None = None):
+    if product.publisher_short_sku is None and short_code:
         product.publisher_short_sku = short_code
 
     # GW products in the trade range should always be all retail, reset it if we forgot.
@@ -380,13 +446,14 @@ def update_product_information(factions: list[Any], games: list[Any], maprice: M
     product.publisher = publisher
     product.msrp = msrp
     product.map = maprice
-    product.publisher_sku = sku
+    if sku:
+        product.publisher_sku = sku
     product.page_is_draft = False
 
     # Set these if they are blank but don't override any existing ones.
-    if not product.games.exists():
+    if games and not product.games.exists():
         product.games.set(games)
-    if not product.factions.exists():
+    if factions and not product.factions.exists():
         product.factions.set(factions)
 
     product.save()
@@ -425,6 +492,7 @@ def create_product(barcode: Any | None, factions: list[Any], games: list[Any], n
 
 def hide_products(checked_short_codes, publisher):
     hobby_products, _ = Category.objects.get_or_create(name="Hobby Products")
+    os.makedirs("reports", exist_ok=True)
     hidden_products_log = open(f"reports/hidden_products_{datetime.datetime.now()}.txt", "w")
     for product in Product.objects.filter(publisher=publisher) \
             .exclude(publisher_short_sku__in=checked_short_codes).exclude(page_is_draft=True) \
@@ -438,7 +506,10 @@ def hide_products(checked_short_codes, publisher):
 
 
 def get_product_information_from_product_code(product_code):
-    game_code = product_code[4:6]  # game system
+    if not product_code or not isinstance(product_code, str):
+        return [], [], []
+
+    game_code = product_code[4:6] if len(product_code) >= 6 else None
 
     games = []
     if game_code == "01":
@@ -463,7 +534,7 @@ def get_product_information_from_product_code(product_code):
         games.append(Game.objects.get_or_create(name=("%s" % HORUS_HERESY))[0])
     factions = []
 
-    faction_code = product_code[6:8]  # faction
+    faction_code = product_code[6:8] if len(product_code) >= 8 else None
 
     for game in games:
         faction = None

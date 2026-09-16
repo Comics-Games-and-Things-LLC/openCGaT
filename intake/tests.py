@@ -210,3 +210,81 @@ class GamesWorkshopTestCase(TestCase):
         self.assertFalse(product.page_is_draft)
         self.assertIn(game, product.games.all())
         self.assertIn(faction, product.factions.all())
+
+    def test_update_product_information_with_short_code_alone(self):
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        game, _ = Game.objects.get_or_create(name="Warhammer 40k")
+        faction, _ = game.factions.get_or_create(name="Space Marines")
+        product = Product.objects.create(
+            name="Space Marine Intercessors",
+            barcode="5011921123456",
+            publisher=publisher,
+            publisher_sku="99120101190",
+            publisher_short_sku="48-75",
+            msrp=Money(Decimal("60.00"), "USD"),
+            map=Money(Decimal("51.00"), "USD"),
+            release_date=datetime.date.today(),
+        )
+        product.games.add(game)
+        product.factions.add(faction)
+
+        new_msrp = Money(Decimal("65.00"), "USD")
+        new_map = Money(Decimal("55.25"), "USD")
+
+        games_workshop.update_product_information(
+            factions=[],
+            games=[],
+            maprice=new_map,
+            msrp=new_msrp,
+            product=product,
+            publisher=publisher,
+            short_code="48-75",
+            sku=None,
+        )
+
+        product.refresh_from_db()
+        self.assertEqual(product.msrp, new_msrp)
+        self.assertEqual(product.map, new_map)
+        self.assertEqual(product.publisher_sku, "99120101190")
+        self.assertEqual(product.publisher_short_sku, "48-75")
+        self.assertIn(game, product.games.all())
+        self.assertIn(faction, product.factions.all())
+
+    def test_get_product_information_from_product_code_handles_none_and_invalid(self):
+        self.assertEqual(games_workshop.get_product_information_from_product_code(None), ([], [], []))
+        self.assertEqual(games_workshop.get_product_information_from_product_code(""), ([], [], []))
+        self.assertEqual(games_workshop.get_product_information_from_product_code("123"), ([], [], []))
+
+    @patch("openCGaT.management_util.EmailMessage")
+    def test_import_records_updates_msrp_by_short_code_alone(self, mock_email):
+        import pandas as pd
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        product = Product.objects.create(
+            name="Space Marine Intercessors",
+            barcode="5011921123456",
+            publisher=publisher,
+            publisher_short_sku="48-75",
+            msrp=Money(Decimal("60.00"), "USD"),
+            map=Money(Decimal("51.00"), "USD"),
+            release_date=datetime.date.today(),
+        )
+
+        df = pd.DataFrame([
+            {
+                "Short Code": "48-75",
+                "New US Retail Price": 65.00,
+            }
+        ])
+
+        with patch("pandas.ExcelFile"), patch("pandas.read_excel", return_value=df), patch("os.listdir", return_value=["USA PRICE RISE.xlsx"]), patch("os.path.exists", return_value=True):
+            games_workshop.import_records()
+
+        product.refresh_from_db()
+        self.assertEqual(product.msrp, Money(Decimal("65.00"), "USD"))
+        self.assertEqual(product.map, Money(Decimal("55.25"), "USD"))
+        self.assertFalse(product.page_is_draft)
+
+        distributor = Distributor.objects.get(dist_name="Games Workshop")
+        dist_item = DistItem.objects.get(distributor=distributor, dist_number="48-75")
+        self.assertEqual(dist_item.msrp, Money(Decimal("65.00"), "USD"))
+        self.assertEqual(dist_item.product, product)

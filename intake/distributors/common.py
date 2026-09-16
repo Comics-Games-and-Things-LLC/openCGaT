@@ -1,3 +1,5 @@
+import os
+
 from intake.distributors.utility import log
 from partner.models import Partner
 from shop.models import InventoryItem
@@ -6,11 +8,15 @@ from print_queue.models import PrintQueueItem
 
 def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=False, price_adjustment_csv=None):
     if f is None:
+        os.makedirs("reports", exist_ok=True)
         f = open("reports/valhalla_inventory_price_adjustments.txt", "a")
     if price_adjustment_csv is None:
         price_adjustment_csv = open("reports/valhalla_inventory_price_adjustments.csv", "a")
 
-    partner = Partner.objects.get(name__icontains="Valhalla")
+    try:
+        partner = Partner.objects.get(name__icontains="Valhalla")
+    except Partner.DoesNotExist:
+        return None
 
     if price is None:
         price = product.get_price_from_rule(partner)
