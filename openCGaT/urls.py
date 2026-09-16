@@ -40,6 +40,7 @@ urlpatterns = [
                   path('partner/<slug:partner_slug>/backorders/', include('dist_backorders.urls')),
                   path('partner/<slug:partner_slug>/intake/', include('intake.urls')),
                   path('partner/<slug:partner_slug>/inv_report/', include('inventory_report.urls')),
+                  path('partner/<slug:partner_slug>/print_queue/', include('print_queue.urls')),
                   path('partner/', include('user_list.urls-partner')),
                   # Handle slug in individual urls so we don't have issues
 

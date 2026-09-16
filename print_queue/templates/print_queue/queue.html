@@ -1,0 +1,130 @@
+{% extends 'container.html' %}
+{% load static %}
+
+{% block title %}Print Queue{% endblock %}
+
+{% block content %}
+    <h2>Print Queue</h2>
+    <table class="table" id="print-queue-table">
+        <thead>
+            <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Old Price</th>
+                <th scope="col">New Price</th>
+                <th scope="col">Qty at Adj</th>
+                <th scope="col">Qty at Print</th>
+                <th scope="col">Current Inv</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in queue_items %}
+                <tr id="item-row-{{ item.id }}" data-item-id="{{ item.id }}" data-inventory-item-id="{{ item.inventory_item.id }}">
+                    <td>
+                        {{ item.inventory_item.product.name }}<br>
+                        <small>{{ item.inventory_item.product.barcode }}</small>
+                    </td>
+                    <td>{{ item.old_price }}</td>
+                    <td>{{ item.new_price }}</td>
+                    <td>{{ item.quantity_at_adjustment }}</td>
+                    <td id="qty-at-printing-{{ item.id }}">{{ item.quantity_at_printing|default:"-" }}</td>
+                    <td id="current-inv-{{ item.id }}">{{ item.inventory_item.current_inventory }}</td>
+                    <td>
+                        <button class="btn btn-primary start-printing-btn" onclick="startPrintingFrom({{ forloop.counter0 }})">
+                            Start printing here
+                        </button>
+                        <button class="btn btn-secondary mark-finished-btn" onclick="markFinished({{ item.id }})">
+                            Mark finished
+                        </button>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">No items in the print queue.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        let isPrinting = false;
+
+        async function startPrintingFrom(startIndex) {
+            if (isPrinting) {
+                alert("Already printing!");
+                return;
+            }
+            isPrinting = true;
+            const rows = document.querySelectorAll('#print-queue-table tbody tr[data-item-id]');
+            
+            for (let i = startIndex; i < rows.length; i++) {
+                const row = rows[i];
+                const itemId = row.getAttribute('data-item-id');
+                const inventoryItemId = row.getAttribute('data-inventory-item-id');
+                
+                // Update snapshot and get current inventory
+                let updateUrl = "{% url 'mark_printed' partner_slug=partner.slug item_id=0 %}".replace('0', itemId);
+                const response = await fetch(updateUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById(`qty-at-printing-${itemId}`).innerText = data.quantity_at_printing;
+                    document.getElementById(`current-inv-${itemId}`).innerText = data.current_inventory;
+                    
+                    let printUrl = "{% url 'get_image' partner_slug=partner.slug item_id=0 %}".replace('0', inventoryItemId);
+                    
+                    for (let q = 0; q < data.current_inventory; q++) {
+                        console.log(`Printing label ${q + 1} of ${data.current_inventory} for item ${itemId}`);
+                        PrintImageFromUrl(printUrl);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+            }
+            isPrinting = false;
+        }
+
+        async function markFinished(itemId) {
+            let markUrl = "{% url 'mark_restickered' partner_slug=partner.slug item_id=0 %}".replace('0', itemId);
+            const response = await fetch(markUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                const row = document.getElementById(`item-row-${itemId}`);
+                row.remove();
+            }
+        }
+
+        function ImagetoPrint(source) {
+            return "<html><head><scri" + "pt>function step1(){\n" +
+                "setTimeout('step2()', 10);}\n" +
+                "function step2(){window.print();window.close()}\n" +
+                "</scri" + "pt></head><body onload='step1()'>\n" +
+                "<img src='" + source + "' /></body></html>";
+        }
+
+        function PrintImage(source) {
+            var Pagelink = "about:blank";
+            var pwa = window.open(Pagelink, "_new");
+            pwa.document.open();
+            pwa.document.write(ImagetoPrint(source));
+            pwa.document.close();
+        }
+
+        // Override or ensure PrintImageFromUrl uses the pattern that closes the window
+        function PrintImageFromUrl(target_url) {
+            console.log("attempting print from queue");
+            fetch(target_url)
+                .then(response => response.blob())
+                .then(imageBlob => PrintImage(URL.createObjectURL(imageBlob)));
+        }
+    </script>
+{% endblock %}

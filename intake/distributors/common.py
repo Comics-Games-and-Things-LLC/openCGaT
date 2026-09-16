@@ -1,6 +1,7 @@
 from intake.distributors.utility import log
 from partner.models import Partner
 from shop.models import InventoryItem
+from print_queue.models import PrintQueueItem
 
 
 def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=False, price_adjustment_csv=None):
@@ -21,6 +22,7 @@ def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=
                                                                 'price': price, 'default_price': price
                                                             })
         if price != item.price and item.current_inventory > 0:
+            old_price = item.price
             # If we are only adjusting the default price, and the price change is greater than 1 cent,
             #   only adjust the default price and not the current price.
             if only_adjust_default_price:  # and (item.price.amount - price.amount) > Decimal(0.01):
@@ -31,6 +33,12 @@ def create_valhalla_item(product, price=None, f=None, only_adjust_default_price=
                                                                                     item.product.barcode))
                 item.price = price
             price_adjustment_csv.write(f"{item.product.name},{item.product.barcode},{item.current_inventory}\n")
+            PrintQueueItem.objects.create(
+                inventory_item=item,
+                quantity_at_adjustment=item.current_inventory,
+                old_price=old_price,
+                new_price=price
+            )
 
         if item.current_inventory == 0:  # If there are none in stock adjust the price anyway.
             item.price = price
