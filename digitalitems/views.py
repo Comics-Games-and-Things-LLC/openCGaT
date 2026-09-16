@@ -235,15 +235,15 @@ def upload_file(request, partner_slug, product_slug, di_id, parent_node_id):
             except KeyError:
                 pass
             with transaction.atomic():  # Atomic to ensure we upload to both data sources.
-                start_time = datetime.now()
+                start_time = datetime.datetime.now()
                 print("Uploading to Azure")
                 new_di_file = DIFile.objects.create(partner=partner, azure_file=file, clean_name=clean_name)
-                print("Upload took {}".format(datetime.now() - start_time))
-                start_time = datetime.now()
+                print("Upload took {}".format(datetime.datetime.now() - start_time))
+                start_time = datetime.datetime.now()
                 print("Uploading to b2")
                 new_di_file.b2_file = file
                 new_di_file.save()
-                print("Upload took {}".format(datetime.now() - start_time))
+                print("Upload took {}".format(datetime.datetime.now() - start_time))
 
             parent_node = parent_node.follow_or_create_path(clean_name)
             for sibling in parent_node.get_children():

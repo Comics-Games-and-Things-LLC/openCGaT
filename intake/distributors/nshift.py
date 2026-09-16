@@ -1,4 +1,4 @@
-from datetime import timedelta
+import datetime
 
 import requests
 from django.db import models
@@ -77,7 +77,7 @@ def fetch_detailed_shipment_data(shipment_uuid, timestamp):
 def update_tracking_from_nshift():
     # For any GW purchase order starting with M
     # Only try every 24 hours
-    check_threshold = timezone.now() - timedelta(hours=24)
+    check_threshold = timezone.now() - datetime.timedelta(hours=24)
     gw_pos = PurchaseOrder.objects.filter(
         distributor__dist_name="Games Workshop",
         po_number__startswith="M"

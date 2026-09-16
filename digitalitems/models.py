@@ -1,6 +1,6 @@
 import hashlib
 import os
-from datetime import datetime
+import datetime
 
 from azure.common import AzureMissingResourceHttpError
 from dateutil import tz
@@ -67,7 +67,7 @@ class DigitalItem(Item):
         super().save(*args, **kwargs)
 
     def available_for_download(self):
-        if self.download_date <= datetime.utcnow().astimezone(tz=tz.tzutc()).date():
+        if self.download_date <= datetime.datetime.utcnow().astimezone(tz=tz.tzutc()).date():
             return True
         else:
             return False
@@ -235,7 +235,7 @@ class Downloadable(MPTTModel):
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     folder = models.CharField(max_length=200, null=True, blank=True)
     file = models.OneToOneField(DIFile, on_delete=models.CASCADE, null=True, related_name='downloadable')
-    updated_timestamp = models.DateTimeField(default=datetime.now)
+    updated_timestamp = models.DateTimeField(default=datetime.datetime.now)
 
     class Meta:
         constraints = [
@@ -336,7 +336,7 @@ class UserDownloadableHistory(models.Model):
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="downloadable_history")
     downloadable = models.ForeignKey(Downloadable, on_delete=models.CASCADE, related_name="download_history")
-    timestamp = models.DateTimeField(default=datetime.now)
+    timestamp = models.DateTimeField(default=datetime.datetime.now)
 
     class Meta:
         get_latest_by = "timestamp"

@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, timedelta
+import datetime
 
 from allauth.account.models import EmailAddress
 from django.contrib.admin.views.decorators import staff_member_required
@@ -288,8 +288,8 @@ def financial(request, partner_slug):
     context = {
         'partner': partner,
         'all_time': sum_lines(lines),
-        'month_to_date': sum_lines(lines.filter(cart__date_paid__gte=datetime.today().replace(day=1))),
-        'four_weeks': sum_lines(lines.filter(cart__date_paid__gte=datetime.today() - timedelta(days=28)))
+        'month_to_date': sum_lines(lines.filter(cart__date_paid__gte=datetime.datetime.today().replace(day=1))),
+        'four_weeks': sum_lines(lines.filter(cart__date_paid__gte=datetime.datetime.today() - datetime.timedelta(days=28)))
     }
     return render(request, "partner/partner_financials.html", context)
 
@@ -305,7 +305,7 @@ def export_pt_sales_csv(request, partner_slug):
 
 def export_pt_csv(request, partner_slug, sales_only=False):
     partner = get_partner_or_401(request, partner_slug=partner_slug)
-    output_name = "{} CG&T {}.csv".format(partner.name, datetime.today())
+    output_name = "{} CG&T {}.csv".format(partner.name, datetime.datetime.today())
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(
         content_type='text/csv',

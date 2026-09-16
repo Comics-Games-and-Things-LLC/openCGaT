@@ -2,7 +2,7 @@ import os
 import re
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+import datetime
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from dist_backorders.models import BackorderReport, BackorderReportLine
@@ -77,7 +77,7 @@ class Command(BaseCommand):
                         date_ordered = None
                         if data['orders_due']:
                             try:
-                                date_ordered = datetime.strptime(data['orders_due'], "%m/%d/%Y").date()
+                                date_ordered = datetime.datetime.strptime(data['orders_due'], "%m/%d/%Y").date()
                             except ValueError:
                                 pass
 

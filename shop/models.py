@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta, date
+import datetime
 from decimal import Decimal, ROUND_UP
 
 from django.apps import apps
@@ -55,13 +55,13 @@ class CardCondition(models.Model):
 class ProductQuerySet(PolymorphicQuerySet):
     def filter_preorder_or_secondary_release_date(self, manage=False, date=None):
         if date is None:
-            date = datetime.now()
+            date = datetime.datetime.now()
         return self.remove_drafts(manage).filter(preorder_or_secondary_release_date__isnull=False,
                                                  preorder_or_secondary_release_date__lte=date)
 
     def filter_release_date(self, manage=False, date=None):
         if date is None:
-            date = datetime.now()
+            date = datetime.datetime.now()
         return self.remove_drafts(manage).filter(release_date__isnull=False,
                                                  release_date__lte=date)
 
@@ -218,13 +218,13 @@ class Product(PolymorphicModel):
     @property
     def after_release_date(self, date=None):
         if date is None:
-            date = datetime.now().date()
+            date = datetime.datetime.now().date()
         return self.release_date and self.release_date <= date
 
     @property
     def after_secondary_date(self, date=None):
         if date is None:
-            date = datetime.now().date()
+            date = datetime.datetime.now().date()
         return self.preorder_or_secondary_release_date and self.preorder_or_secondary_release_date <= date
 
     @property
@@ -296,7 +296,7 @@ class Product(PolymorphicModel):
         More generic than is_preorder, including time before the product officially goes up for preorder.
         @return:
         """
-        return self.release_date and datetime.today().date() < self.release_date
+        return self.release_date and datetime.datetime.today().date() < self.release_date
 
     @property
     def is_preorder(self):
@@ -306,10 +306,10 @@ class Product(PolymorphicModel):
         """
         if self.preorder_or_secondary_release_date and self.release_date:
             if self.preorder_or_secondary_release_date <= self.release_date:
-                if self.preorder_or_secondary_release_date <= datetime.today().date():
+                if self.preorder_or_secondary_release_date <= datetime.datetime.today().date():
                     # print("In pre-order window")
                     if self.release_date:
-                        if datetime.today().date() < self.release_date:
+                        if datetime.datetime.today().date() < self.release_date:
                             # print("Not yet released")
                             return True
                         else:
@@ -413,7 +413,7 @@ class Product(PolymorphicModel):
         context["x_open"] = completed_sales.exclude(cart__status=Cart.COMPLETED).aggregate(sum=Sum("quantity"))['sum']
 
         context["x_sold_last_12_months"] = completed_sales.filter(
-            cart__date_submitted__gte=timezone.now() - timedelta(days=365)
+            cart__date_submitted__gte=timezone.now() - datetime.timedelta(days=365)
         ).aggregate(sum=Sum("quantity"))['sum']
         context["x_sold_post_release"] = completed_sales.filter(
             cart__date_submitted__date__gte=self.release_date
@@ -459,10 +459,10 @@ class Product(PolymorphicModel):
         if info['SKU']:
             product.publisher_sku = info['SKU']
         if info["Release Date"]:
-            if isinstance(info["Release Date"], date):
+            if isinstance(info["Release Date"], datetime.date):
                 product.release_date = info["Release Date"]
             else:
-                product.release_date = datetime.strptime(info["Release Date"], "%Y%m%d").date()
+                product.release_date = datetime.datetime.strptime(info["Release Date"], "%Y%m%d").date()
         if info["Picture Source"]:
             image = Image.create_from_external_url(info["Picture Source"])
             product.primary_image = image
@@ -493,13 +493,13 @@ class ItemQuerySet(PolymorphicQuerySet):
 
     def filter_preorder_or_secondary_release_date(self, manage=False, date=None):
         if date is None:
-            date = datetime.now()
+            date = datetime.datetime.now()
         return self.remove_drafts(manage).filter(product__preorder_or_secondary_release_date__isnull=False,
                                                  product__preorder_or_secondary_release_date__lte=date)
 
     def filter_release_date(self, manage=False, date=None):
         if date is None:
-            date = datetime.now()
+            date = datetime.datetime.now()
         return self.remove_drafts(manage).filter(product__release_date__isnull=False,
                                                  product__release_date__lte=date)
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from django.core.management.base import BaseCommand
 
@@ -13,7 +13,7 @@ class Command(BaseCommand):
         f = open("reports/trade range inventory report.txt", "a")
         for tr in TradeRange.objects.all():
             if tr.name != "nan":
-                log(f, "\nTR {} {} as of {}".format(tr.distributor, tr.name, datetime.now()))
+                log(f, "\nTR {} {} as of {}".format(tr.distributor, tr.name, datetime.datetime.now()))
 
                 for di in tr.contains.all():
                     items = InventoryItem.objects.filter(partner=Partner.objects.get(name__icontains="Valhalla"))

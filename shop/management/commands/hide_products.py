@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+import datetime
 
 from django.core.management import BaseCommand
 from django.db.models import Sum
@@ -12,8 +12,8 @@ from shop.models import Product, Category, InventoryItem
 class Command(BaseCommand):
     def handle(self, *args, **options):
         hobby_products, _ = Category.objects.get_or_create(name="Hobby Products")
-        hidden_products_log = open(f"reports/hidden_products_{datetime.now()}.txt", "w")
-        log_csv = open(f"reports/products_to_consider_hiding{datetime.now()}.csv", "w")
+        hidden_products_log = open(f"reports/hidden_products_{datetime.datetime.now()}.txt", "w")
+        log_csv = open(f"reports/products_to_consider_hiding{datetime.datetime.now()}.csv", "w")
         writer = csv.DictWriter(log_csv, ['Publisher', 'Product', 'Barcode', 'Current Inventory'])
         writer.writeheader()
 

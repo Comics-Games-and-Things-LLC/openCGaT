@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from django.core.management.base import BaseCommand
 
@@ -12,7 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         f = open("reports/partner_adjustments.txt", "a")
         for partner in Partner.objects.all().order_by('name'):
-            log(f, "{} had balance of {} at {}".format(partner.name, partner.acct_balance, datetime.now()))
+            log(f, "{} had balance of {} at {}".format(partner.name, partner.acct_balance, datetime.datetime.now()))
             partner.reset_balance()
             log(f, 'Reset balance for {}'.format(partner.name))
         PartnerTransaction.objects.filter(type=PartnerTransaction.PURCHASE).delete()
@@ -21,7 +21,7 @@ class Command(BaseCommand):
         for partner in Partner.objects.all().order_by('name'):
             partner.update_balance()
             partner.refresh_from_db()
-            log(f, "{} has balance of {} at {}".format(partner.name, partner.acct_balance, datetime.now()))
+            log(f, "{} has balance of {} at {}".format(partner.name, partner.acct_balance, datetime.datetime.now()))
         f.write("Adjustment complete")
         f.close()
 

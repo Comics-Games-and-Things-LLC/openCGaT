@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from decimal import Decimal
 
 import pypdf_table_extraction
@@ -173,10 +173,10 @@ def get_invoice_summary(pdf_file):
             [order_number, date] = line.split("Order Number: #")[1].split("Issue Date: ")
             date = date.strip()
             try:
-                info.date = datetime.strptime(date.strip(), "%B %d, %Y")
+                info.date = datetime.datetime.strptime(date.strip(), "%B %d, %Y")
             except ValueError:
                 date = date.replace("Sept", "Sep")
-                info.date = datetime.strptime(date.replace('.', ''), "%b %d, %Y")
+                info.date = datetime.datetime.strptime(date.replace('.', ''), "%b %d, %Y")
             info.invoice_number = order_number.strip()
 
     last_page = reader.pages[-1]

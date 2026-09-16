@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+import datetime
 from decimal import Decimal
 
 import pypdf_table_extraction
@@ -34,7 +34,7 @@ def read_pdf_invoice(invoice_source):
     if not po.amount_charged:
         po.amount_charged = Money(info.final_total, 'USD')
     if not po.date:
-        po.date = datetime.strptime(info.date, '%m/%d/%y')
+        po.date = datetime.datetime.strptime(info.date, '%m/%d/%y')
     if not po.subtotal:
         po.subtotal = Money(info.pre_additional_discount, "USD") - Money(info.shipping_and_handling, "USD") \
                       + Money(info.additional_discount,
@@ -536,21 +536,21 @@ def update_inventory(auth):
         orders_due = None
         if data['orders_due']:
             try:
-                orders_due = datetime.strptime(data['orders_due'], "%m/%d/%Y").date()
+                orders_due = datetime.datetime.strptime(data['orders_due'], "%m/%d/%Y").date()
             except ValueError:
                 pass
 
         announced = None
         if data['date_announced']:
             try:
-                announced = datetime.strptime(data['date_announced'], "%m/%d/%Y").date()
+                announced = datetime.datetime.strptime(data['date_announced'], "%m/%d/%Y").date()
             except ValueError:
                 pass
 
         expected = None
         if data['date_expected']:
             try:
-                expected = datetime.strptime(data['date_expected'], "%m/%d/%Y").date()
+                expected = datetime.datetime.strptime(data['date_expected'], "%m/%d/%Y").date()
             except ValueError:
                 pass
 

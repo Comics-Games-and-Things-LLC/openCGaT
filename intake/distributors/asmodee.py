@@ -1,4 +1,5 @@
 import csv
+import datetime
 import decimal
 import traceback
 
@@ -79,15 +80,15 @@ def compare_maps():
     distributor = Distributor.objects.get_or_create(dist_name=dist_name)[0]
     partner = Partner.objects.get(name__icontains="Valhalla")
 
-    products_csv = open(f"reports/asmodee_check_{datetime.now()}.csv", "w")
+    products_csv = open(f"reports/asmodee_check_{datetime.datetime.now()}.csv", "w")
     writer = csv.DictWriter(products_csv,
                             ['Publisher', 'Product', 'Barcode', 'MSRP', 'MAP',
                              'Our Product', 'Our Product MSRP', 'Our Product MAP', 'Our Price'])
     writer.writeheader()
-    f = open(f"reports/asmodee_check_{datetime.now()}.txt", "w")
+    f = open(f"reports/asmodee_check_{datetime.datetime.now()}.txt", "w")
 
     filename = "./intake/inventories/ausa-mapcatalog-04012026.csv"
-    price_adjustment_csv = open(f"reports/asmodee_check_adjustments_{datetime.now()}.csv", "a")
+    price_adjustment_csv = open(f"reports/asmodee_check_adjustments_{datetime.datetime.now()}.csv", "a")
 
     dataframe = pandas.read_csv(filename, header=0, encoding='latin1')
     records = dataframe.astype('string').fillna("").to_dict(orient='records')

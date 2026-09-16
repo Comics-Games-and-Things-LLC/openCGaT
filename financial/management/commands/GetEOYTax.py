@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from django.core.management.base import BaseCommand
 
@@ -15,7 +15,7 @@ class Command(BaseCommand):
         year = 2023
         f = open("reports/partner_tax_info.txt", "a")
         for partner in Partner.objects.all().order_by('name'):
-            log(f, "{} for {} generated at {}".format(partner.name, year, datetime.now()))
+            log(f, "{} for {} generated at {}".format(partner.name, year, datetime.datetime.now()))
             transactions = partner.partnertransaction_set.filter(timestamp__year=year)
             total_collected = transactions.filter(type=PartnerTransaction.PURCHASE).aggregate(
                 Sum('transaction_subtotal'))['transaction_subtotal__sum']

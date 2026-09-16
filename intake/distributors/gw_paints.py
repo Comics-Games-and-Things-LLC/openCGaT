@@ -1,5 +1,5 @@
 import traceback
-from datetime import date
+import datetime
 
 import requests
 
@@ -65,7 +65,7 @@ def import_records():
             print(paint_name, barcode_single, barcode_6_pack, trade_range.code)
             product.name = product_name
             product.barcode = barcode_single
-            product.release_date = date(year=2022, month=7, day=16)
+            product.release_date = datetime.date(year=2022, month=7, day=16)
 
             product.categories.clear()
             product.categories.add(category)

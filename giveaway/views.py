@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
@@ -11,7 +11,7 @@ from giveaway.models import Giveaway, Entry
 
 
 def giveaways(request):
-    context = {'list': Giveaway.objects.filter(end_time__gte=datetime.now())}
+    context = {'list': Giveaway.objects.filter(end_time__gte=datetime.datetime.now())}
     return TemplateResponse(request, "giveaways/giveaways.html", context=context)
 
 

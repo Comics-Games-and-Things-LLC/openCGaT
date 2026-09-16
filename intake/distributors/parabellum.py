@@ -1,3 +1,4 @@
+import datetime
 import traceback
 from _decimal import Decimal
 
@@ -51,7 +52,7 @@ def import_records():
                                   sheet_name='WHOLESALE Order Form')
     product_name_column = "Product Name -NEW 2000 point Armies (net pricing)"
 
-    log_file = open(f"reports/valhalla_inventory_price_adjustments_conquest_{datetime.today()}.txt", "a")
+    log_file = open(f"reports/valhalla_inventory_price_adjustments_conquest_{datetime.datetime.today()}.txt", "a")
     log(log_file, "\n\nUpdating Para Bellum Prices \n")
 
     # Header is row 10 to skip bundles. Those rows also don't have MSRPS, just Net US.
@@ -119,7 +120,7 @@ def import_records():
                     # product, created = Product.objects.get_or_create(
                     #     barcode=barcode,
                     #     defaults={'all_retail': True,
-                    #               'release_date': datetime.today(),
+                    #               'release_date': datetime.datetime.today(),
                     #               'description': description,
                     #               'name': name}
                     # )

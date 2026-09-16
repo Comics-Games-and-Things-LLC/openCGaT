@@ -1,3 +1,4 @@
+import datetime
 import traceback
 from _decimal import ROUND_UP
 
@@ -36,7 +37,7 @@ def import_records():
 
     file = pandas.ExcelFile('./intake/inventories/Warlord Games USD Order Form March 2026.xlsx')
 
-    log_file = open(f"reports/valhalla_inventory_price_adjustments_warlord_{datetime.today()}.txt", "a")
+    log_file = open(f"reports/valhalla_inventory_price_adjustments_warlord_{datetime.datetime.today()}.txt", "a")
     log(log_file, "Updating Warlord Prices \n")
 
     for sheet_name in ["Historical Range","WWII Range", "K47 Sci-Fi & Fantasy Range"]:
@@ -97,7 +98,7 @@ def import_from_tab(file, sheet_name, log_file, distributor, publisher):
                     product, created = Product.objects.get_or_create(
                         barcode=barcode,
                         defaults={'all_retail': True,
-                                  'release_date': datetime.today(),
+                                  'release_date': datetime.datetime.today(),
                                   'name': name}
                     )
                 product.name = name

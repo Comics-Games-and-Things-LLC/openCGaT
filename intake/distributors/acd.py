@@ -2,7 +2,7 @@ import decimal
 import json
 import re
 import traceback
-from datetime import datetime
+import datetime
 from decimal import Decimal, ROUND_DOWN
 
 import pandas
@@ -59,7 +59,7 @@ def update_inventory(auth=None):
         m = re.search(r"(\d{1,2}/\d{1,2}/\d{4}\s+\d{1,2}:\d{2}:\d{2}\s+[AP]M)", text)
         if m:
             try:
-                parsed_dt = datetime.strptime(m.group(1), "%m/%d/%Y %I:%M:%S %p")
+                parsed_dt = datetime.datetime.strptime(m.group(1), "%m/%d/%Y %I:%M:%S %p")
                 if timezone.is_naive(parsed_dt):
                     update_date = timezone.make_aware(parsed_dt)
                 else:
@@ -129,9 +129,9 @@ def update_inventory(auth=None):
                     clean_date = f"{parts[0]}/01/{parts[2]}"
                 if len(parts) == 3:
                     if len(parts[2]) == 4:
-                        expected = datetime.strptime(clean_date, "%m/%d/%Y").date()
+                        expected = datetime.datetime.strptime(clean_date, "%m/%d/%Y").date()
                     elif len(parts[2]) == 2:
-                        expected = datetime.strptime(clean_date, "%m/%d/%y").date()
+                        expected = datetime.datetime.strptime(clean_date, "%m/%d/%y").date()
             except (ValueError, TypeError):
                 pass
 
@@ -206,7 +206,7 @@ def import_records(dist_inv_file):
         distributor = Distributor.objects.get_or_create(dist_name=dist_name)[0]
         warehouse = DistributorWarehouse.objects.get(distributor=distributor, warehouse_filename=filename)
         dist_inv_file.warehouse = warehouse
-        dist_inv_file.update_date = datetime.strptime(timestamp, "%m/%d/%Y %I:%M:%S %p")
+        dist_inv_file.update_date = datetime.datetime.strptime(timestamp, "%m/%d/%Y %I:%M:%S %p")
         dist_inv_file.save()
         print(dist_inv_file)
 

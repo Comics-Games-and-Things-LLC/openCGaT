@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+import datetime
 from decimal import Decimal
 
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -238,7 +238,7 @@ class PurchaseOrder(models.Model):
     partner = models.ForeignKey(Partner, on_delete=models.CASCADE)
     distributor = models.ForeignKey(Distributor, on_delete=models.CASCADE)
     date = models.DateField(null=True, blank=True, help_text="Date Invoiced")
-    date_received = models.DateField(null=True, blank=True, default=datetime.today)
+    date_received = models.DateField(null=True, blank=True, default=datetime.datetime.today)
     po_number = models.CharField(max_length=40, primary_key=True)
     archived = models.BooleanField(default=False)
     amount_charged = MoneyField(max_digits=8, decimal_places=2, default_currency='USD', null=True, blank=True,
@@ -479,7 +479,7 @@ class PoInvoiceFile(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.update_date:
-            self.update_date = datetime.now()
+            self.update_date = datetime.datetime.now()
         if self.file:
             self.filename = os.path.basename(self.file.name)
         return super(PoInvoiceFile, self).save(*args, **kwargs)
@@ -574,7 +574,7 @@ class DistributorInventoryFile(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.update_date:
-            self.update_date = datetime.now()
+            self.update_date = datetime.datetime.now()
         if self.file:
             self.filename = os.path.basename(self.file.name)
         return super(DistributorInventoryFile, self).save(*args, **kwargs)

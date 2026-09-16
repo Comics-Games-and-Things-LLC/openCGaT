@@ -1,3 +1,4 @@
+import datetime
 import time
 import traceback
 import urllib
@@ -81,7 +82,7 @@ def import_records():
                     continue  # Skip this product if it already exists.
                 product = Product.objects.create(
                     all_retail=True,
-                    release_date=datetime.today(),
+                    release_date=datetime.datetime.today(),
                     barcode=barcode,
                     name=formatted_name,
                     publisher=publisher,

@@ -39,3 +39,11 @@ Management pages for partners should follow these conventions:
 - **View Logic**: Use `partner.models.get_partner_or_401(request, partner_slug)` to retrieve the partner object and verify the user has access.
 - **Template Context**: Always include `'partner': partner` in the template context. This is required for the partner toolbar and other navigation elements to function correctly.
 - **Toolbar Integration**: Add new management pages to the partner toolbar in `partner/templates/snippets/partner_toolbar.html`.
+  
+## Preferred Coding Patterns
+
+### Datetime Handling
+Across the project, use the module-prefix pattern for `datetime` and its components:
+- **Imports**: Always use `import datetime` instead of `from datetime import ...`.
+- **Usage**: Use the full module path for calls, e.g., `datetime.datetime.now()`, `datetime.date.today()`, `datetime.timedelta(days=1)`, and `datetime.datetime.strptime()`.
+- **Note**: This pattern ensures consistency and avoids name collisions with variables named `date` or `time`.

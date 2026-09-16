@@ -426,7 +426,7 @@ def create_product(barcode: Any | None, factions: list[Any], games: list[Any], n
 
 def hide_products(checked_short_codes, publisher):
     hobby_products, _ = Category.objects.get_or_create(name="Hobby Products")
-    hidden_products_log = open(f"reports/hidden_products_{datetime.now()}.txt", "w")
+    hidden_products_log = open(f"reports/hidden_products_{datetime.datetime.now()}.txt", "w")
     for product in Product.objects.filter(publisher=publisher) \
             .exclude(publisher_short_sku__in=checked_short_codes).exclude(page_is_draft=True) \
             .exclude(categories=hobby_products):

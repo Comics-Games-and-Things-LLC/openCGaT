@@ -1,5 +1,5 @@
 import time
-from datetime import timedelta
+import datetime
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -36,7 +36,7 @@ class Command(BaseCommand):
         # Refresh DistItem products roughly once a day
         items_to_refresh = DistItem.objects.filter(
             Q(product_last_refreshed__isnull=True) |
-            Q(product_last_refreshed__lt=timezone.now() - timedelta(days=1))
+            Q(product_last_refreshed__lt=timezone.now() - datetime.timedelta(days=1))
         ).order_by('product_last_refreshed')[:1000]
         for item in items_to_refresh:
             item.set_product_from_sku()
@@ -45,7 +45,7 @@ class Command(BaseCommand):
         hobbytyme = Distributor.objects.filter(dist_name="Hobbytyme").first()
         if hobbytyme:
             last_report = BackorderReport.objects.filter(distributor=hobbytyme).order_by('-retrieved').first()
-            if not last_report or last_report.retrieved < timezone.now() - timedelta(days=1):
+            if not last_report or last_report.retrieved < timezone.now() - datetime.timedelta(days=1):
                 try:
                     call_command('load_hobbytyme_backorders')
                 except Exception as e:
@@ -53,7 +53,7 @@ class Command(BaseCommand):
 
             last_inventory = DistributorInventoryFile.objects.filter(distributor=hobbytyme).order_by(
                 '-update_date').first()
-            if not last_inventory or last_inventory.update_date < timezone.now() - timedelta(days=1):
+            if not last_inventory or last_inventory.update_date < timezone.now() - datetime.timedelta(days=1):
                 try:
                     call_command('update_hobbytyme_inventory')
                 except Exception as e:
@@ -64,7 +64,7 @@ class Command(BaseCommand):
         if acd:
             last_inventory = DistributorInventoryFile.objects.filter(distributor=acd).order_by(
                 '-update_date').first()
-            if not last_inventory or last_inventory.update_date < timezone.now() - timedelta(days=1):
+            if not last_inventory or last_inventory.update_date < timezone.now() - datetime.timedelta(days=1):
                 try:
                     call_command('update_acd_inventory')
                 except Exception as e:
