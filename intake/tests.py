@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 from unittest.mock import patch, MagicMock
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
@@ -319,3 +320,134 @@ class GamesWorkshopTestCase(TestCase):
 
         product.refresh_from_db()
         self.assertEqual(product.msrp, Money(Decimal("65.00"), "USD"))
+
+    def test_get_pack_quantity_from_name(self):
+        from intake.distributors.games_workshop import get_pack_quantity_from_name
+        self.assertEqual(get_pack_quantity_from_name("Base: Abaddon Black (6PK)"), 6)
+        self.assertEqual(get_pack_quantity_from_name("Layer: Auric Armour Gold (6-pack)"), 6)
+        self.assertEqual(get_pack_quantity_from_name("Citadel Shade: Nuln Oil 6 PK"), 6)
+        self.assertEqual(get_pack_quantity_from_name("Contrast Paint: Flesh Tearers Red (6-pk)"), 6)
+        self.assertEqual(get_pack_quantity_from_name("Contrast Paint Medium 6 pack"), 6)
+        self.assertEqual(get_pack_quantity_from_name("Technical Paint 6pk"), 6)
+        self.assertEqual(get_pack_quantity_from_name("Spray Paint (3PK)"), 3)
+        self.assertEqual(get_pack_quantity_from_name("Dice Set (12-pack)"), 12)
+        self.assertEqual(get_pack_quantity_from_name("Pack of 4 Markers"), 4)
+        self.assertIsNone(get_pack_quantity_from_name("Space Marine Backpack"))
+        self.assertIsNone(get_pack_quantity_from_name("Jetpack Assault Squad"))
+        self.assertIsNone(get_pack_quantity_from_name("Space Marine Intercessors"))
+        self.assertIsNone(get_pack_quantity_from_name(None))
+
+    @patch("openCGaT.management_util.EmailMessage")
+    def test_import_records_pack_quantity_price_division_and_barcode_retention(self, mock_email):
+        import pandas as pd
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        product = Product.objects.create(
+            name="Base: Abaddon Black",
+            barcode="5011921000001",
+            publisher=publisher,
+            publisher_short_sku="28-01",
+            msrp=Money(Decimal("4.00"), "USD"),
+            map=Money(Decimal("3.40"), "USD"),
+            release_date=datetime.date.today(),
+        )
+
+        df = pd.DataFrame([
+            {
+                "Description": "Base: Abaddon Black (6PK)",
+                "Short Code": "28-01",
+                "Barcode": "5011921999999",
+                "New US Retail Price": 27.00,
+                "New US Trade Price": 13.50,
+            }
+        ])
+
+        with patch("pandas.ExcelFile"), patch("pandas.read_excel", return_value=df), patch("os.listdir", return_value=["USA PRICE RISE.xlsx"]), patch("os.path.exists", return_value=True):
+            games_workshop.import_records()
+
+        product.refresh_from_db()
+        # Barcode must NOT be updated to the 6PK barcode (5011921999999)
+        self.assertEqual(product.barcode, "5011921000001")
+        # MSRP should be divided by quantity (27.00 / 6 = 4.50)
+        self.assertEqual(product.msrp, Money(Decimal("4.50"), "USD"))
+        # MAP should be 85% of divided MSRP (4.50 * 0.85 = 3.825 -> 3.83)
+        self.assertEqual(product.map, Money(Decimal("3.83"), "USD"))
+
+        distributor = Distributor.objects.get(dist_name="Games Workshop")
+        dist_item = DistItem.objects.get(distributor=distributor, dist_barcode="5011921999999")
+        self.assertEqual(dist_item.quantity_per_pack, 6)
+        self.assertEqual(dist_item.product, product)
+        self.assertEqual(dist_item.msrp, Money(Decimal("4.50"), "USD"))
+        self.assertEqual(dist_item.dist_price, Money(Decimal("2.25"), "USD"))
+
+    @patch("openCGaT.management_util.EmailMessage")
+    def test_import_records_pack_quantity_variations(self, mock_email):
+        import pandas as pd
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        product = Product.objects.create(
+            name="Citadel Spray: Chaos Black",
+            barcode=None,
+            publisher=publisher,
+            publisher_short_sku="65-01",
+            msrp=Money(Decimal("18.00"), "USD"),
+            map=Money(Decimal("15.30"), "USD"),
+            release_date=datetime.date.today(),
+        )
+
+        df = pd.DataFrame([
+            {
+                "Description": "Citadel Spray: Chaos Black (3-pack)",
+                "Short Code": "65-01",
+                "Barcode": "5011921888888",
+                "New US Retail Price": 60.00,
+            }
+        ])
+
+        with patch("pandas.ExcelFile"), patch("pandas.read_excel", return_value=df), patch("os.listdir", return_value=["USA PRICE RISE.xlsx"]), patch("os.path.exists", return_value=True):
+            games_workshop.import_records()
+
+        product.refresh_from_db()
+        # Product barcode should remain None (not updated to 3-pack barcode)
+        self.assertIsNone(product.barcode)
+        # MSRP divided by 3 (60.00 / 3 = 20.00)
+        self.assertEqual(product.msrp, Money(Decimal("20.00"), "USD"))
+        self.assertEqual(product.map, Money(Decimal("17.00"), "USD"))
+
+    def test_read_new_release_summary_pack_quantity(self):
+        import io
+        import pandas as pd
+        distributor = Distributor.objects.get_or_create(dist_name="Games Workshop")[0]
+        partner = Partner.objects.create(name="Valhalla Hobby", slug="valhalla-hobby")
+
+        df = pd.DataFrame([
+            {
+                "Product Name": "Contrast: Baal Red (6PK)",
+                "Short Sales Code": "29-01",
+                "Complete Barcode": "5011921777777",
+                "US/$": 36.00,
+                "Global Pack Code": "99189960001",
+                "Format": "Single",
+                "Release Date": None,
+                "Order From": None,
+            }
+        ])
+        excel_buffer = io.BytesIO()
+        df.to_excel(excel_buffer, index=False)
+        excel_buffer.seek(0)
+
+        inv_file = DistributorInventoryFile.objects.create(
+            distributor=distributor,
+            file=SimpleUploadedFile("new_releases.xlsx", excel_buffer.read()),
+        )
+
+        games_workshop.read_new_release_summary(inv_file)
+
+        product = Product.objects.get(publisher_short_sku="29-01")
+        # Barcode must not be set to the 6PK barcode
+        self.assertIsNone(product.barcode)
+        # MSRP should be 36.00 / 6 = 6.00
+        self.assertEqual(product.msrp, Money(Decimal("6.00"), "USD"))
+        self.assertEqual(product.map, Money(Decimal("5.10"), "USD"))
+
+        dist_item = DistItem.objects.get(distributor=distributor, dist_barcode="5011921777777")
+        self.assertEqual(dist_item.quantity_per_pack, 6)
+        self.assertEqual(dist_item.product, product)

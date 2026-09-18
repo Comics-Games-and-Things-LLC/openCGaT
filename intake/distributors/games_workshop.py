@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 import traceback
 from decimal import ROUND_UP, Decimal
 from typing import Any
@@ -85,6 +86,23 @@ DEATHWATCH = 'Deathwatch'
 dist_name = "Games Workshop"
 
 
+def get_pack_quantity_from_name(name: str | None) -> int | None:
+    if not name or not isinstance(name, str):
+        return None
+    # Matches patterns like 6PK, 6-pack, 6pk, 6-pk, 6 pk, 6 pack, 6packs, 6-packs, (6PK), [6PK], 6 PK, etc.
+    match = re.search(r'(?:^|[\s\(\[\-_])(\d+)\s*[-_]?\s*(?:pk|pack|packs)\b', name, re.IGNORECASE)
+    if match:
+        qty = int(match.group(1))
+        if qty > 0:
+            return qty
+    match = re.search(r'\b(?:pack|pk)\s+of\s+(\d+)\b', name, re.IGNORECASE)
+    if match:
+        qty = int(match.group(1))
+        if qty > 0:
+            return qty
+    return None
+
+
 def read_new_release_summary(inv_file: DistributorInventoryFile):
     distributor = inv_file.distributor
     publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
@@ -105,10 +123,18 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
 
         if "(fre" in name.lower(): continue  # Ignore French products
 
+        pack_quantity = get_pack_quantity_from_name(name)
+        if pack_quantity:
+            msrp = Money(Decimal(msrp.amount / Decimal(pack_quantity)).quantize(Decimal('.01'), rounding=ROUND_UP),
+                         currency='USD', decimal_places=2)
+
         barcode = row.get('Complete Barcode').replace('-', '')
         maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01'), rounding=ROUND_UP),
                         currency='USD', decimal_places=2)
         dist_item = create_dist_item(barcode, distributor, maprice, msrp, name, short_code)
+        if pack_quantity:
+            dist_item.quantity_per_pack = pack_quantity
+            dist_item.save()
         inv_file.items.add(dist_item)
         inv_file.line_count += 1
 
@@ -116,25 +142,28 @@ def read_new_release_summary(inv_file: DistributorInventoryFile):
         games, factions, categories = get_product_information_from_product_code(global_pack_code)
 
         # Check if the product already exists (shouldn't, but for testing runs)
-        if barcode and Product.objects.filter(barcode=barcode).exists():
+        if not pack_quantity and barcode and Product.objects.filter(barcode=barcode).exists():
             product = Product.objects.get(barcode=barcode)
+        elif short_code and Product.objects.filter(publisher_short_sku=short_code).exists():
+            product = Product.objects.filter(publisher_short_sku=short_code).first()
         else:
             # Try creating the product.
-            product = create_product(barcode, factions, games, name, short_code)
+            product = create_product(None if pack_quantity else barcode, factions, games, name, short_code)
 
         dist_item.product = product
         dist_item.save()
         set_product_dates_and_listed(product, row.get('Release Date'), row.get('Order From'))
         product.order_cutoff_for_shops_date = product.release_date - datetime.timedelta(days=18)
         update_product_information(factions, games, maprice, msrp, product, publisher, short_code,
-                                   global_pack_code)  # Calls product.save
+                                   global_pack_code, barcode=None if pack_quantity else barcode)  # Calls product.save
         item = create_valhalla_item(product, price=maprice)
-        item.enable_restock_alert = True
-        item.low_inventory_alert_threshold = 0
-        item.allow_backorders = True
-        item.preallocated = True
-        item.save()
-        print(product, product.release_date, item)
+        if item:
+            item.enable_restock_alert = True
+            item.low_inventory_alert_threshold = 0
+            item.allow_backorders = True
+            item.preallocated = True
+            item.save()
+            print(product, product.release_date, item)
         if release_date is None or release_date < product.release_date:
             release_date = product.release_date
 
@@ -330,8 +359,6 @@ def import_records():
             if pandas.isna(msrp_val) or msrp_val is None or str(msrp_val).strip() == '':
                 continue
             msrp = Money(msrp_val, currency='USD', decimal_places=2)
-            maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01'), rounding=ROUND_UP),
-                            currency='USD', decimal_places=2)
 
             dist_price_val = row.get('US/$ Trade',
                                      row.get("New US Trade Price", row.get("US Trade", row.get("Trade Price"))))
@@ -339,6 +366,17 @@ def import_records():
                 dist_price = Money(dist_price_val, currency='USD')
             else:
                 dist_price = None
+
+            pack_quantity = get_pack_quantity_from_name(name)
+            if pack_quantity:
+                msrp = Money(Decimal(msrp.amount / Decimal(pack_quantity)).quantize(Decimal('.01'), rounding=ROUND_UP),
+                             currency='USD', decimal_places=2)
+                if dist_price is not None:
+                    dist_price = Money(Decimal(dist_price.amount / Decimal(pack_quantity)).quantize(Decimal('.01'), rounding=ROUND_UP),
+                                       currency='USD', decimal_places=2)
+
+            maprice = Money(Decimal(msrp.amount * Decimal(.85)).quantize(Decimal('.01'), rounding=ROUND_UP),
+                            currency='USD', decimal_places=2)
 
             games, factions, categories = get_product_information_from_product_code(product_code)
             range_code = row.get("Module")
@@ -375,7 +413,7 @@ def import_records():
 
                 created = False
                 products = []
-                if barcode and Product.objects.filter(barcode=barcode).exists():
+                if not pack_quantity and barcode and Product.objects.filter(barcode=barcode).exists():
                     products = list(Product.objects.filter(barcode=barcode))
                 elif short_code and Product.objects.filter(publisher_short_sku=short_code).exists():
                     products = list(Product.objects.filter(publisher_short_sku=short_code))
@@ -386,7 +424,7 @@ def import_records():
                     continue
                     # Create the new product
                     created = True
-                    products = [create_product(barcode, factions, games, name, short_code)]
+                    products = [create_product(None if pack_quantity else barcode, factions, games, name, short_code)]
 
                 if item:
                     item.dist_name = name or (products[0].name if products else None)
@@ -397,14 +435,14 @@ def import_records():
                     item.trade_range.clear()
                     if trade_range:
                         item.trade_range.add(trade_range)
-                    item.quantity_per_pack = row.get("Pack Qty") if not pandas.isna(row.get("Pack Qty")) else None
+                    item.quantity_per_pack = pack_quantity or (row.get("Pack Qty") if not pandas.isna(row.get("Pack Qty")) else None)
                     if products:
                         item.product = products[0]
                     item.save()
 
                 for product in products:
                     update_product_information(factions, games, maprice, msrp, product, publisher, short_code,
-                                               product_code)
+                                               product_code, barcode=None if pack_quantity else barcode)
 
                     create_valhalla_item(product, f=f, only_adjust_default_price=True,
                                          price_adjustment_csv=price_adjustment_csv)
@@ -423,13 +461,19 @@ def import_records():
 
 
 def set_product_dates_and_listed(product, release_date, preorder_date):
-    if release_date:
-        product.release_date = release_date.date()
+    if release_date is not None and not pandas.isna(release_date):
+        if hasattr(release_date, 'date'):
+            product.release_date = release_date.date()
+        elif isinstance(release_date, datetime.date):
+            product.release_date = release_date
         product.purchasable_on_release = True
         product.listed_on_release = True
         product.visible_on_release = True
-    if preorder_date:
-        product.preorder_or_secondary_release_date = preorder_date.date()
+    if preorder_date is not None and not pandas.isna(preorder_date):
+        if hasattr(preorder_date, 'date'):
+            product.preorder_or_secondary_release_date = preorder_date.date()
+        elif isinstance(preorder_date, datetime.date):
+            product.preorder_or_secondary_release_date = preorder_date
         product.purchasable_on_preorder_secondary = True
         product.listed_on_preorder_secondary = True
         product.visible_on_preorder_secondary = True
@@ -437,7 +481,7 @@ def set_product_dates_and_listed(product, release_date, preorder_date):
 
 def update_product_information(factions: list[Any], games: list[Any], maprice: Money, msrp: Money,
                                product: Product | Any, publisher: Publisher, short_code: Any | None,
-                               sku: str | None = None):
+                               sku: str | None = None, barcode: str | None = None):
     if product.publisher_short_sku is None and short_code:
         product.publisher_short_sku = short_code
 
@@ -448,6 +492,9 @@ def update_product_information(factions: list[Any], games: list[Any], maprice: M
     product.map = maprice
     if sku:
         product.publisher_sku = sku
+    if barcode and not product.barcode:
+        if not Product.objects.filter(barcode=barcode).exclude(id=product.id).exists():
+            product.barcode = barcode
     product.page_is_draft = False
 
     # Set these if they are blank but don't override any existing ones.
@@ -461,13 +508,16 @@ def update_product_information(factions: list[Any], games: list[Any], maprice: M
 
 def create_product(barcode: Any | None, factions: list[Any], games: list[Any], name: Any | None,
                    short_code: Any | None) -> list[Product]:
+    if get_pack_quantity_from_name(name):
+        barcode = None
+
     # Append year to name if there's any existing.
     if Product.objects.filter(slug=slugify(name)).exists():
         name += f" ({datetime.datetime.today().year})"
 
     product = Product.objects.create(
         barcode=barcode,
-        release_date=datetime.datetime.today(),
+        release_date=datetime.date.today(),
         name=name.title(),
     )
 
