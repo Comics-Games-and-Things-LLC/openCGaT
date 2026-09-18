@@ -100,6 +100,13 @@ def get_pack_quantity_from_name(name: str | None) -> int | None:
         qty = int(match.group(1))
         if qty > 0:
             return qty
+    match = re.search(r'(?:^|[\s\(\[\-_])[xX]\s*(\d+)(?:[\s\)\]\-_]|$)', name)
+    if match:
+        qty = int(match.group(1))
+        if qty > 0:
+            return qty
+    if re.search(r'\b(?:12|18|24)\s*ml\b', name, re.IGNORECASE):
+        return 6
     return None
 
 
