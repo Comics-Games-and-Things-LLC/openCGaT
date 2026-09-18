@@ -288,3 +288,34 @@ class GamesWorkshopTestCase(TestCase):
         dist_item = DistItem.objects.get(distributor=distributor, dist_number="48-75")
         self.assertEqual(dist_item.msrp, Money(Decimal("65.00"), "USD"))
         self.assertEqual(dist_item.product, product)
+
+    @patch("openCGaT.management_util.EmailMessage")
+    def test_import_records_us_price_adjustment_file(self, mock_email):
+        import pandas as pd
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        product = Product.objects.create(
+            name="Space Marine Intercessors",
+            barcode="5011921123456",
+            publisher=publisher,
+            publisher_short_sku="48-75",
+            msrp=Money(Decimal("60.00"), "USD"),
+            map=Money(Decimal("51.00"), "USD"),
+            release_date=datetime.date.today(),
+        )
+
+        df = pd.DataFrame([
+            {
+                "Short Code": "48-75",
+                "New US Retail Price": 65.00,
+            }
+        ])
+
+        with patch("pandas.ExcelFile") as mock_excel_file, patch("pandas.read_excel", return_value=df) as mock_read_excel, patch("os.listdir", return_value=["US Price Adjustment File - 09.08.xlsx"]), patch("os.path.exists", return_value=True):
+            games_workshop.import_records()
+            mock_read_excel.assert_called_once()
+            _, kwargs = mock_read_excel.call_args
+            self.assertEqual(kwargs.get("sheet_name"), "USD Pricelist")
+            self.assertEqual(kwargs.get("header"), 3)
+
+        product.refresh_from_db()
+        self.assertEqual(product.msrp, Money(Decimal("65.00"), "USD"))

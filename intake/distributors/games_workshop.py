@@ -266,15 +266,15 @@ def import_records():
     # trade_range_name = "US Price Adjustment File - 09.08.xlsx"
     inventories_path = './intake/inventories/'
     if trade_range_name is None and os.path.exists(inventories_path):
-        for file in os.listdir(inventories_path):
-            if "Trade Range" in file or "USA PRICE RISE" or "US Price Adjustment" in file:
-                trade_range_name = file
+        for filename in os.listdir(inventories_path):
+            if "Trade Range" in filename or "USA PRICE RISE" in filename or "US Price Adjustment" in filename:
+                trade_range_name = filename
     if trade_range_name is None:
         print("Please have a file with 'Trade Range' or 'USA Price Rise' in the inventories folder")
         return
     file = pandas.ExcelFile(os.path.join(inventories_path, trade_range_name))
     sheet_name = 'USA' if 'USA' in file.sheet_names else 0
-    if "US Price Adjustment" in file:
+    if "US Price Adjustment" in trade_range_name:
         dataframe = pandas.read_excel(file, header=3, sheet_name='USD Pricelist',
                                       converters={'Product': str, 'Barcode': str, 'Product Code': str})
     else:
