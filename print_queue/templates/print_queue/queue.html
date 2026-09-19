@@ -81,7 +81,9 @@
                     for (let q = 0; q < data.current_inventory; q++) {
                         console.log(`Printing label ${q + 1} of ${data.current_inventory} for item ${itemId}`);
                         PrintImageFromUrl(printUrl);
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        // 1 per second is probably about the rate the printer goes at but it can occasionally jam,
+                        // So we got a little slower, 1 every 3 seconds.
+                        await new Promise(resolve => setTimeout(resolve, 3000));
                     }
                 }
             }
