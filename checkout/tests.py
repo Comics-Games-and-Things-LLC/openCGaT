@@ -121,3 +121,56 @@ class CheckoutTestCase(TestCase):
 
         # Check lines are gone
         self.assertFalse(CheckoutLine.objects.filter(item__product=product, cart__status=Cart.OPEN).exists())
+
+    def test_merge_line_copies_line_when_not_existing(self):
+        site = Site.objects.get(name="Test site")
+        product = Product.objects.get(name="Test Product")
+        partner = Partner.objects.get(name="Test Partner")
+        item = InventoryItem.objects.get(product=product, partner=partner)
+
+        cart1 = Cart.objects.create(site=site, email="cart1@example.com", status=Cart.OPEN)
+        cart1.add(item, quantity=2)
+        cart1_line = cart1.lines.first()
+
+        cart2 = Cart.objects.create(site=site, email="cart2@example.com", status=Cart.OPEN)
+        self.assertEqual(cart2.lines.count(), 0)
+
+        cart2.merge_line(cart1_line)
+
+        # cart2 should now have the line
+        self.assertEqual(cart2.lines.count(), 1)
+        cart2_line = cart2.lines.first()
+        self.assertEqual(cart2_line.item, item)
+        self.assertEqual(cart2_line.quantity, 2)
+        self.assertNotEqual(cart2_line.id, cart1_line.id)
+
+        # cart1 should still have the original line intact (not moved or deleted)
+        self.assertEqual(cart1.lines.count(), 1)
+        cart1_line.refresh_from_db()
+        self.assertEqual(cart1_line.cart, cart1)
+        self.assertEqual(cart1_line.quantity, 2)
+
+    def test_merge_line_copies_and_updates_quantity_when_existing(self):
+        site = Site.objects.get(name="Test site")
+        product = Product.objects.get(name="Test Product")
+        partner = Partner.objects.get(name="Test Partner")
+        item = InventoryItem.objects.get(product=product, partner=partner)
+
+        cart1 = Cart.objects.create(site=site, email="cart1@example.com", status=Cart.OPEN)
+        cart1.add(item, quantity=2)
+        cart1_line = cart1.lines.first()
+
+        cart2 = Cart.objects.create(site=site, email="cart2@example.com", status=Cart.OPEN)
+        cart2.add(item, quantity=3)
+
+        cart2.merge_line(cart1_line, add_quantities=True)
+
+        # cart2 quantity should be 5
+        self.assertEqual(cart2.lines.count(), 1)
+        self.assertEqual(cart2.lines.first().quantity, 5)
+
+        # cart1 should still have the original line intact (not deleted)
+        self.assertEqual(cart1.lines.count(), 1)
+        cart1_line.refresh_from_db()
+        self.assertEqual(cart1_line.cart, cart1)
+        self.assertEqual(cart1_line.quantity, 2)

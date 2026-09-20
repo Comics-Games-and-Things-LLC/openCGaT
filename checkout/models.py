@@ -297,16 +297,23 @@ class Cart(RepresentationMixin, models.Model):
     def merge_line(self, line, add_quantities=True):
         """
         For transferring a line from one cart to this one.
+        Leave the old line for reference or in case something odd happens.
         """
         try:
             existing_line = self.lines.get(item=line.item)
         except ObjectDoesNotExist:
-            # Line does not already exist - reassign its cart
-            line.cart = self
-            line.save()
+            # Line does not already exist - copy to this cart
+            if line.id:
+                new_line = CheckoutLine.objects.get(id=line.id)
+                new_line.id = None
+                new_line.cart = self
+                new_line.save()
+            else:
+                new_line = line
+                new_line.cart = self
+                new_line.save()
         else:
-            # Line already exists - assume the max quantity is correct and
-            # delete the old
+            # Line already exists - assume the max quantity is correct
             if add_quantities:
                 existing_line.quantity += line.quantity
             else:
@@ -314,7 +321,6 @@ class Cart(RepresentationMixin, models.Model):
                                              line.quantity)
             self.update_quantity(line=existing_line, quantity=existing_line.quantity)  # Force max item check
             existing_line.save()
-            line.delete()
 
     @property
     def text_summary(self):
