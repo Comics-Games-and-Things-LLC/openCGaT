@@ -9,10 +9,15 @@
 
     <div>
         <h3> Checkout complete</h3>
-        You can check the status of your order <a href="{% url 'past_order_details'  cart_id=order.id %}">here</a>.
+        <p>You can check the status of your order <a href="{% url 'past_order_details'  cart_id=order.id %}">here</a>.
+        </p>
+        <p>Please check your email for a confirmation email and be sure to check your spam folder.
+            <b>If you do not have a confirmation email,</b>
+            please reach out to us at <a href="mailto:shop@comicsgamesandthings.com">shop@comicsgamesandthings.com</a>.
+        </p>
         {% if order.is_login_required %}
-            Once it has finished processing you will be able to download all items in your order from your accounts
-            downloads.
+            <p>Once it has finished processing you will be able to download all items in your order from your accounts
+                downloads.</p>
         {% endif %}
     </div>
 {% endblock %}
