@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import urllib.parse
 from decimal import Decimal
 
@@ -28,6 +29,9 @@ from intake.models import POLine
 from partner.models import Partner, PartnerTransaction
 from realaddress.abstract_models import AbstractAddress
 from shop.models import Item, InventoryItem
+
+
+logger = logging.getLogger(__name__)
 
 
 class BillingAddress(AbstractAddress):
@@ -194,6 +198,27 @@ class Cart(RepresentationMixin, models.Model):
     def __str__(self):
         return "{} cart (id: {}, owner: {}, items: {}, total:{})".format(
             self.status, self.id, self.owner, self.num_items, self.final_total)
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            try:
+                old_status = Cart.objects.filter(pk=self.pk).values_list('status', flat=True).first()
+                if old_status == self.MERGED and self.status != self.MERGED:
+                    warning_msg = (
+                        f"Warning: Cart #{self.id} was previously in status '{self.MERGED}', "
+                        f"but has changed status away from merged to '{self.status}'.\n"
+                        f"Reference issue #272 for more details about the last time this happened. \n\n"
+                        f"Cart details:\n{self.text_summary}"
+                    )
+                    logger.warning(warning_msg)
+                    subject = f"Warning: Merged Cart #{self.id} changed status to {self.status}"
+                    mail.mail_admins(subject, message=warning_msg, fail_silently=True)
+                    if settings.EMAIL_HOST_USER:
+                        email = EmailMessage(subject, warning_msg, to=[settings.EMAIL_HOST_USER])
+                        email.send(fail_silently=True)
+            except Exception as e:
+                logger.error(f"Error checking merged cart status transition: {e}")
+        return super().save(*args, **kwargs)
 
     # ============
     # Manipulation

@@ -4,6 +4,7 @@ from unittest import mock
 
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 from djmoney.money import Money
@@ -174,3 +175,59 @@ class CheckoutTestCase(TestCase):
         cart1_line.refresh_from_db()
         self.assertEqual(cart1_line.cart, cart1)
         self.assertEqual(cart1_line.quantity, 2)
+
+    def test_merged_cart_changing_status_sends_email_and_proceeds(self):
+        site = Site.objects.get(name="Test site")
+        cart = Cart.objects.create(site=site, email="merged@example.com", status=Cart.MERGED)
+        mail.outbox.clear()
+
+        # Change status away from MERGED
+        cart.status = Cart.OPEN
+        cart.save()
+
+        # Verify status change proceeded
+        cart.refresh_from_db()
+        self.assertEqual(cart.status, Cart.OPEN)
+
+        # Verify email was sent to admin referencing issue #272
+        self.assertGreater(len(mail.outbox), 0)
+        sent_email = mail.outbox[-1]
+        self.assertIn("#272", sent_email.body)
+        self.assertIn(str(cart.id), sent_email.body)
+        self.assertIn("Merged", sent_email.body)
+        self.assertIn("Open", sent_email.body)
+
+    def test_merged_cart_saving_same_status_does_not_send_email(self):
+        site = Site.objects.get(name="Test site")
+        cart = Cart.objects.create(site=site, email="merged_same@example.com", status=Cart.MERGED)
+        mail.outbox.clear()
+
+        # Save again with same status
+        cart.email = "merged_same2@example.com"
+        cart.save()
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_open_cart_changing_to_merged_does_not_send_warning_email(self):
+        site = Site.objects.get(name="Test site")
+        cart = Cart.objects.create(site=site, email="open_to_merged@example.com", status=Cart.OPEN)
+        mail.outbox.clear()
+
+        # Change from OPEN to MERGED
+        cart.status = Cart.MERGED
+        cart.save()
+
+        self.assertEqual(len(mail.outbox), 0)
+        cart.refresh_from_db()
+        self.assertEqual(cart.status, Cart.MERGED)
+
+    def test_checkout_complete_confirmation_page_content(self):
+        site = Site.objects.get(name="Test site")
+        cart = Cart.objects.create(site=site, email="order_confirmed@example.com", status=Cart.SUBMITTED)
+        url = reverse('checkout_complete', kwargs={'order_id': cart.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Checkout complete")
+        self.assertContains(response, "confirmation email")
+        self.assertContains(response, "spam")
+        self.assertContains(response, "reach out")
