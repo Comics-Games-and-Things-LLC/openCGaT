@@ -22,7 +22,7 @@ from intake.models import (
     DistributorInventoryLine,
     ItemWarehouseAvailability,
 )
-from shop.models import Product, Publisher
+from shop.models import Product, Publisher, Category, InventoryItem
 from game_info.models import Game
 
 SAMPLE_ACD_HTML = """<!DOCTYPE html>
@@ -469,3 +469,146 @@ class GamesWorkshopTestCase(TestCase):
         dist_item = DistItem.objects.get(distributor=distributor, dist_barcode="5011921777777")
         self.assertEqual(dist_item.quantity_per_pack, 6)
         self.assertEqual(dist_item.product, product)
+
+    @patch("openCGaT.management_util.EmailMessage")
+    def test_hide_products_logic(self, mock_email):
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        partner, _ = Partner.objects.get_or_create(name="Valhalla Hobby", slug="valhalla-hobby-test")
+        hobby_cat, _ = Category.objects.get_or_create(name="Hobby Products")
+
+        today = datetime.date.today()
+        yesterday = today - datetime.timedelta(days=1)
+        future = today + datetime.timedelta(days=7)
+
+        # 1. Product with inventory on hand (> 0), not in trade range, past release date -> should be hidden
+        prod_with_stock = Product.objects.create(
+            name="Old Box With Stock",
+            publisher=publisher,
+            publisher_short_sku="99-01",
+            release_date=yesterday,
+            page_is_draft=False,
+        )
+        item1 = InventoryItem.objects.create(
+            product=prod_with_stock,
+            partner=partner,
+            price=Money(10, "USD"),
+            default_price=Money(10, "USD"),
+        )
+        item1.current_inventory = 3
+        item1.save()
+
+        # 2. Product sold out (inventory == 0), not in trade range, past release date -> should be hidden
+        prod_sold_out = Product.objects.create(
+            name="Old Sold Out Box",
+            publisher=publisher,
+            publisher_short_sku="99-02",
+            release_date=yesterday,
+            page_is_draft=False,
+        )
+        item2 = InventoryItem.objects.create(
+            product=prod_sold_out,
+            partner=partner,
+            price=Money(10, "USD"),
+            default_price=Money(10, "USD"),
+        )
+        item2.current_inventory = 0
+        item2.save()
+
+        # 3. Product with future release date (> today), 0 stock, not in trade range -> should NOT be hidden
+        prod_future_preorder = Product.objects.create(
+            name="Future Preorder Box",
+            publisher=publisher,
+            publisher_short_sku="99-03",
+            release_date=future,
+            page_is_draft=False,
+        )
+        item3 = InventoryItem.objects.create(
+            product=prod_future_preorder,
+            partner=partner,
+            price=Money(10, "USD"),
+            default_price=Money(10, "USD"),
+        )
+        item3.current_inventory = 0
+        item3.save()
+
+        # 4. Product in trade range (in checked_short_codes) -> should NOT be hidden
+        prod_in_trade_range = Product.objects.create(
+            name="Current Range Box",
+            publisher=publisher,
+            publisher_short_sku="99-04",
+            release_date=yesterday,
+            page_is_draft=False,
+        )
+
+        # 5. Product with category 'Hobby Products' -> should NOT be hidden
+        prod_hobby = Product.objects.create(
+            name="Citadel Brush",
+            publisher=publisher,
+            publisher_short_sku="99-05",
+            release_date=yesterday,
+            page_is_draft=False,
+        )
+        prod_hobby.categories.add(hobby_cat)
+
+        checked_short_codes = ["99-04"]
+        log_file = games_workshop.hide_products(checked_short_codes, publisher)
+        log_file.close()
+
+        prod_with_stock.refresh_from_db()
+        prod_sold_out.refresh_from_db()
+        prod_future_preorder.refresh_from_db()
+        prod_in_trade_range.refresh_from_db()
+        prod_hobby.refresh_from_db()
+
+        self.assertTrue(prod_with_stock.page_is_draft)
+        self.assertTrue(prod_sold_out.page_is_draft)
+        self.assertFalse(prod_future_preorder.page_is_draft)
+        self.assertFalse(prod_in_trade_range.page_is_draft)
+        self.assertFalse(prod_hobby.page_is_draft)
+
+        # Check log file content
+        with open(log_file.name, "r") as f:
+            content = f.read()
+        self.assertIn("Hid Old Box With Stock, which we had 3", content)
+        self.assertIn("Hid Old Sold Out Box, since there was no stock", content)
+        self.assertNotIn("Future Preorder Box", content)
+        self.assertNotIn("Current Range Box", content)
+        self.assertNotIn("Citadel Brush", content)
+
+    @patch("openCGaT.management_util.EmailMessage")
+    def test_gwhide_management_command(self, mock_email):
+        import pandas as pd
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        yesterday = datetime.date.today() - datetime.timedelta(days=1)
+
+        prod_in_range = Product.objects.create(
+            name="GW Product In Range",
+            publisher=publisher,
+            publisher_short_sku="50-01",
+            release_date=yesterday,
+            page_is_draft=False,
+        )
+        prod_not_in_range = Product.objects.create(
+            name="GW Product Out Of Range",
+            publisher=publisher,
+            publisher_short_sku="50-02",
+            release_date=yesterday,
+            page_is_draft=False,
+        )
+
+        df = pd.DataFrame([
+            {
+                "Short Code": "50-01",
+                "Product Name": "GW Product In Range",
+            }
+        ])
+
+        with patch("pandas.ExcelFile"), patch("pandas.read_excel", return_value=df), patch("os.listdir", return_value=["Trade Range 2026.xlsx"]), patch("os.path.exists", return_value=True):
+            call_command("GWHide")
+
+        prod_in_range.refresh_from_db()
+        prod_not_in_range.refresh_from_db()
+
+        self.assertFalse(prod_in_range.page_is_draft)
+        self.assertTrue(prod_not_in_range.page_is_draft)
+        mock_email.return_value.send.assert_called_once()

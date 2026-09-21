@@ -555,8 +555,14 @@ def hide_products(checked_short_codes, publisher):
             .exclude(publisher_short_sku__in=checked_short_codes).exclude(page_is_draft=True) \
             .exclude(categories=hobby_products):
         count = InventoryItem.objects.filter(product=product).aggregate(sum=Sum("current_inventory"))['sum'] or 0
+        if product.release_date and product.release_date > datetime.date.today():
+            continue
         if count > 0:
             log(hidden_products_log, f"Hid {product.name}, which we had {count}")
+            product.page_is_draft = True
+            product.save()
+        else:
+            log(hidden_products_log, f"Hid {product.name}, since there was no stock")
             product.page_is_draft = True
             product.save()
     return hidden_products_log
