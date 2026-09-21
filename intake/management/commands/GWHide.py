@@ -3,7 +3,7 @@ import pandas
 from django.core.management.base import BaseCommand
 from intake.distributors.games_workshop import hide_products
 from openCGaT.management_util import email_report
-from shop.models import Publisher
+from shop.models import Publisher, Item
 
 
 class Command(BaseCommand):
@@ -54,5 +54,12 @@ class Command(BaseCommand):
         publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
         hidden_products_log = hide_products(checked_short_codes, publisher)
         hidden_products_log.flush()
+        reset_prices(publisher)
         email_report("GW Hidden Products", [hidden_products_log.name])
         self.stdout.write(self.style.SUCCESS(f"Finished hiding GW products. Checked {len(checked_short_codes)} short codes."))
+
+def reset_prices(publisher):
+    for item in Item.objects.filter(product__publisher=publisher):
+        if item.default_price and item.price != item.default_price:
+            item.price = item.default_price
+            item.save()
