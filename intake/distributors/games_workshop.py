@@ -568,6 +568,16 @@ def hide_products(checked_short_codes, publisher):
     return hidden_products_log
 
 
+def unhide_products(checked_short_codes, publisher, log_file=None):
+    for product in Product.objects.filter(publisher=publisher, publisher_short_sku__in=checked_short_codes, page_is_draft=True):
+        count = InventoryItem.objects.filter(product=product).aggregate(sum=Sum("current_inventory"))['sum'] or 0
+        if count > 0:
+            if log_file:
+                log(log_file, f"Unhid {product.name}, which we had {count}")
+            product.page_is_draft = False
+            product.save()
+
+
 def get_product_information_from_product_code(product_code):
     if not product_code or not isinstance(product_code, str):
         return [], [], []

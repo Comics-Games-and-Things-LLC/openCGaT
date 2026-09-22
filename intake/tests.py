@@ -550,6 +550,22 @@ class GamesWorkshopTestCase(TestCase):
         )
         prod_hobby.categories.add(hobby_cat)
 
+        # 6. Product from another publisher with discounted price -> should NOT be reset
+        other_publisher, _ = Publisher.objects.get_or_create(name="Other Publisher")
+        other_prod = Product.objects.create(
+            name="Other Publisher Product",
+            publisher=other_publisher,
+            publisher_short_sku="OP-01",
+            release_date=yesterday,
+            page_is_draft=False,
+        )
+        other_item = InventoryItem.objects.create(
+            product=other_prod,
+            partner=partner,
+            price=Money(5, "USD"),
+            default_price=Money(10, "USD"),
+        )
+
         checked_short_codes = ["99-04"]
         log_file = games_workshop.hide_products(checked_short_codes, publisher)
         log_file.close()
@@ -559,6 +575,8 @@ class GamesWorkshopTestCase(TestCase):
         prod_future_preorder.refresh_from_db()
         prod_in_trade_range.refresh_from_db()
         prod_hobby.refresh_from_db()
+        item1.refresh_from_db()
+        other_item.refresh_from_db()
 
         self.assertTrue(prod_with_stock.page_is_draft)
         self.assertTrue(prod_sold_out.page_is_draft)
@@ -575,10 +593,98 @@ class GamesWorkshopTestCase(TestCase):
         self.assertNotIn("Current Range Box", content)
         self.assertNotIn("Citadel Brush", content)
 
+    def test_unhide_products_logic(self):
+        publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        other_publisher, _ = Publisher.objects.get_or_create(name="Other Publisher")
+        partner, _ = Partner.objects.get_or_create(name="Valhalla Hobby", slug="valhalla-hobby-test")
+        yesterday = datetime.date.today() - datetime.timedelta(days=1)
+
+        # 1. In stock, in file, draft -> should be unhidden
+        prod_in_stock_in_file_draft = Product.objects.create(
+            name="Draft In Stock In File",
+            publisher=publisher,
+            publisher_short_sku="88-01",
+            release_date=yesterday,
+            page_is_draft=True,
+        )
+        item1 = InventoryItem.objects.create(
+            product=prod_in_stock_in_file_draft,
+            partner=partner,
+            price=Money(10, "USD"),
+            default_price=Money(10, "USD"),
+        )
+        item1.current_inventory = 2
+        item1.save()
+
+        # 2. Out of stock, in file, draft -> should remain draft
+        prod_no_stock_in_file_draft = Product.objects.create(
+            name="Draft No Stock In File",
+            publisher=publisher,
+            publisher_short_sku="88-02",
+            release_date=yesterday,
+            page_is_draft=True,
+        )
+        item2 = InventoryItem.objects.create(
+            product=prod_no_stock_in_file_draft,
+            partner=partner,
+            price=Money(10, "USD"),
+            default_price=Money(10, "USD"),
+        )
+        item2.current_inventory = 0
+        item2.save()
+
+        # 3. In stock, not in file, draft -> should remain draft
+        prod_in_stock_not_in_file_draft = Product.objects.create(
+            name="Draft In Stock Not In File",
+            publisher=publisher,
+            publisher_short_sku="88-03",
+            release_date=yesterday,
+            page_is_draft=True,
+        )
+        item3 = InventoryItem.objects.create(
+            product=prod_in_stock_not_in_file_draft,
+            partner=partner,
+            price=Money(10, "USD"),
+            default_price=Money(10, "USD"),
+        )
+        item3.current_inventory = 5
+        item3.save()
+
+        # 4. Other publisher, in stock, in file, draft -> should remain draft
+        other_prod = Product.objects.create(
+            name="Other Pub Draft In Stock",
+            publisher=other_publisher,
+            publisher_short_sku="88-01",
+            release_date=yesterday,
+            page_is_draft=True,
+        )
+        other_item = InventoryItem.objects.create(
+            product=other_prod,
+            partner=partner,
+            price=Money(10, "USD"),
+            default_price=Money(10, "USD"),
+        )
+        other_item.current_inventory = 3
+        other_item.save()
+
+        checked_short_codes = ["88-01", "88-02"]
+        games_workshop.unhide_products(checked_short_codes, publisher)
+
+        prod_in_stock_in_file_draft.refresh_from_db()
+        prod_no_stock_in_file_draft.refresh_from_db()
+        prod_in_stock_not_in_file_draft.refresh_from_db()
+        other_prod.refresh_from_db()
+
+        self.assertFalse(prod_in_stock_in_file_draft.page_is_draft)
+        self.assertTrue(prod_no_stock_in_file_draft.page_is_draft)
+        self.assertTrue(prod_in_stock_not_in_file_draft.page_is_draft)
+        self.assertTrue(other_prod.page_is_draft)
+
     @patch("openCGaT.management_util.EmailMessage")
     def test_gwhide_management_command(self, mock_email):
         import pandas as pd
         publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
+        partner, _ = Partner.objects.get_or_create(name="Valhalla Hobby", slug="valhalla-hobby-test")
         yesterday = datetime.date.today() - datetime.timedelta(days=1)
 
         prod_in_range = Product.objects.create(
@@ -588,6 +694,12 @@ class GamesWorkshopTestCase(TestCase):
             release_date=yesterday,
             page_is_draft=False,
         )
+        item_in_range = InventoryItem.objects.create(
+            product=prod_in_range,
+            partner=partner,
+            price=Money(15, "USD"),
+            default_price=Money(20, "USD"),
+        )
         prod_not_in_range = Product.objects.create(
             name="GW Product Out Of Range",
             publisher=publisher,
@@ -595,11 +707,50 @@ class GamesWorkshopTestCase(TestCase):
             release_date=yesterday,
             page_is_draft=False,
         )
+        prod_draft_in_range_with_stock = Product.objects.create(
+            name="GW Draft Product In Range With Stock",
+            publisher=publisher,
+            publisher_short_sku="50-03",
+            release_date=yesterday,
+            page_is_draft=True,
+        )
+        item_draft_in_range = InventoryItem.objects.create(
+            product=prod_draft_in_range_with_stock,
+            partner=partner,
+            price=Money(30, "USD"),
+            default_price=Money(30, "USD"),
+        )
+        item_draft_in_range.current_inventory = 4
+        item_draft_in_range.save()
+
+        prod_draft_in_range_no_stock = Product.objects.create(
+            name="GW Draft Product In Range No Stock",
+            publisher=publisher,
+            publisher_short_sku="50-04",
+            release_date=yesterday,
+            page_is_draft=True,
+        )
+        item_draft_no_stock = InventoryItem.objects.create(
+            product=prod_draft_in_range_no_stock,
+            partner=partner,
+            price=Money(30, "USD"),
+            default_price=Money(30, "USD"),
+        )
+        item_draft_no_stock.current_inventory = 0
+        item_draft_no_stock.save()
 
         df = pd.DataFrame([
             {
                 "Short Code": "50-01",
                 "Product Name": "GW Product In Range",
+            },
+            {
+                "Short Code": "50-03",
+                "Product Name": "GW Draft Product In Range With Stock",
+            },
+            {
+                "Short Code": "50-04",
+                "Product Name": "GW Draft Product In Range No Stock",
             }
         ])
 
@@ -608,7 +759,13 @@ class GamesWorkshopTestCase(TestCase):
 
         prod_in_range.refresh_from_db()
         prod_not_in_range.refresh_from_db()
+        prod_draft_in_range_with_stock.refresh_from_db()
+        prod_draft_in_range_no_stock.refresh_from_db()
+        item_in_range.refresh_from_db()
 
         self.assertFalse(prod_in_range.page_is_draft)
         self.assertTrue(prod_not_in_range.page_is_draft)
+        self.assertFalse(prod_draft_in_range_with_stock.page_is_draft)
+        self.assertTrue(prod_draft_in_range_no_stock.page_is_draft)
+        self.assertEqual(item_in_range.price, Money(20, "USD"))
         mock_email.return_value.send.assert_called_once()
