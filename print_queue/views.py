@@ -49,3 +49,16 @@ def mark_restickered(request, partner_slug, item_id):
     item.restickered_at = timezone.now()
     item.save()
     return JsonResponse({'status': 'success'})
+
+
+@require_POST
+def mark_all_restickered(request, partner_slug):
+    partner = get_partner_or_401(request, partner_slug)
+    PrintQueueItem.objects.filter(inventory_item__partner=partner, restickered=False).update(
+        restickered=True,
+        restickered_at=timezone.now()
+    )
+    return JsonResponse({'status': 'success'})
+
+
+mark_all_finished = mark_all_restickered

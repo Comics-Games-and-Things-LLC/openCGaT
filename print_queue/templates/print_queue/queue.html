@@ -5,6 +5,11 @@
 
 {% block content %}
     <h2>Print Queue</h2>
+    <div class="mb-3">
+        <button class="btn btn-secondary mark-all-finished-btn" onclick="markAllFinished()">
+            Mark all finished
+        </button>
+    </div>
     <table class="table" id="print-queue-table">
         <thead>
             <tr>
@@ -102,6 +107,21 @@
             if (data.status === 'success') {
                 const row = document.getElementById(`item-row-${itemId}`);
                 row.remove();
+            }
+        }
+
+        async function markAllFinished() {
+            let markAllUrl = "{% url 'mark_all_restickered' partner_slug=partner.slug %}";
+            const response = await fetch(markAllUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                const tbody = document.querySelector('#print-queue-table tbody');
+                tbody.innerHTML = '<tr><td colspan="7">No items in the print queue.</td></tr>';
             }
         }
 
