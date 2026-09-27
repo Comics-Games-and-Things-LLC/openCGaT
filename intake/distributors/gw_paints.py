@@ -47,6 +47,7 @@ def import_records():
 
             print(paint_name, barcode_single)
             product.name = product_name
+            product.publisher = publisher
             product.all_retail = True
             product.page_is_draft = False
             product.visible_on_release = True
