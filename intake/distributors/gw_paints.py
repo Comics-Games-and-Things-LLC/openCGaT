@@ -24,13 +24,14 @@ def import_records():
         try:
             short_code = row.get('SSC')
             full_name = row.get('Product Description')
-
+            type = None
             paint_name = full_name
             if ':' in paint_name:
+                type = paint_name.split(":")[0].strip()
                 paint_name = paint_name.split(':')[-1]
             paint_name = paint_name.split("JUC")[0]
-            paint_name = paint_name.strip().title()
-            product_name = "Warhammer Tone Pro: {}".format(paint_name)
+            paint_name = paint_name.strip().title().replace("Ml", "ml")
+            product_name = "Warhammer Tone Pro{}: {}".format(" Technical" if type == "TE" else "", paint_name)
 
             sku = row.get('SKU')
             barcode_single = remove_barcode_dashes(row.get('Individual Barcode'))
@@ -55,7 +56,10 @@ def import_records():
             product.purchasable_on_release = True
             product.barcode = barcode_single
             product.release_date = datetime.date(year=2026, month=10, day=24)
-            product.msrp = Money(6.75, 'USD')
+            if type == "TE":
+                product.msrp = Money(8.10, 'USD')
+            else:
+                product.msrp = Money(6.75, 'USD')
             product.publisher_short_sku = short_code
             product.publisher_sku = sku
             if not product.description:
