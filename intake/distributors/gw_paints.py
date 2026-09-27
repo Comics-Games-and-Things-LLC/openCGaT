@@ -1,16 +1,12 @@
 import traceback
-import datetime
 
-import requests
+import pandas
 
 import intake.distributors.games_workshop
-from game_info.models import Game
-from intake.distributors.utility import log, remove_barcode_dashes
+from intake.distributors.common import create_valhalla_item
+from intake.distributors.utility import remove_barcode_dashes
 from intake.models import *
-import pandas
-import xlrd
-
-from shop.models import Product, Publisher, InventoryItem
+from shop.models import Product, Publisher
 
 
 def import_records():
@@ -18,57 +14,56 @@ def import_records():
     publisher, _ = Publisher.objects.get_or_create(name="Games Workshop")
     category, _ = Category.objects.get_or_create(name="Acrylic Paint")
 
-    file = pandas.ExcelFile('./intake/inventories/Citadel Paints Bar Codes 07_22.xlsx')
-    dataframe = pandas.read_excel(file, header=0, sheet_name='Sheet1', converters={'Product': str, 'Barcode': str})
+    file = pandas.ExcelFile('./intake/inventories/Warhammer Tone Pro Codes and Barcodes (individual, JUS).xlsx')
+    dataframe = pandas.read_excel(file, header=0, sheet_name='Paint', converters={'Product': str, 'Barcode': str})
 
     records = dataframe.to_dict(orient='records')
     f = open("reports/products_with_price_adjustments.txt", "a")
     for row in records:
         print(row)
         try:
-            paint_line_raw = row.get('Range')
-            paint_line = paint_line_raw.split('-')[-1].strip()
-
             short_code = row.get('SSC')
-            full_name = row.get('PRODUCT NAME')
+            full_name = row.get('Product Description')
+
             paint_name = full_name
             if ':' in paint_name:
                 paint_name = paint_name.split(':')[-1]
-            paint_name = paint_name.split("(")[0]
+            paint_name = paint_name.split("JUC")[0]
             paint_name = paint_name.strip().title()
+            product_name = "Warhammer Tone Pro: {}".format(paint_name)
 
-            size = row.get('SIZE')
-            barcode_6_pack = row.get('Barcode (6-Pack)')
-            barcode_single = remove_barcode_dashes(row.get('Barcode (Single)'))
-            range_code = row.get("Range 07_22")
+            sku = row.get('SKU')
+            barcode_single = remove_barcode_dashes(row.get('Individual Barcode'))
 
-            trade_range = None
-            if range_code:
-                trade_range, _ = TradeRange.objects.get_or_create(code=range_code, distributor=distributor,
-                                                                  defaults={'name': range_code})
-
-            is_rerelease = False
-            product = None
-
-            product_name = "Citadel {}: {} {}".format(paint_line, paint_name, size)
-            existing_products = Product.objects.filter(product_name__search=product_name).order_by('-release_date')
+            existing_products = Product.objects.filter(barcode=barcode_single).order_by('-release_date')
             if existing_products.count() == 1:
                 product = existing_products.first()
-                if product.barcode is None:
-                    is_rerelease = True
             else:
-                product, created = Product.objects.get_or_create(barcode=product)
+                existing_products = Product.objects.filter(name__search=product_name).order_by('-release_date')
+                if existing_products.count() == 1:
+                    product = existing_products.first()
+                else:
+                    product, created = Product.objects.get_or_create(barcode=barcode_single, name=product_name)
 
-            if is_rerelease:
-                product_name = product_name + " (2022)"
-
-            print(paint_name, barcode_single, barcode_6_pack, trade_range.code)
+            print(paint_name, barcode_single)
             product.name = product_name
             product.barcode = barcode_single
-            product.release_date = datetime.date(year=2022, month=7, day=16)
+            product.release_date = datetime.date(year=2026, month=10, day=24)
+            product.msrp = Money(6.75, 'USD')
+            product.publisher_short_sku = short_code
+            product.publisher_sku = sku
+            if not product.description:
+                product.description = "Warhammer Tone Pro Paint in 12 ml bottle."
 
             product.categories.clear()
             product.categories.add(category)
+            product.save()
+
+            item = create_valhalla_item(product)
+            item.allow_backorder = True
+            item.enable_restock_alert = True
+            item.low_inventory_alert_threshold = 2
+            item.save()
 
 
         except Exception as e:
