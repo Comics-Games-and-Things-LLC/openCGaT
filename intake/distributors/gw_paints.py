@@ -47,6 +47,7 @@ def import_records():
 
             print(paint_name, barcode_single)
             product.name = product_name
+            product.all_retail = True
             product.barcode = barcode_single
             product.release_date = datetime.date(year=2026, month=10, day=24)
             product.msrp = Money(6.75, 'USD')
