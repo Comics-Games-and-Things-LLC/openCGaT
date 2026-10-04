@@ -2,19 +2,22 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
+
 from partner.models import get_partner_or_401
-from .models import BoxInventory
 from .forms import BoxInventoryForm
+from .models import BoxInventory
+
 
 @login_required
 def box_inventory(request, partner_slug):
     partner = get_partner_or_401(request, partner_slug)
-    boxes = BoxInventory.objects.all()
+    boxes = BoxInventory.objects.all().order_by('-length_inches', '-width_inches', '-height_inches')
     context = {
         'partner': partner,
         'boxes': boxes,
     }
     return render(request, "box_counter/box_inventory.html", context)
+
 
 @login_required
 def adjust_box_inventory(request, partner_slug, box_id):
@@ -33,6 +36,7 @@ def adjust_box_inventory(request, partner_slug, box_id):
         'form': form,
     }
     return render(request, "box_counter/adjust_box_inventory.html", context)
+
 
 @login_required
 @require_POST
