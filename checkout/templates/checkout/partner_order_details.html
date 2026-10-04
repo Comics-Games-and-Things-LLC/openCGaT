@@ -139,49 +139,35 @@
             }
 
             function print_pick_slip() {
+                var payload = {
+                    title: `Order {{ past_cart.id }}`,
+                    subtitle: '{{ past_cart.delivery_method }}',
+                    lines: [
+                        {% if past_cart.owner %}
+                            'Customer: {{ past_cart.owner.email }}',
+                        {% elif past_cart.email %}
+                            'Customer: {{ past_cart.email }}',
+                        {% endif %}
+                    ],
+                    table: {
+                        rows: [
+                            {% for line in past_cart.lines.all %}
+                                ["{{ line.quantity }}", "{{ line.item.product.name|escapejs }}"],
+                            {% endfor %}
+                        ]
+                    },
+                    cut: true
+                };
+
                 if (window.posPrinter && typeof window.posPrinter.broadcastPrintCustom === 'function') {
-                    window.posPrinter.broadcastPrintCustom({
-                        title: `Order {{ past_cart.id }}`,
-                        subtitle: '{{ past_cart.delivery_method }}',
-                        lines: [
-                            {% if past_cart.owner %}
-                                'Customer: {{ past_cart.owner.email }}',
-                            {% elif past_cart.email %}
-                                'Customer: {{ past_cart.email }}',
-                            {% endif %}
-                        ],
-                        table: {
-                            rows: [
-                                {% for line in past_cart.lines.all %}
-                                    ["{{ line.quantity }}", "{{ line.item.product.name|escapejs }}"],
-                                {% endfor %}
-                            ]
-                        },
-                        cut: true
-                    });
+                    window.posPrinter.broadcastPrintCustom(payload);
+                } else if (typeof RoutePrintMessage === 'function') {
+                    RoutePrintMessage({type: 'PRINT_CUSTOM', payload: payload});
                 } else if (typeof BroadcastChannel !== 'undefined') {
                     var channel = new BroadcastChannel('pos_print_channel');
                     channel.postMessage({
                         type: 'PRINT_CUSTOM',
-                        payload: {
-                            title: `Order {{ past_cart.id }}`,
-                            subtitle: '{{ past_cart.delivery_method }}',
-                            lines: [
-                                {% if past_cart.owner %}
-                                    'Customer: {{ past_cart.owner.email }}',
-                                {% elif past_cart.email %}
-                                    'Customer: {{ past_cart.email }}',
-                                {% endif %}
-                            ],
-                            table: {
-                                rows: [
-                                    {% for line in past_cart.lines.all %}
-                                        ["{{ line.quantity }}", "{{ line.item.product.name|escapejs }}"],
-                                    {% endfor %}
-                                ]
-                            },
-                            cut: true
-                        }
+                        payload: payload
                     });
                     channel.close();
                 }
