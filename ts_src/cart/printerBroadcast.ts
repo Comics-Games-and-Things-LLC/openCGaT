@@ -282,6 +282,41 @@ export function broadcastPrint(
 }
 
 /**
+ * Routes a print job to either the local BroadcastChannel or the server-side network queue.
+ */
+export async function routePrint(
+    message: IPrinterBroadcastMessage,
+    partnerSlug?: string,
+    channelName = POS_PRINT_CHANNEL_NAME
+): Promise<boolean> {
+    const destinationPrinterId = localStorage.getItem('destination_printer_id') || 'local';
+
+    if (destinationPrinterId === 'local' || !partnerSlug) {
+        return broadcastPrint(message, channelName);
+    }
+
+    // Send to network queue
+    try {
+        const response = await fetch(`/partner/${partnerSlug}/print_queue/jobs/add/`, {
+            method: 'POST',
+            body: JSON.stringify({
+                job_type: message.type.replace('PRINT_', ''),
+                payload: message.payload,
+                destination_client_id: destinationPrinterId
+            }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '',
+            }
+        });
+        return response.ok;
+    } catch (e) {
+        console.error("Failed to send print job to network queue", e);
+        return false;
+    }
+}
+
+/**
  * Broadcast a cart print request to other tabs.
  */
 export function broadcastPrintCart(

@@ -20,41 +20,30 @@
             ];
 
             // 1. Broadcast via BroadcastChannel (for other tabs / POS receipt printer)
+            var payload = {
+                title: 'Items to Pick',
+                subtitle: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
+                table: {
+                    columns: [
+                        {width: 4, marginRight: 1, align: 'right'},
+                        {width: 28, marginRight: 1, align: 'left'},
+                        {width: 7, align: 'right'}
+                    ],
+                    rows: items.map(function (item) {
+                        return [item.quantity, item.product, item.delivery];
+                    })
+                },
+                cut: true
+            };
             if (window.posPrinter && typeof window.posPrinter.broadcastPrintCustom === 'function') {
-                window.posPrinter.broadcastPrintCustom({
-                    title: 'Items to Pick',
-                    subtitle: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
-                    table: {
-                        columns: [
-                            { width: 4, marginRight: 1, align: 'right' },
-                            { width: 28, marginRight: 1, align: 'left' },
-                            { width: 7, align: 'right' }
-                        ],
-                        rows: items.map(function(item) {
-                            return [item.quantity, item.product, item.delivery];
-                        })
-                    },
-                    cut: true
-                });
+                window.posPrinter.broadcastPrintCustom(payload);
+            } else if (typeof RoutePrintMessage === 'function') {
+                RoutePrintMessage({type: 'PRINT_CUSTOM', payload: payload});
             } else if (typeof BroadcastChannel !== 'undefined') {
                 var channel = new BroadcastChannel('pos_print_channel');
                 channel.postMessage({
                     type: 'PRINT_CUSTOM',
-                    payload: {
-                        title: 'Items to Pick',
-                        subtitle: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
-                        table: {
-                            columns: [
-                                { width: 4, marginRight: 1, align: 'right' },
-                                { width: 28, marginRight: 1, align: 'left' },
-                                { width: 7, align: 'right' }
-                            ],
-                            rows: items.map(function(item) {
-                                return [item.quantity, item.product, item.delivery];
-                            })
-                        },
-                        cut: true
-                    }
+                    payload: payload
                 });
                 channel.close();
             }

@@ -4,6 +4,7 @@ import ReceiptPrinterEncoder from '@point-of-sale/receipt-printer-encoder';
 import WebUSBReceiptPrinter from '@point-of-sale/webusb-receipt-printer';
 import WebSerialReceiptPrinter from './WebSerialReceiptPrinter/WebSerialReceiptPrinter';
 import WebBluetoothReceiptPrinter from '@point-of-sale/webbluetooth-receipt-printer';
+import getCookie from "./get_cookie";
 import {
     POS_PRINT_CHANNEL_NAME,
     encodeCartReceipt,
@@ -27,8 +28,12 @@ interface IReceiptPrinter {
     print(data: Uint8Array): Promise<void>;
 }
 
+interface PrinterWidgetProps {
+    partnerSlug?: string;
+}
 
-const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
+
+const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.Element => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [driver, setDriver] = useState('usb');
     const [baudRate, setBaudRate] = useState('9600');
@@ -37,6 +42,11 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
     const [canConnect, setCanConnect] = useState(false);
     const [printerModels, setPrinterModels] = useState([]);
     const receiptPrinterRef = useRef<IReceiptPrinter | null>(null);
+
+    const [clientId, setClientId] = useState<string>('');
+    const [printerName, setPrinterName] = useState<string>('');
+    const [onlinePrinters, setOnlinePrinters] = useState<Array<{ client_id: string, name: string }>>([]);
+    const [destinationPrinterId, setDestinationPrinterId] = useState<string>('local');
 
 
     const openForm = () => setIsFormOpen(true);
@@ -65,6 +75,18 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
         const newModel = e.target.value;
         setPrinterModel(newModel);
         localStorage.setItem('printerModel', newModel);
+    };
+
+    const handlePrinterNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newName = e.target.value;
+        setPrinterName(newName);
+        localStorage.setItem('printer_name', newName);
+    };
+
+    const handleDestinationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newDest = e.target.value;
+        setDestinationPrinterId(newDest);
+        localStorage.setItem('destination_printer_id', newDest);
     };
 
     const connect = () => {
@@ -126,6 +148,91 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
 
         console.log('Disconnecting');
         setIsConnected(false);
+    };
+
+    const fetchOnlinePrinters = useCallback(async () => {
+        if (!props.partnerSlug) return;
+        try {
+            const response = await fetch(`/partner/${props.partnerSlug}/print_queue/printers/online/`);
+            if (response.ok) {
+                const data = await response.json();
+                setOnlinePrinters(data.printers || []);
+            }
+        } catch (e) {
+            console.error("Failed to fetch online printers", e);
+        }
+    }, [props.partnerSlug]);
+
+    const registerPrinter = useCallback(async () => {
+        if (!props.partnerSlug || !clientId) return;
+        const formData = new FormData();
+        formData.append('client_id', clientId);
+        formData.append('name', printerName);
+
+        try {
+            await fetch(`/partner/${props.partnerSlug}/print_queue/printers/register/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken') || '',
+                }
+            });
+        } catch (e) {
+            console.error("Failed to register printer", e);
+        }
+    }, [props.partnerSlug, clientId, printerName]);
+
+    const claimJob = useCallback(async (jobId: number) => {
+        if (!props.partnerSlug || !clientId) return;
+        try {
+            const response = await fetch(`/partner/${props.partnerSlug}/print_queue/jobs/claim/`, {
+                method: 'POST',
+                body: JSON.stringify({client_id: clientId, job_id: jobId}),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') || '',
+                }
+            });
+            if (response.status === 200) {
+                const data = await response.json();
+                if (data.status === 'success') {
+                    await processJob(data.job);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to claim job", e);
+        }
+    }, [props.partnerSlug, clientId]);
+
+    const processJob = async (job: any) => {
+        console.log("Processing network job:", job);
+        const {id, job_type, payload} = job;
+
+        try {
+            if (job_type === 'RECEIPT') {
+                handleBroadcastMessage({type: 'PRINT_CART', payload});
+            } else if (job_type === 'LABEL') {
+                if (payload.url) {
+                    const response = await fetch(payload.url, {method: 'POST', mode: 'same-origin'});
+                    const blob = await response.blob();
+                    if ((window as any).OpenPrintImagePage) {
+                        (window as any).OpenPrintImagePage(URL.createObjectURL(blob));
+                    }
+                }
+            } else if (job_type === 'RAW') {
+                handleBroadcastMessage({type: 'PRINT_RAW', payload});
+            }
+
+            // Mark as printed
+            await fetch(`/partner/${props.partnerSlug}/print_queue/jobs/${id}/mark_printed/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken') || '',
+                }
+            });
+        } catch (e) {
+            console.error("Failed to process job", e);
+        }
     };
 
     const rPrint = useCallback((event: Event) => {
@@ -270,10 +377,64 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
             setPrinterModel(savedPrinterModel);
         }
 
+        // Identity initialization
+        let id = localStorage.getItem('printer_client_id');
+        if (!id) {
+            id = crypto.randomUUID();
+            localStorage.setItem('printer_client_id', id);
+        }
+        setClientId(id);
+
+        const savedName = localStorage.getItem('printer_name') || 'Station ' + id.substring(0, 4);
+        setPrinterName(savedName);
+
+        const savedDest = localStorage.getItem('destination_printer_id') || 'local';
+        setDestinationPrinterId(savedDest);
+
         tryReconnect()
-
-
     }, []);
+
+    useEffect(() => {
+        if (!props.partnerSlug || !clientId) return;
+
+        const heartbeat = setInterval(() => {
+            registerPrinter();
+            fetchOnlinePrinters();
+        }, 60000); // Every minute
+
+        registerPrinter();
+        fetchOnlinePrinters();
+
+        return () => clearInterval(heartbeat);
+    }, [props.partnerSlug, clientId, registerPrinter, fetchOnlinePrinters]);
+
+    useEffect(() => {
+        if (!props.partnerSlug || !clientId) return;
+
+        const url = `/partner/${props.partnerSlug}/print_queue/stream/?client_id=${clientId}`;
+        const eventSource = new EventSource(url);
+
+        eventSource.onmessage = (event) => {
+            if (event.data.includes(': heartbeat')) return;
+            try {
+                const data = JSON.parse(event.data);
+                if (data.event === 'NEW_JOB') {
+                    claimJob(data.job_id);
+                }
+            } catch (e) {
+                console.error("Failed to parse SSE message", e);
+            }
+        };
+
+        eventSource.onerror = (e) => {
+            console.error("SSE Error", e);
+            eventSource.close();
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [props.partnerSlug, clientId, claimJob]);
 
     useEffect(() => {
         checkConnectionCapability();
@@ -287,6 +448,34 @@ const PrinterWidget: React.FunctionComponent = (props): JSX.Element => {
             style={{display: isFormOpen ? 'block' : 'none'}}
         >
             <h1>Printer Controls</h1>
+
+            <div id="printer-identity" style={{marginBottom: '20px'}}>
+                <label>Printer Name:
+                    <input
+                        type="text"
+                        value={printerName}
+                        onChange={handlePrinterNameChange}
+                        style={{marginLeft: '10px', padding: '5px', borderRadius: '4px', border: '1px solid #ccc'}}
+                    />
+                </label>
+                <div style={{fontSize: '0.8em', color: '#666'}}>ID: {clientId}</div>
+            </div>
+
+            <div id="printer-destination" style={{marginBottom: '20px'}}>
+                <label>Send Prints To:
+                    <select
+                        value={destinationPrinterId}
+                        onChange={handleDestinationChange}
+                        style={{marginLeft: '10px', padding: '5px'}}
+                    >
+                        <option value="local">Local Printer (This Tab)</option>
+                        {onlinePrinters.filter(p => p.client_id !== clientId).map(p => (
+                            <option key={p.client_id} value={p.client_id}>{p.name}</option>
+                        ))}
+                    </select>
+                </label>
+            </div>
+
             <div id="printer-config">
                 <div className="printer-config-header" style={{
                     display: 'flex',

@@ -122,6 +122,21 @@
     {% endblock %}
     {% if partner %}
         <script>
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
             function AutoPrintImagePage(source) {
                 return "<html><head><scri" + "pt>function step1(){\n" +
                     "setTimeout('step2()', 10);}\n" +
@@ -140,8 +155,72 @@
                 pwa.document.close();
             }
 
-            function PrintImageFromUrl(target_url) {
+            async function RoutePrintMessage(message) {
+                const destinationPrinterId = localStorage.getItem('destination_printer_id') || 'local';
+                const partnerSlug = "{{ partner.slug }}";
+
+                if (destinationPrinterId !== 'local' && partnerSlug) {
+                    try {
+                        const response = await fetch(`/partner/${partnerSlug}/print_queue/jobs/add/`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                job_type: message.type.replace('PRINT_', ''),
+                                payload: message.payload,
+                                destination_client_id: destinationPrinterId
+                            }),
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken'),
+                            }
+                        });
+                        if (response.ok) {
+                            console.log("Sent job to network queue");
+                            return true;
+                        }
+                    } catch (e) {
+                        console.error("Failed to send print job to network queue", e);
+                    }
+                }
+
+                // Fallback to local
+                if (typeof BroadcastChannel !== 'undefined') {
+                    var channel = new BroadcastChannel('pos_print_channel');
+                    channel.postMessage(message);
+                    channel.close();
+                    return true;
+                }
+                return false;
+            }
+
+            async function PrintImageFromUrl(target_url) {
                 console.log("attempting print")
+                const destinationPrinterId = localStorage.getItem('destination_printer_id') || 'local';
+                const partnerSlug = "{{ partner.slug }}";
+
+                if (destinationPrinterId !== 'local' && partnerSlug) {
+                    try {
+                        const response = await fetch(`/partner/${partnerSlug}/print_queue/jobs/add/`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                job_type: 'LABEL',
+                                payload: {url: target_url},
+                                destination_client_id: destinationPrinterId
+                            }),
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken'),
+                            }
+                        });
+                        if (response.ok) {
+                            console.log("Sent label to network queue");
+                            return false;
+                        }
+                    } catch (e) {
+                        console.error("Failed to send print job to network queue", e);
+                    }
+                }
+
+                // Fallback to local
                 let request = new Request(target_url);
                 fetch(request, {
                     method: 'POST',
@@ -345,7 +424,7 @@
     </div>
 </footer>
 {% if partner %}
-    {% react_render component="PrinterWidget" identifier="printer_widget" %}
+    {% react_render component="PrinterWidget" identifier="printer_widget" partnerSlug=partner.slug %}
 {% endif %}
 
 {% block body_js %}
