@@ -1,0 +1,32 @@
+{% extends 'container.html' %}
+{% load static %}
+
+{% block title %}Box Inventory{% endblock %}
+
+{% block content %}
+    <h1>Box Inventory</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Dimensions (L x W x H)</th>
+                <th>Barcode</th>
+                <th>Current Inventory</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for box in boxes %}
+                <tr>
+                    <td>{{ box.description }}</td>
+                    <td>{{ box.length_inches }}" x {{ box.width_inches }}" x {{ box.height_inches }}"</td>
+                    <td>{{ box.barcode }}</td>
+                    <td>{{ box.current_inventory }}</td>
+                    <td>
+                        <a href="{% url 'adjust_box_inventory' partner_slug=partner.slug box_id=box.id %}">Adjust Inventory</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

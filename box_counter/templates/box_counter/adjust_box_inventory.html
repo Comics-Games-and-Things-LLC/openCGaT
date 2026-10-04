@@ -1,0 +1,9 @@
+{% extends "create_from_form.html" %}
+{% block title %}
+    Adjust Inventory for {{ box.description }}
+{% endblock %}
+{% block info_before %}
+    <h1>Adjust Inventory for {{ box.description }}</h1>
+    <p>Dimensions: {{ box.length_inches }}" x {{ box.width_inches }}" x {{ box.height_inches }}"</p>
+    <p>Barcode: {{ box.barcode }}</p>
+{% endblock %}

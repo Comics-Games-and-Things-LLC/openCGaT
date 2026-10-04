@@ -111,6 +111,11 @@
                         </a>
                     </nav>
                     <nav class="nav-item">
+                        <a class="nav-link" href="{% url 'box_inventory' partner_slug=partner.slug %}">
+                            Box Inventory
+                        </a>
+                    </nav>
+                    <nav class="nav-item">
                         <a class="nav-link" href="{% url 'print_queue_list' partner_slug=partner.slug %}">
                             Print Queue
                         </a>
