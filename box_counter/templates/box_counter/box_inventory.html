@@ -4,7 +4,40 @@
 {% block title %}Box Inventory{% endblock %}
 
 {% block content %}
+    <script src="{% static "js/onscan.min.js" %}"></script>
     <h1>Box Inventory</h1>
+
+    <h3>Add Item (Or Scan):</h3>
+    <div class="form-inline mb-3">
+        <label class="mr-2">
+            Quantity:
+            <input type="number" id="quantity" class="form-control" value="1" min="1"/>
+        </label>
+        <label class="mr-2">
+            Barcode:
+            <input type="text" id="barcode" class="form-control"/>
+        </label>
+        <input type="submit" value="Add" class="btn btn-primary" onclick="HandleAdd()"/>
+    </div>
+
+    <h3>Scanned this session:</h3>
+    <table id="this_session" class="table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Barcode</th>
+                <th>Description</th>
+                <th>Added</th>
+                <th>New Total</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <hr>
+    <h3>Inventory List</h3>
     <table class="table">
         <thead>
             <tr>
@@ -21,7 +54,7 @@
                     <td>{{ box.description }}</td>
                     <td>{{ box.length_inches }}" x {{ box.width_inches }}" x {{ box.height_inches }}"</td>
                     <td>{{ box.barcode }}</td>
-                    <td>{{ box.current_inventory }}</td>
+                    <td id="inventory-{{ box.barcode }}">{{ box.current_inventory }}</td>
                     <td>
                         <a href="{% url 'adjust_box_inventory' partner_slug=partner.slug box_id=box.id %}">Adjust Inventory</a>
                     </td>
@@ -29,4 +62,95 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <script>
+        function HandleAdd() {
+            AddItem(document.getElementById("barcode").value)
+        }
+
+        function AddItem(sCode) {
+            const quantity = document.getElementById("quantity").value;
+            const url = "{% url 'scan_box_inventory' partner_slug=partner.slug %}";
+            const table = document.getElementById("this_session").getElementsByTagName('tbody')[0];
+            const row = table.insertRow(0);
+            row.insertCell().innerText = (new Date()).toLocaleTimeString();
+            row.insertCell().innerText = sCode;
+
+            const formData = new FormData();
+            formData.append('barcode', sCode);
+            formData.append('quantity', quantity);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json()).then((data) => {
+                if (data.success) {
+                    row.insertCell().innerText = data.description;
+                    row.insertCell().innerText = data.added;
+                    row.insertCell().innerText = data.new_inventory;
+                    row.insertCell().innerText = "Success";
+                    row.classList.add("table-success");
+                    playSuccess();
+
+                    // Update the list view if the item is present
+                    const inventoryCell = document.getElementById("inventory-" + sCode);
+                    if (inventoryCell) {
+                        inventoryCell.innerText = data.new_inventory;
+                    }
+
+                    document.getElementById("barcode").value = ""; // Clear barcode
+                } else {
+                    row.insertCell().innerText = "-";
+                    row.insertCell().innerText = "-";
+                    row.insertCell().innerText = "-";
+                    row.insertCell().innerText = data.error || "Failure";
+                    row.classList.add("table-danger");
+                    playError();
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                row.insertCell().innerText = "-";
+                row.insertCell().innerText = "-";
+                row.insertCell().innerText = "-";
+                row.insertCell().innerText = "Network Error";
+                row.classList.add("table-danger");
+                playError();
+            });
+        }
+
+        function playSound(type, frequency, length) {
+            const context = new AudioContext();
+            const soundGen = context.createOscillator();
+            soundGen.frequency = frequency;
+            soundGen.type = type;
+            soundGen.connect(context.destination);
+            soundGen.start();
+            soundGen.stop(context.currentTime + length);
+        }
+
+        function playSuccess() {
+            playSound("sine", 196, .1)
+        }
+
+        function playError() {
+            playSound("sawtooth", 440, .5)
+        }
+
+        onScan.attachTo(document, {
+            keyCodeMapper: function (oEvent) {
+                if (oEvent.which === 189) {
+                    return '-';
+                }
+                return onScan.decodeKeyEvent(oEvent);
+            },
+            suffixKeyCodes: [13],
+            reactToPaste: true,
+            avgTimeByChar: 60,
+            onScan: function (sCode, iQty) {
+                console.log('Scanned: ' + iQty + 'x ' + sCode);
+                AddItem(sCode)
+            },
+        });
+    </script>
 {% endblock %}
