@@ -35,7 +35,7 @@ class Command(BaseCommand):
                   newline='') as csvfile:
             fieldnames = ['Cart Number', 'Contact Info', 'Date Paid', 'Sales Tax Charged', 'Subtotal', 'Shipping',
                           'Pre-Tax Total',
-                          'Final Total', "Amount Refunded", "Total Less Refunds",
+                          'Final Total', "Amount Refunded", "Total Less Refunds", "Cash Paid",
                           'Address',
                           "Cart Status", "Country", "State", 'Date Submitted', "Zip Code"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -63,6 +63,7 @@ class Command(BaseCommand):
                              "Sales Tax Charged": cart.final_tax, "Final Total": cart.final_total,
                              "Amount Refunded": amount_refunded,
                              "Total Less Refunds": cart.final_total - amount_refunded,
+                             "Cash Paid": min(cart.cash_paid, cart.final_total),
                              }
                 country, postcode, potential_address, state = get_address_or_old_address(cart)
                 cart_info["Address"] = str(potential_address)
