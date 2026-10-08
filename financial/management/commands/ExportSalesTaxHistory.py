@@ -14,8 +14,8 @@ from partner.views import get_address_or_old_address
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        # parser.add_argument("--year", type=int)
-        # parser.add_argument("--month", type=int)
+        parser.add_argument("--year", type=int)
+        parser.add_argument("--month", type=int)
         parser.add_argument("--all", action='store_true')
 
     def handle(self, *args, **options):
@@ -23,11 +23,22 @@ class Command(BaseCommand):
         start_range = None
         end_range = None
         all_time = options.pop("all")
-        nice_name = f"Sales Tax Report {datetime.date.today().isoformat()}"
-        filename = 'reports/sales_tax_report_{}.csv'.format(datetime.date.today().isoformat())
+        month = options.pop("month")
+        year = options.pop("year")
+        if all_time:
+            nice_name = f"Sales Tax Report (Start to {datetime.date.today().isoformat()})"
+            filename = 'reports/sales_tax_report_{}.csv'.format(datetime.date.today().isoformat())
+
+        elif not month:
+            if year is None:
+                year = datetime.date.today().year
+            start_range = datetime.date(year, month, 1)
+            end_range = get_last_day_of_month(year, month)
+        else:
+            ## Default to the previous month.
+            start_range, end_range = get_previous_month_range()
 
         if not all_time:
-            start_range, end_range = get_previous_month_range()
             nice_name = 'Sales Tax Report from {} to {}'.format(start_range.isoformat(), end_range.isoformat())
 
             filename = 'reports/sales_tax_report_from_{}_to_{}.csv'.format(start_range.isoformat(),
@@ -84,3 +95,10 @@ def get_previous_month_range():
     first_of_this_month = today.replace(day=1)
     last_month = first_of_this_month - datetime.timedelta(days=1)
     return last_month.replace(day=1), first_of_this_month
+
+def get_last_day_of_month(year, month):
+    month = month + 1
+    if month > 13:
+        month = 1
+        year = year + 1
+    return datetime.date(year, month, 1)-datetime.timedelta(days=1)
