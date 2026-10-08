@@ -63,7 +63,7 @@ class Command(BaseCommand):
                              "Sales Tax Charged": cart.final_tax, "Final Total": cart.final_total,
                              "Amount Refunded": amount_refunded,
                              "Total Less Refunds": cart.final_total - amount_refunded,
-                             "Cash Paid": min(cart.cash_paid, cart.final_total),
+                             "Cash Paid": min(cart.cash_paid.amount or 0, cart.final_total.amount or 0),
                              }
                 country, postcode, potential_address, state = get_address_or_old_address(cart)
                 cart_info["Address"] = str(potential_address)
