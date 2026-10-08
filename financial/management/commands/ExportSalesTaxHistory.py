@@ -28,8 +28,7 @@ class Command(BaseCommand):
         if all_time:
             nice_name = f"Sales Tax Report (Start to {datetime.date.today().isoformat()})"
             filename = 'reports/sales_tax_report_{}.csv'.format(datetime.date.today().isoformat())
-
-        elif not month:
+        elif month:
             if year is None:
                 year = datetime.date.today().year
             start_range = datetime.date(year, month, 1)
