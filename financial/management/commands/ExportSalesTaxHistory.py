@@ -4,6 +4,7 @@ import datetime
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
+from djmoney.money import Money
 from tqdm import tqdm
 
 from checkout.models import Cart
@@ -63,7 +64,7 @@ class Command(BaseCommand):
                              "Sales Tax Charged": cart.final_tax, "Final Total": cart.final_total,
                              "Amount Refunded": amount_refunded,
                              "Total Less Refunds": cart.final_total - amount_refunded,
-                             "Cash Paid": min(cart.cash_paid or 0, cart.final_total or 0),
+                             "Cash Paid": min(cart.cash_paid or Money(0,'USD'), cart.final_total or Money(0,'USD')),
                              }
                 country, postcode, potential_address, state = get_address_or_old_address(cart)
                 cart_info["Address"] = str(potential_address)
