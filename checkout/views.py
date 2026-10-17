@@ -12,7 +12,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Prefetch, OuterRef, Subquery, F, Sum, Max, Exists
+from django.db.models import Prefetch, OuterRef, Subquery, F, Sum, Max, Exists, Q
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
@@ -27,6 +27,7 @@ from box_counter.models import BoxInventory
 from digitalitems.models import DigitalItem
 from discount_codes.models import DiscountCode
 from partner.models import get_partner_or_401, Partner
+from intake.models import POLine
 from shop.models import CustomChargeItem, Product, Item, InventoryItem, Category
 from shop.serializers import ItemSerializer
 from .forms import PickupForm, EmailForm, BillingAddressForm, PaymentMethodForm, ShippingAddressForm, FiltersForm, \
@@ -1135,11 +1136,25 @@ def tasks(request, partner_slug):
                                                                          # ^ ensure email hasn't been sent
                                                                          )
     from shop.views import get_orders_due
+    today = timezone.now().date()
+    next_week = today + datetime.timedelta(days=7)
+
+    # Products missing intake
+    release_date_q = Q(product__release_date__lte=next_week,
+                       product__release_date__gte=today - datetime.timedelta(days=30)) | \
+                     Q(product__in_store_early_release_date__lte=next_week,
+                       product__in_store_early_release_date__gte=today - datetime.timedelta(days=30))
+
+    items_missing_intake = InventoryItem.objects.filter(partner=partner).filter(release_date_q)
+    po_lines = POLine.objects.filter(barcode=OuterRef('product__barcode'), po__partner=partner).exclude(barcode=None)
+    items_missing_intake = items_missing_intake.exclude(Exists(po_lines)).distinct()
+
     context = {'partner': partner,
                'lines_to_pick': lines_to_pick,
                'send_ready_for_pickup_email_order_list': send_ready_for_pickup_email_order_list,
                'orders_to_ship': all_item_ready_carts.filter(delivery_method=Cart.SHIP_ALL),
                'orders_due_items': get_orders_due(partner, exclude_requested=True).filter(days_until_cutoff__lte=2),
+               'items_missing_intake': items_missing_intake,
                }
     return TemplateResponse(request, "partner/tasks.html", context)
 

@@ -305,6 +305,27 @@
             {% endfor %}
         </table>
     {% endif %}
+    {% if items_missing_intake %}
+        <h2>Products coming up for release that have not been intook (no PO lines):</h2>
+        <table class="table">
+            <tr>
+                <th scope="col">Product</th>
+                <th scope="col">Release Date</th>
+                <th scope="col">Early Release Date</th>
+            </tr>
+            {% for item in items_missing_intake %}
+                <tr>
+                    <td>
+                        <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=item.product.slug %}">
+                            {{ item.product.name }}
+                        </a>
+                    </td>
+                    <td>{{ item.product.release_date }}</td>
+                    <td>{{ item.product.in_store_early_release_date|default_if_none:"" }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
     <h2>Orders the store must place within the next 2 days: <a href="{% url 'orders_due' partner_slug=partner.slug %}"
                                                                class="btn btn-secondary">View All</a>
     </h2>
