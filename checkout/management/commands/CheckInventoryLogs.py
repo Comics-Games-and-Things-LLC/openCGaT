@@ -5,6 +5,7 @@ import tqdm
 from django.core.management.base import BaseCommand
 from django.db.models import Q, Sum
 from checkout.models import Cart
+from openCGaT.management_util import email_report
 from shop.models import Item, InventoryItem, InventoryLog
 
 class Command(BaseCommand):
@@ -16,15 +17,10 @@ class Command(BaseCommand):
             action='store_true',
             help='Rectify any missing lines',
         )
-        parser.add_argument(
-            '--csv',
-            type=str,
-            help='Path to output CSV file',
-        )
 
     def handle(self, *args, **options):
         correct = options['correct']
-        csv_path = options['csv']
+        csv_path = 'reports/inventory_logs_report.csv'
 
         # We specifically want SUBMITTED, PAID, and COMPLETED. 
         carts = Cart.objects.filter(status__in=[Cart.SUBMITTED, Cart.PAID, Cart.COMPLETED]).order_by('id')
@@ -111,4 +107,5 @@ class Command(BaseCommand):
                 dict_writer = csv.DictWriter(output_file, fieldnames=keys)
                 dict_writer.writeheader()
                 dict_writer.writerows(report_data)
+                email_report("Inventory log errors on carts", [output_file.name])
             self.stdout.write(self.style.SUCCESS(f"Report saved to {csv_path}"))
