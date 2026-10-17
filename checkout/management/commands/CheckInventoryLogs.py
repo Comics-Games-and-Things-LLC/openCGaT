@@ -3,7 +3,7 @@ import traceback
 from django.core.management.base import BaseCommand
 from django.db.models import Q, Sum
 from checkout.models import Cart
-from shop.models import InventoryItem, InventoryLog
+from shop.models import Item, InventoryItem, InventoryLog
 
 class Command(BaseCommand):
     help = "Confirms all submitted, paid, and completed carts's lines have an appropriate inventory log and subtract from inventory."
@@ -37,61 +37,64 @@ class Command(BaseCommand):
             try:
                 cart_reason = f"Sold in cart {cart.id}"
                 for line in cart.lines.all():
-                    if isinstance(line.item, InventoryItem):
-                        # Check for an inventory log linked to this line
-                        if InventoryLog.objects.filter(line=line).exists():
-                            continue
-                        
-                        # Fallback: Check for an inventory log with the correct reason for this item
-                        # This handles older data where the line foreign key was not consistently set.
-                        if InventoryLog.objects.filter(item=line.item, reason=cart_reason).exists():
-                            continue
+                    try:
+                        if isinstance(line.item, InventoryItem):
+                            # Check for an inventory log linked to this line
+                            if InventoryLog.objects.filter(line=line).exists():
+                                continue
+                            
+                            # Fallback: Check for an inventory log with the correct reason for this item
+                            # This handles older data where the line foreign key was not consistently set.
+                            if InventoryLog.objects.filter(item=line.item, reason=cart_reason).exists():
+                                continue
 
-                        self.stdout.write(self.style.WARNING(f"Cart {cart.id}, Line {line.id} ({line.item.product.name}) is missing inventory log"))
-                        missing_count += 1
+                            self.stdout.write(self.style.WARNING(f"Cart {cart.id}, Line {line.id} ({line.item.product.name}) is missing inventory log"))
+                            missing_count += 1
 
-                        # Collect data for report
-                        item = line.item
-                        total_po = InventoryLog.objects.filter(item=item, po__isnull=False).aggregate(total=Sum('change_quantity'))['total'] or 0
-                        total_sold = InventoryLog.objects.filter(item=item).filter(
-                            Q(line__isnull=False) | Q(reason__icontains='Sold in cart')
-                        ).aggregate(total=Sum('change_quantity'))['total'] or 0
-                        
-                        po_minus_sold = total_po + total_sold # total_sold is negative
-                        diff = item.current_inventory - po_minus_sold
-                        
-                        emails = []
-                        if cart.email:
-                            emails.append(cart.email)
-                        if cart.owner and cart.owner.email:
-                            emails.append(cart.owner.email)
-                        email_str = ", ".join(sorted(set(emails)))
+                            # Collect data for report
+                            item = line.item
+                            total_po = InventoryLog.objects.filter(item=item, po__isnull=False).aggregate(total=Sum('change_quantity'))['total'] or 0
+                            total_sold = InventoryLog.objects.filter(item=item).filter(
+                                Q(line__isnull=False) | Q(reason__icontains='Sold in cart')
+                            ).aggregate(total=Sum('change_quantity'))['total'] or 0
+                            
+                            po_minus_sold = total_po + total_sold # total_sold is negative
+                            diff = item.current_inventory - po_minus_sold
+                            
+                            emails = []
+                            if cart.email:
+                                emails.append(cart.email)
+                            if cart.owner and cart.owner.email:
+                                emails.append(cart.owner.email)
+                            email_str = ", ".join(sorted(set(emails)))
 
-                        report_data.append({
-                            'date': cart.date_submitted or cart.date_created,
-                            'cart': cart.id,
-                            'product': item.product.name,
-                            'quantity_sold': line.quantity,
-                            'emails': email_str,
-                            'current_quantity': item.current_inventory,
-                            'qty_from_po_minus_qty_sold': po_minus_sold,
-                            'difference': diff
-                        })
+                            report_data.append({
+                                'date': cart.date_submitted or cart.date_created,
+                                'cart': cart.id,
+                                'product': item.product.name,
+                                'quantity_sold': line.quantity,
+                                'emails': email_str,
+                                'current_quantity': item.current_inventory,
+                                'qty_from_po_minus_qty_sold': po_minus_sold,
+                                'difference': diff
+                            })
 
-                        if correct:
-                                try:
-                                    # reduce_inventory calls adjust_inventory with quantity=-self.quantity
-                                    # It also handles setting back_or_pre_order and is_preorder on the line.
-                                    line.reduce_inventory()
-                                    # Check again to confirm it worked (though adjust_inventory is atomic)
-                                    if InventoryLog.objects.filter(line=line).exists():
-                                        self.stdout.write(self.style.SUCCESS(f"  Line {line.id} inventory adjusted and logged."))
-                                        fixed_count += 1
-                                    else:
-                                        self.stdout.write(self.style.ERROR(f"  Failed to adjust inventory for line {line.id}"))
-                                except Exception as e:
-                                    self.stdout.write(self.style.ERROR(f"  Error correcting line {line.id}: {e}"))
-                                    traceback.print_exc()
+                            if correct:
+                                    try:
+                                        # reduce_inventory calls adjust_inventory with quantity=-self.quantity
+                                        # It also handles setting back_or_pre_order and is_preorder on the line.
+                                        line.reduce_inventory()
+                                        # Check again to confirm it worked (though adjust_inventory is atomic)
+                                        if InventoryLog.objects.filter(line=line).exists():
+                                            self.stdout.write(self.style.SUCCESS(f"  Line {line.id} inventory adjusted and logged."))
+                                            fixed_count += 1
+                                        else:
+                                            self.stdout.write(self.style.ERROR(f"  Failed to adjust inventory for line {line.id}"))
+                                    except Exception as e:
+                                        self.stdout.write(self.style.ERROR(f"  Error correcting line {line.id}: {e}"))
+                                        traceback.print_exc()
+                    except Item.DoesNotExist:
+                        self.stdout.write(self.style.ERROR(f"Cart {cart.id}, Line {line.id} refers to a non-existent Item"))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error processing cart {cart.id}: {e}"))
                 traceback.print_exc()
