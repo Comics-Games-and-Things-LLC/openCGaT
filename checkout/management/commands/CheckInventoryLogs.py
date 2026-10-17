@@ -107,5 +107,6 @@ class Command(BaseCommand):
                 dict_writer = csv.DictWriter(output_file, fieldnames=keys)
                 dict_writer.writeheader()
                 dict_writer.writerows(report_data)
+                output_file.flush()
                 email_report("Inventory log errors on carts", [output_file.name])
             self.stdout.write(self.style.SUCCESS(f"Report saved to {csv_path}"))
