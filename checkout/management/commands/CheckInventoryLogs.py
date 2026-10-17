@@ -1,5 +1,7 @@
 import csv
 import traceback
+
+import tqdm
 from django.core.management.base import BaseCommand
 from django.db.models import Q, Sum
 from checkout.models import Cart
@@ -33,7 +35,7 @@ class Command(BaseCommand):
         missing_count = 0
         fixed_count = 0
 
-        for cart in carts:
+        for cart in tqdm.tqdm(carts):
             try:
                 cart_reason = f"Sold in cart {cart.id}"
                 for line in cart.lines.all():
