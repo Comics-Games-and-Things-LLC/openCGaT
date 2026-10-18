@@ -976,6 +976,21 @@ def bulk_edit(request, partner_slug):
                 item.product.listed_on_release = form.cleaned_data.get("new_value_for_bool")
                 item.product.save()
                 item.save()
+        if action == BulkEditItemsForm.UPDATE_RELEASE_DATE:
+            for item in items:
+                item.product.release_date = form.cleaned_data.get("new_date_value")
+                item.product.save()
+                item.save()
+        if action == BulkEditItemsForm.UPDATE_PREORDER_DATE:
+            for item in items:
+                item.product.preorder_or_secondary_release_date = form.cleaned_data.get("new_date_value")
+                item.product.save()
+                item.save()
+        if action == BulkEditItemsForm.UPDATE_EARLY_RELEASE_DATE:
+            for item in items:
+                item.product.in_store_early_release_date = form.cleaned_data.get("new_date_value")
+                item.product.save()
+                item.save()
 
     page_size = 20
     page_number = 1

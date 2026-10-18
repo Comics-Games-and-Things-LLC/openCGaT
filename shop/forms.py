@@ -287,6 +287,9 @@ class BulkEditItemsForm(FiltersForm):
     SET_VISIBLE = "Set Visible"
     SET_PURCHASABLE = "Set Purchasable"
     SET_LISTED = "Set Listed"
+    UPDATE_RELEASE_DATE = "Update Release Date"
+    UPDATE_PREORDER_DATE = "Update Preorder Date"
+    UPDATE_EARLY_RELEASE_DATE = "Update Early Release Date"
 
     ACTION_OPTIONS = (
         (NO_ACTION, NO_ACTION),
@@ -301,6 +304,9 @@ class BulkEditItemsForm(FiltersForm):
         (SET_VISIBLE, SET_VISIBLE),
         (SET_PURCHASABLE, SET_PURCHASABLE),
         (SET_LISTED, SET_LISTED),
+        (UPDATE_RELEASE_DATE, UPDATE_RELEASE_DATE),
+        (UPDATE_PREORDER_DATE, UPDATE_PREORDER_DATE),
+        (UPDATE_EARLY_RELEASE_DATE, UPDATE_EARLY_RELEASE_DATE),
     )
 
     action_to_take = forms.ChoiceField(choices=ACTION_OPTIONS, required=False)
@@ -310,7 +316,9 @@ class BulkEditItemsForm(FiltersForm):
     allow_backorders_update = forms.BooleanField(required=False)
     enable_restock_alert = forms.BooleanField(required=False)
     low_inventory_alert_threshold = forms.IntegerField(required=False)
-    new_value_for_bool = forms.BooleanField(required=False, help_text="Use for Set as Draft")
+    new_value_for_bool = forms.BooleanField(required=False, help_text="Use for Set as Draft, Visible, Purchasable, or Listed")
+    new_date_value = forms.DateField(required=False, widget=widgets.DateInput(attrs={'type': 'date'}),
+                                     help_text="Use for Update Date actions")
 
 
 class ProductsForm(FiltersForm):
