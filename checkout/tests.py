@@ -7,6 +7,7 @@ from django.contrib.sites.models import Site
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from djmoney.money import Money
 
 from checkout.models import Cart, ShippingAddress, CheckoutLine
@@ -231,3 +232,113 @@ class CheckoutTestCase(TestCase):
         self.assertContains(response, "confirmation email")
         self.assertContains(response, "spam")
         self.assertContains(response, "reach out")
+
+    def test_other_items_for_customer_by_owner_and_email(self):
+        from checkout.models import other_items_for_customer
+        from allauth.account.models import EmailAddress
+
+        site = Site.objects.get(name="Test site")
+        partner = Partner.objects.get(name="Test Partner")
+        product = Product.objects.get(name="Test Product")
+        product2 = Product.objects.get(name="Test Product 2")
+        item1 = InventoryItem.objects.get(product=product, partner=partner)
+        item2 = InventoryItem.objects.get(product=product2, partner=partner)
+
+        user1 = User.objects.create_user(username='customer1', email='customer1@example.com', password='password')
+        EmailAddress.objects.create(user=user1, email='customer1_alt@example.com', verified=True, primary=False)
+
+        # Cart 1: Paid order owned by user1
+        cart1 = Cart.objects.create(site=site, owner=user1, email='customer1@example.com', status=Cart.PAID,
+                                    date_submitted=timezone.now())
+        cart1.add(item1, quantity=1)
+
+        # Cart 1b: Second paid order owned by user1
+        cart1b = Cart.objects.create(site=site, owner=user1, email='customer1@example.com', status=Cart.PAID,
+                                     date_submitted=timezone.now())
+        cart1b.add(item2, quantity=1)
+
+        # Cart 2: Guest paid order with same email as user1's primary email
+        cart2 = Cart.objects.create(site=site, owner=None, email='customer1@example.com', status=Cart.PAID,
+                                    date_submitted=timezone.now())
+        cart2.add(item2, quantity=2)
+
+        # Cart 3: Guest paid order with user1's alternate email
+        cart3 = Cart.objects.create(site=site, owner=None, email='customer1_alt@example.com', status=Cart.PAID,
+                                    date_submitted=timezone.now())
+        cart3.add(item1, quantity=3)
+
+        # Cart 4: Order for unrelated email
+        user2 = User.objects.create_user(username='customer2', email='customer2@example.com', password='password')
+        cart4 = Cart.objects.create(site=site, owner=user2, email='customer2@example.com', status=Cart.PAID,
+                                    date_submitted=timezone.now())
+        cart4.add(item2, quantity=1)
+
+        # When viewing other items for cart1 (owned by user1), since user is set, it only matches user's carts (cart1b)
+        # and does NOT fallback to email to match guest orders cart2 or cart3.
+        other_items_cart1 = cart1.get_other_items_for_customer(paid_only=True)
+        self.assertIsNotNone(other_items_cart1)
+        cart_ids = [line.cart.id for line in other_items_cart1]
+        self.assertIn(cart1b.id, cart_ids)
+        self.assertNotIn(cart1.id, cart_ids)
+        self.assertNotIn(cart2.id, cart_ids)
+        self.assertNotIn(cart3.id, cart_ids)
+        self.assertNotIn(cart4.id, cart_ids)
+
+        # Direct user query only returns user's carts
+        user_items = other_items_for_customer(user1, paid_only=True)
+        user_cart_ids = [line.cart.id for line in user_items]
+        self.assertIn(cart1.id, user_cart_ids)
+        self.assertIn(cart1b.id, user_cart_ids)
+        self.assertNotIn(cart2.id, user_cart_ids)
+        self.assertNotIn(cart3.id, user_cart_ids)
+        self.assertNotIn(cart4.id, user_cart_ids)
+
+        # When viewing other items for guest cart2 (email: customer1@example.com, owner=None), user is not set,
+        # so it falls back to email matching and includes cart1, cart1b (matched by user email)
+        other_items_cart2 = cart2.get_other_items_for_customer(paid_only=True)
+        self.assertIsNotNone(other_items_cart2)
+        cart_ids_guest = [line.cart.id for line in other_items_cart2]
+        self.assertIn(cart1.id, cart_ids_guest)
+        self.assertIn(cart1b.id, cart_ids_guest)
+        self.assertNotIn(cart2.id, cart_ids_guest)
+        self.assertNotIn(cart4.id, cart_ids_guest)
+
+    def test_partner_order_details_shows_other_items_for_guest_and_user_orders(self):
+        site = Site.objects.get(name="Test site")
+        partner = Partner.objects.get(name="Test Partner")
+        product = Product.objects.get(name="Test Product")
+        product2 = Product.objects.get(name="Test Product 2")
+        item1 = InventoryItem.objects.get(product=product, partner=partner)
+        item2 = InventoryItem.objects.get(product=product2, partner=partner)
+
+        admin_user = User.objects.create_user(username='admin_partner', password='password')
+        partner.administrators.add(admin_user)
+        self.client.login(username='admin_partner', password='password')
+
+        # Cart A: Guest order submitted with email
+        cart_a = Cart.objects.create(site=site, owner=None, email='shared_email@example.com', status=Cart.PAID,
+                                     date_submitted=timezone.now())
+        cart_a.add(item1, quantity=1)
+
+        # Cart B: Another order with same email
+        cart_b = Cart.objects.create(site=site, owner=None, email='shared_email@example.com', status=Cart.PAID,
+                                     date_submitted=timezone.now())
+        cart_b.add(item2, quantity=4)
+
+        # Details view for Cart A should show Cart B in other items
+        url_a = reverse('partner_order_details', kwargs={'partner_slug': partner.slug, 'cart_id': cart_a.id})
+        response = self.client.get(url_a)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('other_items_for_customer', response.context)
+        other_items = response.context['other_items_for_customer']
+        self.assertIsNotNone(other_items)
+        self.assertEqual(other_items.count(), 1)
+        self.assertEqual(other_items.first().cart.id, cart_b.id)
+        self.assertContains(response, f"/{partner.slug}/orders/{cart_b.id}/")
+
+        # Printout view for Cart A
+        url_print = reverse('partner_order_printout', kwargs={'partner_slug': partner.slug, 'cart_id': cart_a.id})
+        response_print = self.client.get(url_print)
+        self.assertEqual(response_print.status_code, 200)
+        self.assertIn('other_items_for_customer', response_print.context)
+        self.assertEqual(response_print.context['other_items_for_customer'].count(), 1)

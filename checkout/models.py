@@ -785,9 +785,9 @@ Final state:
         return 0
 
     def get_other_items_for_customer(self, paid_only=False):
-        if not self.owner:
+        if not self.owner and not self.email and not self.get_order_email():
             return None
-        return other_items_for_customer(self.owner, cart=self, paid_only=paid_only)
+        return other_items_for_customer(user=self.owner, cart=self, paid_only=paid_only, email=self.get_order_email())
 
     @property
     def time_before_submit(self):
@@ -1720,17 +1720,45 @@ def handle_null_money(val: Money or Decimal or None) -> Money:
     return Money(val, 'USD')
 
 
-def other_items_for_customer(user, cart=None, paid_only=False):
-    lines = CheckoutLine.objects.filter(cart__owner=user,
-                                        fulfilled=False,
-                                        cancelled=False,
-                                        cart__date_submitted__isnull=False,
-                                        ).order_by('-cart__date_submitted')
+def other_items_for_customer(user=None, cart=None, paid_only=False, email=None):
+    target_user = user or (cart.owner if cart else None)
+
+    if target_user:
+        lines = CheckoutLine.objects.filter(
+            cart__owner=target_user,
+            fulfilled=False,
+            cancelled=False,
+            cart__date_submitted__isnull=False,
+        )
+    else:
+        target_email = email
+        if not target_email and cart:
+            target_email = cart.email or (cart.get_order_email() if hasattr(cart, 'get_order_email') else None)
+
+        if not target_email:
+            return CheckoutLine.objects.none()
+
+        target_email = target_email.strip().lower()
+
+        customer_filter = (
+            Q(cart__email__iexact=target_email)
+            | Q(cart__owner__email__iexact=target_email)
+            | Q(cart__owner__emailaddress__email__iexact=target_email)
+        )
+
+        lines = CheckoutLine.objects.filter(
+            customer_filter,
+            fulfilled=False,
+            cancelled=False,
+            cart__date_submitted__isnull=False,
+        )
+
     if paid_only:
         lines = lines.filter(cart__status=Cart.PAID)
     else:
         lines = lines.filter(cart__status__in=[Cart.SUBMITTED, Cart.PAID])
 
-    if not cart:
-        return lines
-    return lines.exclude(cart__id=cart.id)
+    if cart:
+        lines = lines.exclude(cart__id=cart.id)
+
+    return lines.distinct().order_by('-cart__date_submitted')

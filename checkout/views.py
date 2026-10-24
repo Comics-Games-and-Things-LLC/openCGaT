@@ -475,8 +475,7 @@ def partner_order_details(request, partner_slug, cart_id):
                 past_cart.mark_shipped()
                 print(past_cart)
         context['comments_form'] = PartnerCommentsForm(instance=past_cart)
-        if past_cart.owner:
-            context['other_items_for_customer'] = other_items_for_customer(past_cart.owner, past_cart, paid_only=True)
+        context['other_items_for_customer'] = past_cart.get_other_items_for_customer(paid_only=True)
         return TemplateResponse(request, "checkout/partner_order_details.html", context=context)
     except Cart.DoesNotExist:
         return HttpResponse(status=404)
@@ -490,8 +489,7 @@ def partner_order_printout(request, partner_slug, cart_id):
         past_cart.invoice_been_printed = True
         past_cart.save()
         context = {'past_cart': past_cart, 'partner': partner}
-        if past_cart.owner:
-            context['other_items_for_customer'] = other_items_for_customer(past_cart.owner, past_cart, paid_only=True)
+        context['other_items_for_customer'] = past_cart.get_other_items_for_customer(paid_only=True)
         return TemplateResponse(request, "checkout/partner_order_printout.html", context=context)
     except Cart.DoesNotExist:
         return HttpResponse(status=404)

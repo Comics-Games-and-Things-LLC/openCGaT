@@ -248,6 +248,7 @@ def admin_customer_details(request, user_id):
     context = {
         'customer': customer,
         'orders': orders,
+        'other_items_for_customer': other_items_for_customer(customer),
         'items': DigitalItem.objects.filter(downloads__user=customer),
         'banform': BanForm(instance=customer),
         'admin': True,
