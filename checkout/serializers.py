@@ -12,13 +12,17 @@ class CartLineSerializer(serializers.ModelSerializer):
     estimated_cost = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
+    price_per_unit_override = serializers.SerializerMethodField()
 
     class Meta:
         model = CheckoutLine
-        fields = ('item', 'quantity', 'price', 'estimated_cost', 'status',
-                  'description', 'discount_code_message')
         fields = ('id', 'item', 'quantity', 'price', 'estimated_cost', 'status',
+                  'description', 'discount_code_message', 'price_per_unit_override')
+
+    @staticmethod
     def get_price_per_unit_override(line):
+        if line.price_per_unit_override:
+            return float(line.price_per_unit_override.amount)
 
     @staticmethod
     def get_price(line):
