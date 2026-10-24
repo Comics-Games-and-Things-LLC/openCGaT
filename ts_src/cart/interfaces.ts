@@ -49,10 +49,22 @@ export interface IRowProps {
     show_cost_col?: boolean;
 }
 
+export interface IOtherLine {
+    id: number;
+    cart_id: number;
+    name: string;
+    quantity: number;
+    paid: boolean;
+    release_date?: string | null;
+    status?: string;
+    date_submitted?: string;
+}
+
 export interface ICart {
     loaded?: boolean;
     status: string;
     lines: IRowProps[];
+    other_items_ready?: IOtherLine[];
     open: boolean;
     id: number;
     site: string;

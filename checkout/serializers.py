@@ -113,6 +113,45 @@ class CartSummarySerializer(serializers.ModelSerializer):
         return cart.status == Cart.OPEN
 
 
+class OtherCartLineSerializer(serializers.ModelSerializer):
+    """A line from another of the customer's carts, shown alongside the current cart."""
+    cart_id = serializers.IntegerField(source='cart.id', read_only=True)
+    name = serializers.SerializerMethodField()
+    paid = serializers.SerializerMethodField()
+    release_date = serializers.SerializerMethodField()
+    date_submitted = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CheckoutLine
+        fields = ('id', 'cart_id', 'name', 'quantity', 'paid', 'release_date', 'date_submitted')
+
+    @staticmethod
+    def get_name(line):
+        if line.name_of_item:
+            return line.name_of_item
+        if line.item:
+            return str(line.item)
+        return ""
+
+    @staticmethod
+    def get_paid(line):
+        return bool(line.paid or (line.cart and line.cart.is_paid))
+
+    @staticmethod
+    def get_release_date(line):
+        if line.item and hasattr(line.item, 'product') and line.item.product:
+            if line.eligible_for_early_release and line.item.product.in_store_early_release_date:
+                return line.item.product.in_store_early_release_date.isoformat()
+            if line.item.product.release_date:
+                return line.item.product.release_date.isoformat()
+        return None
+
+    @staticmethod
+    def get_date_submitted(line):
+        if line.cart.date_submitted:
+            return line.cart.date_submitted.isoformat()
+
+
 class CartSerializer(CartSummarySerializer):
     lines = CartLineSerializer(many=True)
     payment_partner = PartnerSerializer()
@@ -147,6 +186,8 @@ class CartSerializer(CartSummarySerializer):
 
     cancelled_amount = serializers.SerializerMethodField()
 
+    other_items_ready = serializers.SerializerMethodField()
+
     class Meta:
         model = Cart
         fields = ('id', 'status', 'lines', 'payment_partner', 'final_total', 'final_tax', 'subtotal',
@@ -155,7 +196,7 @@ class CartSerializer(CartSummarySerializer):
                   'available_pickup_partners', 'is_shipping_required', 'pickup_partner', 'delivery_method',
                   'is_account_required', 'completed_steps', 'ready_steps', 'address_error',
                   'discount_code', 'discount_code_message', 'site', 'is_free', 'in_store_pickup_only', "disclaimer",
-                  'cancelled_amount',
+                  'cancelled_amount', 'other_items_ready',
                   )
 
     @staticmethod
@@ -222,6 +263,18 @@ class CartSerializer(CartSummarySerializer):
     @staticmethod
     def get_cancelled_amount(cart):
         return cart.get_cancelled_amount()
+
+    @staticmethod
+    def get_other_items_ready(cart):
+        """Lines in the customer's other submitted carts that are marked ready."""
+        if not cart.id:
+            return []
+        other_lines = cart.get_other_items_for_customer()
+        if other_lines is None:
+            return []
+        ready_lines = other_lines.filter(Q(ready=True) | Q(cart__ready_for_pickup=True)) \
+            .select_related('cart', 'item', 'item__product')
+        return OtherCartLineSerializer(ready_lines, many=True).data
 
 
 def get_pos_props(partner, cart_id=None):

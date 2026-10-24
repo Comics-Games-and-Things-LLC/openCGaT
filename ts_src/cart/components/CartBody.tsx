@@ -2,10 +2,10 @@ import * as React from "react";
 import {FormEvent, useCallback, useEffect, useRef, useState} from "react";
 import {Table} from 'react-bootstrap';
 import CartRow from "./CartRow";
-import {ICart, IRowProps} from "../interfaces";
+import {ICart, IOtherLine, IRowProps} from "../interfaces";
 import {useAppDispatch} from "../store";
 import getCookie from "./get_cookie";
-import {setPOSDiscountCode, updateCart} from "../reducers/cartSlice";
+import {setPOSDiscountCode, updateCart, updatePOSAndChangeToCartID} from "../reducers/cartSlice";
 import {round_up_change} from "./Forms/PaymentForm";
 
 export interface ICartBodyProps {
@@ -183,8 +183,65 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
         handleDiscountCode();
     }, []);
 
+    const other_items_ready: IOtherLine[] = props.cart.other_items_ready || [];
+
+    const switchToCart = (e: React.MouseEvent<HTMLAnchorElement>, cart_id: number) => {
+        e.preventDefault();
+        dispatch(updatePOSAndChangeToCartID(cart_id));
+    };
+
     return <div className="w-full">
         {content}
+        {props.pos && other_items_ready.length > 0 ? <div className="mt-4 p-2 border-t-2 border-gray-400">
+            <h4>Other items ready for this customer</h4>
+            <Table className={"checkout-table w-full"}>
+                <thead>
+                <tr>
+                    <th>Cart</th>
+                    <th>Item</th>
+                    <th>#</th>
+                    <th>Paid</th>
+                    <th>Release Date</th>
+                </tr>
+                </thead>
+                <tbody>
+                {other_items_ready.map((line: IOtherLine) => {
+                    let releaseDateDisplay = line.release_date || "";
+                    let releaseDateClass = "";
+                    if (line.release_date) {
+                        const parts = line.release_date.split("-");
+                        if (parts.length === 3) {
+                            const year = parseInt(parts[0], 10);
+                            const month = parseInt(parts[1], 10) - 1;
+                            const day = parseInt(parts[2], 10);
+                            const releaseDate = new Date(year, month, day);
+                            const now = new Date();
+                            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                            if (releaseDate <= today) {
+                                releaseDateClass = "text-primary font-bold";
+                            } else {
+                                releaseDateClass = "text-warning font-bold";
+                            }
+                        }
+                    }
+                    return (
+                        <tr key={`other-${line.cart_id}-${line.id}`}>
+                            <td>
+                                <a href={`#cart-${line.cart_id}`}
+                                   onClick={(e) => switchToCart(e, line.cart_id)}>
+                                    {line.cart_id}
+                                </a>
+                            </td>
+                            <td>{line.name}</td>
+                            <td>{line.quantity}</td>
+                            <td>{line.paid ? "Paid" : "Unpaid"}</td>
+                            <td className={releaseDateClass}>{releaseDateDisplay}</td>
+                        </tr>
+                    );
+                })}
+                </tbody>
+            </Table>
+        </div> : null}
         {props.full && !props.pos ? <div>
             {props.cart.disclaimer}
         </div> : null}

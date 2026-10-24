@@ -342,3 +342,43 @@ class CheckoutTestCase(TestCase):
         self.assertEqual(response_print.status_code, 200)
         self.assertIn('other_items_for_customer', response_print.context)
         self.assertEqual(response_print.context['other_items_for_customer'].count(), 1)
+
+    def test_cart_serializer_other_items_ready(self):
+        from checkout.serializers import CartSerializer
+
+        site = Site.objects.get(name="Test site")
+        partner = Partner.objects.get(name="Test Partner")
+        product1 = Product.objects.create(name="Product With Release", release_date=datetime.date(2026, 1, 15))
+        product2 = Product.objects.create(name="Product Future Release", release_date=datetime.date(2027, 12, 1))
+        item1 = InventoryItem.objects.create(product=product1, partner=partner, price=Money(10, "USD"), default_price=Money(10, "USD"))
+        item2 = InventoryItem.objects.create(product=product2, partner=partner, price=Money(20, "USD"), default_price=Money(20, "USD"))
+
+        user = User.objects.create_user(username='ready_user', email='ready@example.com', password='password')
+
+        # Current open cart
+        current_cart = Cart.objects.create(site=site, owner=user, email='ready@example.com', status=Cart.OPEN)
+
+        # Other submitted cart with ready line
+        other_cart_1 = Cart.objects.create(site=site, owner=user, email='ready@example.com', status=Cart.PAID,
+                                          date_submitted=timezone.now())
+        line1, _ = other_cart_1.add(item1, quantity=2)
+        line1.ready = True
+        line1.save()
+
+        # Other submitted cart with cart-level ready_for_pickup
+        other_cart_2 = Cart.objects.create(site=site, owner=user, email='ready@example.com', status=Cart.SUBMITTED,
+                                          date_submitted=timezone.now(), ready_for_pickup=True)
+        line2, _ = other_cart_2.add(item2, quantity=1)
+
+        data = CartSerializer(current_cart).data
+        self.assertIn('other_items_ready', data)
+        self.assertEqual(len(data['other_items_ready']), 2)
+
+        items_by_cart = {item['cart_id']: item for item in data['other_items_ready']}
+        self.assertIn(other_cart_1.id, items_by_cart)
+        self.assertTrue(items_by_cart[other_cart_1.id]['paid'])
+        self.assertEqual(items_by_cart[other_cart_1.id]['release_date'], "2026-01-15")
+
+        self.assertIn(other_cart_2.id, items_by_cart)
+        self.assertFalse(items_by_cart[other_cart_2.id]['paid'])
+        self.assertEqual(items_by_cart[other_cart_2.id]['release_date'], "2027-12-01")
