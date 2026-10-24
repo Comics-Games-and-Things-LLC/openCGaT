@@ -1141,9 +1141,9 @@ def tasks(request, partner_slug):
 
     # Products missing intake
     release_date_q = Q(product__release_date__lte=next_week,
-                       product__release_date__gte=today - datetime.timedelta(days=30)) | \
+                       product__release_date__gte=today - datetime.timedelta(days=14)) | \
                      Q(product__in_store_early_release_date__lte=next_week,
-                       product__in_store_early_release_date__gte=today - datetime.timedelta(days=30))
+                       product__in_store_early_release_date__gte=today - datetime.timedelta(days=14))
 
     items_missing_intake = InventoryItem.objects.filter(partner=partner).filter(release_date_q)
     po_lines = POLine.objects.filter(barcode=OuterRef('product__barcode'), po__partner=partner).exclude(barcode=None)
