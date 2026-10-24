@@ -96,18 +96,20 @@ const CartBody: React.FunctionComponent<ICartBodyProps> = (props: ICartBodyProps
             </tr>
             </thead>
             <tbody>
-            {props.cart.lines.map((rowdata: IRowProps) => {
-                rowdata = Object.assign({}, rowdata); // make a copy of the row props, so we can add additional params to it
-                rowdata.key = rowdata.item.id
-                rowdata.full = props.full
-                rowdata.open = props.cart.open
-                rowdata.show_status_col = show_status_col
-                rowdata.pos = props.pos
-                rowdata.show_cost_col = show_cost_col
-                let row = React.createElement(CartRow, rowdata)
-                count += rowdata.quantity
-                cost_estimate += rowdata.estimated_cost
-                return row
+            {props.cart.lines.map((line: IRowProps) => {
+                count += line.quantity
+                cost_estimate += line.estimated_cost
+                return (
+                    <CartRow
+                        key={`${props.cart.id}-${line.id}`}
+                        {...line}
+                        full={props.full}
+                        open={props.cart.open}
+                        pos={props.pos}
+                        show_status_col={show_status_col}
+                        show_cost_col={show_cost_col}
+                    />
+                )
             })}
             {props.full ? <>
                     <FooterRow label={"Subtotal"} value={subtotal_string}

@@ -246,6 +246,7 @@ const POS: React.FunctionComponent<IPOSProps> = (props: IPOSProps): JSX.Element 
                             <button onClick={toggleCost}
                                     className="btn btn-secondary">{showCost ? "Hide Cost" : "Show Cost"}</button>
                             <CartBody
+                                key={currentStatus.active_cart.id}
                                 cart={currentStatus.active_cart}
                                 full={true}
                                 pos={true}

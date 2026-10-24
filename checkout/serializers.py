@@ -17,6 +17,8 @@ class CartLineSerializer(serializers.ModelSerializer):
         model = CheckoutLine
         fields = ('item', 'quantity', 'price', 'estimated_cost', 'status',
                   'description', 'discount_code_message')
+        fields = ('id', 'item', 'quantity', 'price', 'estimated_cost', 'status',
+    def get_price_per_unit_override(line):
 
     @staticmethod
     def get_price(line):

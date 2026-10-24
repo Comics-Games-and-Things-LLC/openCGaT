@@ -33,9 +33,9 @@ export interface IItem {
 }
 
 export interface IRowProps {
+    id: number
     pos: boolean
     item: IItem
-    key: number
     quantity: number
     open: boolean
     price: number

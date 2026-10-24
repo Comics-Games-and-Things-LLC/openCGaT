@@ -59,7 +59,7 @@ const CheckoutCartSummary: React.FunctionComponent<iCartSummaryProps> = (props):
     }
 
     return <SimpleCard>
-        <CartBody cart={currentCart} full={true} pos={false}/>
+        <CartBody key={currentCart.id} cart={currentCart} full={true} pos={false}/>
         <div className={""}>
             <div className={`flex justify-end ${gap}`}>
 

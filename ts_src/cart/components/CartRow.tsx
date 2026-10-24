@@ -81,7 +81,7 @@ const CartRow: React.FunctionComponent<IRowProps> = (props: IRowProps): JSX.Elem
     }
 
     return (
-        <tr key={props.key}>
+        <tr>
             <td>
                 <a href={"/shop/product/" + props.item.product.slug + "/"}>{props.item.product.name}</a>
                 {props.description ? <React.Fragment>

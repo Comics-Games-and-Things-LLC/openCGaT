@@ -9,7 +9,7 @@ import { RootState, useAppDispatch } from "../store";
 const CartFull: React.FunctionComponent = (): JSX.Element => {
     const currentCart = useSelector((state: RootState) => state.cart.cart);
 
-    return <CartBody full={true} pos={false} cart={currentCart}/>;
+    return <CartBody key={currentCart.id} full={true} pos={false} cart={currentCart}/>;
 
 }
 

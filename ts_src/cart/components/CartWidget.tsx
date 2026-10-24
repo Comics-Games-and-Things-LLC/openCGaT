@@ -45,7 +45,7 @@ const CartWidget: React.FunctionComponent<ICart> = (props: ICart): JSX.Element =
                     </Popover.Title>
 
                     <Popover.Content>
-                        <CartBody full={false} pos={false} cart={currentCart}/>
+                        <CartBody key={currentCart.id} full={false} pos={false} cart={currentCart}/>
                     </Popover.Content>
                 </Popover>
             </Overlay>
