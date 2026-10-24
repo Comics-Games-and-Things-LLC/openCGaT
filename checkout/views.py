@@ -26,8 +26,8 @@ import discount_codes.views
 from box_counter.models import BoxInventory
 from digitalitems.models import DigitalItem
 from discount_codes.models import DiscountCode
-from partner.models import get_partner_or_401, Partner
 from intake.models import POLine
+from partner.models import get_partner_or_401, Partner
 from shop.models import CustomChargeItem, Product, Item, InventoryItem, Category
 from shop.serializers import ItemSerializer
 from .forms import PickupForm, EmailForm, BillingAddressForm, PaymentMethodForm, ShippingAddressForm, FiltersForm, \
@@ -1145,7 +1145,8 @@ def tasks(request, partner_slug):
                      Q(product__in_store_early_release_date__lte=next_week,
                        product__in_store_early_release_date__gte=today - datetime.timedelta(days=14))
 
-    items_missing_intake = InventoryItem.objects.filter(partner=partner).filter(release_date_q)
+    items_missing_intake = InventoryItem.objects.filter(partner=partner).filter(release_date_q).order_by(
+        '-product__in_store_early_release_date', '-product__release_date')
     po_lines = POLine.objects.filter(barcode=OuterRef('product__barcode'), po__partner=partner).exclude(barcode=None)
     items_missing_intake = items_missing_intake.exclude(Exists(po_lines)).distinct()
 
@@ -1215,7 +1216,9 @@ def in_store_sales_for_day(request, partner_slug):
 
     # Prefetch items and products
     item_ids = [s['item'] for s in item_sales]
-    items_dict = {item.id: item for item in Item.objects.filter(id__in=item_ids).select_related('product').prefetch_related('product__categories')}
+    items_dict = {item.id: item for item in
+                  Item.objects.filter(id__in=item_ids).select_related('product').prefetch_related(
+                      'product__categories')}
 
     category_root_cache = {}
     results = []
