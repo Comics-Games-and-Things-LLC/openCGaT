@@ -26,7 +26,7 @@ import discount_codes.views
 from box_counter.models import BoxInventory
 from digitalitems.models import DigitalItem
 from discount_codes.models import DiscountCode
-from intake.models import POLine
+from intake.models import POLine, IntakeIgnore
 from partner.models import get_partner_or_401, Partner
 from shop.models import CustomChargeItem, Product, Item, InventoryItem, Category
 from shop.serializers import ItemSerializer
@@ -1150,6 +1150,9 @@ def tasks(request, partner_slug):
     po_lines = POLine.objects.filter(barcode=OuterRef('product__barcode'), po__partner=partner).exclude(barcode=None)
     items_missing_intake = items_missing_intake.exclude(Exists(po_lines)).distinct()
 
+    ignored_products = IntakeIgnore.objects.filter(partner=partner, product=OuterRef('product'))
+    items_missing_intake = items_missing_intake.exclude(Exists(ignored_products))
+
     context = {'partner': partner,
                'lines_to_pick': lines_to_pick,
                'send_ready_for_pickup_email_order_list': send_ready_for_pickup_email_order_list,
@@ -1247,6 +1250,14 @@ def in_store_sales_for_day(request, partner_slug):
         'sold_out': sold_out,
     }
     return TemplateResponse(request, "partner/in_store_sales_for_day.html", context)
+
+
+@login_required
+def ignore_intake(request, partner_slug, product_id):
+    partner = get_partner_or_401(request, partner_slug)
+    product = get_object_or_404(Product, id=product_id)
+    IntakeIgnore.objects.get_or_create(partner=partner, product=product)
+    return HttpResponse(status=200)
 
 
 def product_open_lines(request, partner_slug, product_id):

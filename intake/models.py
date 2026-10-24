@@ -642,3 +642,14 @@ class PricingRule(models.Model):
             product_string = "{} products".format(self.publisher)
 
         return "{}: {} are {}% of msrp".format(self.priority, product_string, self.percent_of_msrp)
+    
+
+class IntakeIgnore(models.Model):
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE)
+    product = models.ForeignKey('shop.Product', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('partner', 'product')
+
+    def __str__(self):
+        return f"{self.partner} ignores {self.product}"

@@ -62,3 +62,4 @@ class PoInvoiceFileAdmin(admin.ModelAdmin):
 admin.site.register(PoInvoiceFile, PoInvoiceFileAdmin)
 admin.site.register(PoShipment)
 admin.site.register(PoShipmentLine)
+admin.site.register(IntakeIgnore)

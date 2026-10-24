@@ -111,6 +111,15 @@
                     PrintImageFromUrl(print_url)
                 });
         }
+
+        function ignore_intake(product_id, target_url) {
+            console.log(target_url)
+            fetch(target_url)
+                .then(response => {
+                    var row = document.getElementById("product_row_" + product_id)
+                    row.remove()
+                });
+        }
     </script>
     {% if lines_to_pick %}
         <h2>Items to pick <button class="btn btn-secondary" onclick="print_pick_list()">Print Pick List</button></h2>
@@ -312,9 +321,10 @@
                 <th scope="col">Product</th>
                 <th scope="col">Release Date</th>
                 <th scope="col">Early Release Date</th>
+                <th scope="col">Ignore</th>
             </tr>
             {% for item in items_missing_intake %}
-                <tr>
+                <tr id="product_row_{{ item.product.id }}">
                     <td>
                         <a href="{% url 'manage_product' partner_slug=partner.slug product_slug=item.product.slug %}">
                             {{ item.product.name }}
@@ -322,6 +332,12 @@
                     </td>
                     <td>{{ item.product.release_date }}</td>
                     <td>{{ item.product.in_store_early_release_date|default_if_none:"" }}</td>
+                    <td>
+                        <button class="btn btn-warning"
+                                onclick="ignore_intake({{ item.product.id }}, '{% url 'partner_ignore_intake' partner_slug=partner.slug product_id=item.product.id %}')">
+                            Ignore
+                        </button>
+                    </td>
                 </tr>
             {% endfor %}
         </table>

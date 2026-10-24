@@ -64,6 +64,7 @@ urlpatterns = [
 
     path('pre_and_back_orders/', all_pre_and_back_orders, name='partner_pre_and_back_orders'),
     path('tasks/', tasks, name='partner_tasks'),
+    path('tasks/ignore/<int:product_id>/', ignore_intake, name='partner_ignore_intake'),
     path('product_lines/<int:product_id>/', product_open_lines, name="product_open_lines"),
     path('product_lines/<int:product_id>/clear/', clear_product_open_lines, name="clear_product_open_lines"),
 
