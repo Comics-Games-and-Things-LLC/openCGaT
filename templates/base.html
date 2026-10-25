@@ -428,7 +428,7 @@
     </div>
 </footer>
 {% if partner %}
-    {% react_render component="PrinterWidget" identifier="printer_widget" partnerSlug=partner.slug %}
+    {% react_render component="PrinterWidget" identifier="printer_widget" prop_partnerSlug=partner.slug %}
 {% endif %}
 
 {% block body_js %}
