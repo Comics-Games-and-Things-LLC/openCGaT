@@ -289,7 +289,9 @@ export async function routePrint(
     partnerSlug?: string,
     channelName = POS_PRINT_CHANNEL_NAME
 ): Promise<boolean> {
-    const destinationPrinterId = localStorage.getItem('destination_printer_id') || 'local';
+    const isLabel = message.type === 'LABEL' || message.type === 'PRINT_LABEL';
+    const storageKey = isLabel ? 'destination_label_printer_id' : 'destination_receipt_printer_id';
+    const destinationPrinterId = localStorage.getItem(storageKey) || (!isLabel ? localStorage.getItem('destination_printer_id') : null) || 'local';
 
     if (destinationPrinterId === 'local' || !partnerSlug) {
         return broadcastPrint(message, channelName);

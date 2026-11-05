@@ -46,7 +46,8 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
     const [clientId, setClientId] = useState<string>('');
     const [printerName, setPrinterName] = useState<string>('');
     const [onlinePrinters, setOnlinePrinters] = useState<Array<{ client_id: string, name: string }>>([]);
-    const [destinationPrinterId, setDestinationPrinterId] = useState<string>('local');
+    const [destinationLabelPrinterId, setDestinationLabelPrinterId] = useState<string>('local');
+    const [destinationReceiptPrinterId, setDestinationReceiptPrinterId] = useState<string>('local');
 
 
     const openForm = () => setIsFormOpen(true);
@@ -83,10 +84,16 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
         localStorage.setItem('printer_name', newName);
     };
 
-    const handleDestinationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleDestinationLabelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newDest = e.target.value;
-        setDestinationPrinterId(newDest);
-        localStorage.setItem('destination_printer_id', newDest);
+        setDestinationLabelPrinterId(newDest);
+        localStorage.setItem('destination_label_printer_id', newDest);
+    };
+
+    const handleDestinationReceiptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newDest = e.target.value;
+        setDestinationReceiptPrinterId(newDest);
+        localStorage.setItem('destination_receipt_printer_id', newDest);
     };
 
     const connect = () => {
@@ -221,6 +228,12 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
                 }
             } else if (job_type === 'RAW') {
                 handleBroadcastMessage({type: 'PRINT_RAW', payload});
+            } else if (job_type === 'CUSTOM') {
+                handleBroadcastMessage({type: 'PRINT_CUSTOM', payload});
+            } else if (job_type === 'COMMANDS') {
+                handleBroadcastMessage({type: 'PRINT_COMMANDS', payload});
+            } else if (job_type.startsWith('PRINT_')) {
+                handleBroadcastMessage({type: job_type, payload});
             }
 
             // Mark as printed
@@ -388,8 +401,11 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
         const savedName = localStorage.getItem('printer_name') || 'Station ' + id.substring(0, 4);
         setPrinterName(savedName);
 
-        const savedDest = localStorage.getItem('destination_printer_id') || 'local';
-        setDestinationPrinterId(savedDest);
+        const savedLabelDest = localStorage.getItem('destination_label_printer_id') || 'local';
+        setDestinationLabelPrinterId(savedLabelDest);
+
+        const savedReceiptDest = localStorage.getItem('destination_receipt_printer_id') || localStorage.getItem('destination_printer_id') || 'local';
+        setDestinationReceiptPrinterId(savedReceiptDest);
 
         tryReconnect()
     }, []);
@@ -461,11 +477,26 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
                 <div style={{fontSize: '0.8em', color: '#666'}}>ID: {clientId}</div>
             </div>
 
-            <div id="printer-destination" style={{marginBottom: '20px'}}>
-                <label>Send Prints To:
+            <div id="printer-destination-label" style={{marginBottom: '10px'}}>
+                <label>Send Label Prints To:
                     <select
-                        value={destinationPrinterId}
-                        onChange={handleDestinationChange}
+                        value={destinationLabelPrinterId}
+                        onChange={handleDestinationLabelChange}
+                        style={{marginLeft: '10px', padding: '5px'}}
+                    >
+                        <option value="local">Local Printer (This Tab)</option>
+                        {onlinePrinters.filter(p => p.client_id !== clientId).map(p => (
+                            <option key={p.client_id} value={p.client_id}>{p.name}</option>
+                        ))}
+                    </select>
+                </label>
+            </div>
+
+            <div id="printer-destination-receipt" style={{marginBottom: '20px'}}>
+                <label>Send Receipt Prints To:
+                    <select
+                        value={destinationReceiptPrinterId}
+                        onChange={handleDestinationReceiptChange}
                         style={{marginLeft: '10px', padding: '5px'}}
                     >
                         <option value="local">Local Printer (This Tab)</option>

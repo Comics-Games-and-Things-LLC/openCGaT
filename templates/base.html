@@ -160,7 +160,7 @@
             }
 
             async function RoutePrintMessage(message) {
-                const destinationPrinterId = localStorage.getItem('destination_printer_id') || 'local';
+                const destinationPrinterId = localStorage.getItem('destination_receipt_printer_id') || localStorage.getItem('destination_printer_id') || 'local';
                 const partnerSlug = "{{ partner.slug }}";
 
                 if (destinationPrinterId !== 'local' && partnerSlug) {
@@ -198,7 +198,7 @@
 
             async function PrintImageFromUrl(target_url) {
                 console.log("attempting print")
-                const destinationPrinterId = localStorage.getItem('destination_printer_id') || 'local';
+                const destinationPrinterId = localStorage.getItem('destination_label_printer_id') || 'local';
                 const partnerSlug = "{{ partner.slug }}";
 
                 if (destinationPrinterId !== 'local' && partnerSlug) {
