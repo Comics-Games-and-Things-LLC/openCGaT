@@ -1,5 +1,6 @@
 import csv
 import datetime
+from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 from moneyed import Money
@@ -13,6 +14,7 @@ from partner.models import Partner
 from shop.models import Product, InventoryItem
 
 partner = Partner.objects.get(name__icontains="Valhalla")
+
 
 def get_purchased_as(barcode, quantity, logfile, cart_line=None, verbose=True, year=None) -> Money:
     '''
@@ -214,10 +216,12 @@ def handle_get_cogs(year, have_inv_report=False):
             try:
                 estimated_cost = POLine.objects.filter(po__partner=partner, barcode=item.product.barcode).order_by(
                     '-po__date').first().cost_per_item
-                unsold_inventory_cost += estimated_cost * item.current_inventory
 
             except Exception:
                 log(f, f"Could not get cost for {item.current_inventory} x {item.product.name}")
+            if not estimated_cost and item.product.msrp:
+                estimated_cost = Money(item.product.msrp.amount * Decimal("0.60"), 'USD')  # Assume 40% off MSRP, possibly high.
+            unsold_inventory_cost += estimated_cost * item.current_inventory
 
         log(f, f"Remaining Inventory cost estimate {unsold_inventory_cost}")
 
