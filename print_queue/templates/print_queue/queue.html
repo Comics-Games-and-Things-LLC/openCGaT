@@ -124,29 +124,5 @@
                 tbody.innerHTML = '<tr><td colspan="7">No items in the print queue.</td></tr>';
             }
         }
-
-        function ImagetoPrint(source) {
-            return "<html><head><scri" + "pt>function step1(){\n" +
-                "setTimeout('step2()', 10);}\n" +
-                "function step2(){window.print();window.close()}\n" +
-                "</scri" + "pt></head><body onload='step1()'>\n" +
-                "<img src='" + source + "' /></body></html>";
-        }
-
-        function PrintImage(source) {
-            var Pagelink = "about:blank";
-            var pwa = window.open(Pagelink, "_new");
-            pwa.document.open();
-            pwa.document.write(ImagetoPrint(source));
-            pwa.document.close();
-        }
-
-        // Override or ensure PrintImageFromUrl uses the pattern that closes the window
-        function PrintImageFromUrl(target_url) {
-            console.log("attempting print from queue");
-            fetch(target_url)
-                .then(response => response.blob())
-                .then(imageBlob => PrintImage(URL.createObjectURL(imageBlob)));
-        }
     </script>
 {% endblock %}
