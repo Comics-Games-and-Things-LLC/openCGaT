@@ -144,7 +144,7 @@ def handle_get_cogs(year, have_inv_report=False):
     for po in PurchaseOrder.objects.filter(date__year=year, partner=partner):
         for line in po.lines.all():
             if line.actual_cost:
-                total_inventory_purchased += (line.actual_cost * line.received_quantity)
+                total_inventory_purchased += Money(line.actual_cost.amount * line.received_quantity, 'USD')
     log(f, "{} of inventory was purchased in {}".format(total_inventory_purchased, year))
 
     # Get cogs for the year in question
@@ -171,7 +171,7 @@ def handle_get_cogs(year, have_inv_report=False):
     for po in tqdm(PurchaseOrder.objects.filter(date__year__lte=year, partner=partner)):
         for line in po.lines.all():
             if line.actual_cost:
-                unsold_inventory_po_cost += (line.actual_cost * line.remaining_quantity)
+                unsold_inventory_po_cost += Money(line.actual_cost.amount * line.remaining_quantity, 'USD')
             else:
                 log(f, "PO Line {} is missing actual cost".format(line))
 
@@ -206,13 +206,15 @@ def handle_get_cogs(year, have_inv_report=False):
                 if p_as:
                     row_info['Purchase order'] = p_as.po
                     if p_as.actual_cost:
-                        unsold_inventory_cost += p_as.actual_cost
-                        row_info['Actual cost'] = p_as.actual_cost
+                        actual_cost = Money(p_as.actual_cost.amount, 'USD')
+                        unsold_inventory_cost += actual_cost
+                        row_info['Actual cost'] = actual_cost
                 writer.writerow(row_info)
 
         log(f, "Inventory from the inventory report costs {} ".format(unsold_inventory_cost))
     else:
         for item in InventoryItem.objects.filter(current_inventory__gt=0):
+            estimated_cost = None
             try:
                 estimated_cost = POLine.objects.filter(po__partner=partner, barcode=item.product.barcode).order_by(
                     '-po__date').first().cost_per_item
@@ -221,7 +223,8 @@ def handle_get_cogs(year, have_inv_report=False):
                 log(f, f"Could not get cost for {item.current_inventory} x {item.product.name}")
             if not estimated_cost and item.product.msrp:
                 estimated_cost = Money(item.product.msrp.amount * Decimal("0.60"), 'USD')  # Assume 40% off MSRP, possibly high.
-            unsold_inventory_cost += estimated_cost * item.current_inventory
+            if estimated_cost is not None:
+                unsold_inventory_cost += Money(estimated_cost.amount * item.current_inventory, 'USD')
 
         log(f, f"Remaining Inventory cost estimate {unsold_inventory_cost}")
 
