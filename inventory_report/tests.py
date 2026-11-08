@@ -30,9 +30,9 @@ class CogsCurrencyTests(SimpleTestCase):
             carts.return_value.filter.return_value.order_by.return_value = []
             cogs.handle_get_cogs(2025)
 
-        self.assertIn('Remaining Inventory cost estimate $22.00', logs)
-        self.assertIn('$20.00 of inventory was purchased in 2025', logs)
-        self.assertTrue(any('$10.00' in message and 'according to purchase orders' in message for message in logs))
+        self.assertIn(f'Remaining Inventory cost estimate {Money(22, "USD")}', logs)
+        self.assertIn(f'{Money(20, "USD")} of inventory was purchased in 2025', logs)
+        self.assertTrue(any(str(Money(10, 'USD')) in message and 'according to purchase orders' in message for message in logs))
 
     def test_inventory_report_cost_is_treated_as_usd(self):
         with patch('partner.models.Partner.objects.get'):
@@ -55,4 +55,4 @@ class CogsCurrencyTests(SimpleTestCase):
             reports.return_value.first.return_value = report
             cogs.handle_get_cogs(2025, have_inv_report=True)
 
-        self.assertIn('Inventory from the inventory report costs $7.00 ', logs)
+        self.assertIn(f'Inventory from the inventory report costs {Money(7, "USD")} ', logs)
