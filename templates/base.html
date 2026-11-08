@@ -143,11 +143,12 @@
             }
 
             function AutoPrintImagePage(source) {
-                return "<html><head><scri" + "pt>function step1(){\n" +
-                    "setTimeout('step2()', 10);}\n" +
-                    "function step2(){window.print();window.close()}\n" +
-                    "</scri" + "pt></head><body onload='step1()'>\n" +
-                    "<img src='" + source + "' /></body></html>";
+                return "<!DOCTYPE html><html><head><style>@page { margin: 0; } body { margin: 0; display: flex; justify-content: center; align-items: center; }</style><scri" + "pt>" +
+                    "function doPrint(){\n" +
+                    "setTimeout(function(){ window.print(); window.close(); }, 50);\n" +
+                    "}\n" +
+                    "</scri" + "pt></head><body>\n" +
+                    "<img src='" + source + "' onload='doPrint()' onerror='doPrint()' /></body></html>";
             }
 
             {#  https://stackoverflow.com/questions/2909033/using-javascript-to-print-images #}
@@ -155,10 +156,13 @@
             function OpenPrintImagePage(source) {
                 var Pagelink = "about:blank";
                 var pwa = window.open(Pagelink, "_new");
-                pwa.document.open();
-                pwa.document.write(AutoPrintImagePage(source));
-                pwa.document.close();
+                if (pwa) {
+                    pwa.document.open();
+                    pwa.document.write(AutoPrintImagePage(source));
+                    pwa.document.close();
+                }
             }
+            window.OpenPrintImagePage = OpenPrintImagePage;
 
             async function RoutePrintMessage(message) {
                 const destinationPrinterId = localStorage.getItem('destination_receipt_printer_id') || localStorage.getItem('destination_printer_id') || 'local';
@@ -226,13 +230,15 @@
                 }
 
                 // Fallback to local
-                let request = new Request(target_url);
-                fetch(request, {
-                    method: 'POST',
-                    mode: 'same-origin', // Do not send CSRF token to another domain.
-                }).then(response => response.blob()
-                ).then(imageBlob => OpenPrintImagePage(URL.createObjectURL(imageBlob))
-                );
+                fetch(target_url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(imageBlob => OpenPrintImagePage(URL.createObjectURL(imageBlob)))
+                    .catch(e => console.error("Failed to fetch image for printing", e));
                 return false;
             }
 

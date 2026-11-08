@@ -221,10 +221,14 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
                 handleBroadcastMessage({type: 'PRINT_CART', payload});
             } else if (job_type === 'LABEL') {
                 if (payload.url) {
-                    const response = await fetch(payload.url, {method: 'POST', mode: 'same-origin'});
-                    const blob = await response.blob();
-                    if ((window as any).OpenPrintImagePage) {
-                        (window as any).OpenPrintImagePage(URL.createObjectURL(blob));
+                    const response = await fetch(payload.url);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        if ((window as any).OpenPrintImagePage) {
+                            (window as any).OpenPrintImagePage(URL.createObjectURL(blob));
+                        }
+                    } else {
+                        console.error("Failed to fetch label image:", response.status, response.statusText);
                     }
                 }
             } else if (job_type === 'RAW') {
