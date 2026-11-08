@@ -769,3 +769,32 @@ class GamesWorkshopTestCase(TestCase):
         self.assertTrue(prod_draft_in_range_no_stock.page_is_draft)
         self.assertEqual(item_in_range.price, Money(20, "USD"))
         mock_email.return_value.send.assert_called_once()
+
+
+class GetImageEndpointTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username="adminuser", password="password")
+        self.partner = Partner.objects.create(name="Sticker Partner", slug="sticker-partner")
+        self.partner.administrators.add(self.user)
+        self.product = Product.objects.create(name="Sticker Item", barcode="123456789012")
+        self.item = InventoryItem.objects.create(
+            product=self.product,
+            partner=self.partner,
+            price=Money(10, "USD"),
+            default_price=Money(10, "USD")
+        )
+        self.client.login(username="adminuser", password="password")
+
+    def test_get_image_returns_png(self):
+        url = reverse('get_image', kwargs={'partner_slug': self.partner.slug, 'item_id': self.item.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'image/png')
+        self.assertTrue(len(response.content) > 0)
+
+    def test_get_image_unauthorized_partner_fails(self):
+        other_partner = Partner.objects.create(name="Other Partner", slug="other-partner")
+        url = reverse('get_image', kwargs={'partner_slug': other_partner.slug, 'item_id': self.item.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)

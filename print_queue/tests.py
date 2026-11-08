@@ -6,7 +6,8 @@ from djmoney.money import Money
 
 from partner.models import Partner
 from shop.models import Product, InventoryItem
-from print_queue.models import PrintQueueItem
+from print_queue.models import PrintQueueItem, PrintJob, Printer
+import json
 
 
 class PrintQueueTests(TestCase):
@@ -139,3 +140,107 @@ class PrintQueueTests(TestCase):
         url = reverse('mark_all_restickered', kwargs={'partner_slug': self.partner.slug})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 405)
+
+
+class PrintJobAPITests(TestCase):
+    def setUp(self):
+        self.site = Site.objects.create(domain="test.com", name="test")
+        self.partner = Partner.objects.create(name="Test Partner", slug="test-partner")
+        self.user = User.objects.create_user(username="testuser", password="password")
+        self.partner.administrators.add(self.user)
+
+        self.client = Client()
+        self.client.login(username="testuser", password="password")
+
+    def test_claim_unassigned_print_job(self):
+        job = PrintJob.objects.create(
+            partner=self.partner,
+            job_type='RECEIPT',
+            payload={'cart_id': 1},
+            status='PENDING'
+        )
+        url = reverse('print_job_claim', kwargs={'partner_slug': self.partner.slug})
+        response = self.client.post(
+            url,
+            data=json.dumps({'client_id': 'station-1'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertEqual(data['job']['id'], job.id)
+        self.assertEqual(data['job']['job_type'], 'RECEIPT')
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, 'CLAIMED')
+
+    def test_claim_targeted_print_job(self):
+        printer1 = Printer.objects.create(partner=self.partner, client_id='station-1', name='Station 1')
+        printer2 = Printer.objects.create(partner=self.partner, client_id='station-2', name='Station 2')
+
+        job_for_station2 = PrintJob.objects.create(
+            partner=self.partner,
+            destination_printer=printer2,
+            job_type='LABEL',
+            payload={'url': 'http://example.com/label.png'},
+            status='PENDING'
+        )
+
+        url = reverse('print_job_claim', kwargs={'partner_slug': self.partner.slug})
+
+        # Station 1 tries to claim (should find nothing)
+        response1 = self.client.post(
+            url,
+            data=json.dumps({'client_id': 'station-1'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response1.status_code, 204)
+
+        # Station 2 claims (should succeed)
+        response2 = self.client.post(
+            url,
+            data=json.dumps({'client_id': 'station-2'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response2.status_code, 200)
+        data2 = response2.json()
+        self.assertEqual(data2['status'], 'success')
+        self.assertEqual(data2['job']['id'], job_for_station2.id)
+
+        job_for_station2.refresh_from_db()
+        self.assertEqual(job_for_station2.status, 'CLAIMED')
+
+    def test_add_and_mark_job_printed(self):
+        add_url = reverse('print_job_add', kwargs={'partner_slug': self.partner.slug})
+        response = self.client.post(
+            add_url,
+            data=json.dumps({
+                'job_type': 'RECEIPT',
+                'payload': {'order_id': 123}
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        job_id = response.json()['job_id']
+
+        job = PrintJob.objects.get(id=job_id)
+        self.assertEqual(job.status, 'PENDING')
+
+        mark_url = reverse('print_job_mark_printed', kwargs={'partner_slug': self.partner.slug, 'job_id': job_id})
+        response = self.client.post(mark_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'status': 'success'})
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, 'PRINTED')
+
+    def test_register_and_get_online_printers(self):
+        reg_url = reverse('printer_register', kwargs={'partner_slug': self.partner.slug})
+        response = self.client.post(reg_url, data={'client_id': 'test-printer-1', 'name': 'Front Desk'})
+        self.assertEqual(response.status_code, 200)
+
+        online_url = reverse('printers_online', kwargs={'partner_slug': self.partner.slug})
+        response = self.client.get(online_url)
+        self.assertEqual(response.status_code, 200)
+        printers = response.json()['printers']
+        self.assertTrue(any(p['client_id'] == 'test-printer-1' and p['name'] == 'Front Desk' for p in printers))

@@ -16,45 +16,36 @@
             ];
 
             // 1. Broadcast via BroadcastChannel (for other tabs / POS receipt printer)
-            if (window.posPrinter && typeof window.posPrinter.broadcastPrintCustom === 'function') {
-                window.posPrinter.broadcastPrintCustom({
-                    title: 'POS Sales',
-                    subtitle: '{{ date }}',
-                    table: {
-                        columns: [
-                            { width: 4, marginRight: 1, align: 'right' },
-                            { width: 35, align: 'left' }
-                        ],
-                        rows: items.map(function(item) {
-                            return [item.quantity, item.product];
-                        })
-                    },
-                    cut: true
-                });
+            var payload = {
+                title: 'POS Sales',
+                subtitle: '{{ date }}',
+                table: {
+                    columns: [
+                        {width: 4, marginRight: 1, align: 'right'},
+                        {width: 35, align: 'left'}
+                    ],
+                    rows: items.map(function (item) {
+                        return [item.quantity, item.product];
+                    })
+                },
+                cut: true
+            };
+            if (typeof RoutePrintMessage === 'function') {
+                RoutePrintMessage({type: 'PRINT_CUSTOM', payload: payload});
+            } else if (window.posPrinter && typeof window.posPrinter.broadcastPrintCustom === 'function') {
+                window.posPrinter.broadcastPrintCustom(payload);
             } else if (typeof BroadcastChannel !== 'undefined') {
                 var channel = new BroadcastChannel('pos_print_channel');
                 channel.postMessage({
                     type: 'PRINT_CUSTOM',
-                    payload: {
-                        title: 'POS Sales',
-                        subtitle: '{{ date }}',
-                        table: {
-                            columns: [
-                                { width: 4, marginRight: 1, align: 'right' },
-                                { width: 35, align: 'left' }
-                            ],
-                            rows: items.map(function(item) {
-                                return [item.quantity, item.product];
-                            })
-                        },
-                        cut: true
-                    }
+                    payload: payload
                 });
                 channel.close();
             }
 
-            // 2. Dispatch rPrint locally if ReceiptPrinterEncoder & listener is in same document
-            if (typeof ReceiptPrinterEncoder !== 'undefined') {
+            // 2. Dispatch rPrint locally only if sending to local printer and listener is in same document
+            var dest = localStorage.getItem('destination_receipt_printer_id') || localStorage.getItem('destination_printer_id') || 'local';
+            if (dest === 'local' && typeof ReceiptPrinterEncoder !== 'undefined') {
                 var encoder = new ReceiptPrinterEncoder();
                 var qtyWidth = Math.max(4, Math.round(encoder.columns * 0.15));
                 var nameWidth = encoder.columns - qtyWidth - 1;

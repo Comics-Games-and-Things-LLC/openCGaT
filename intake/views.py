@@ -330,9 +330,10 @@ def inventory_detail(request, partner_slug, distributor_id, inventory_id):
     return render(request, "intake/inventory_detail.html", context)
 
 
-@login_required
+@csrf_exempt
 def get_image(request, partner_slug, item_id):
-    item = get_object_or_404(InventoryItem, id=item_id)
+    partner = get_partner_or_401(request, partner_slug)
+    item = get_object_or_404(InventoryItem, id=item_id, partner=partner)
     image = generate_product_sticker(item)
     response = HttpResponse(content_type="image/png")
     image.save(response, "PNG")

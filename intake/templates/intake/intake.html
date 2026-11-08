@@ -210,40 +210,11 @@
                         target_url = "{% url 'get_image' partner_slug=partner.slug item_id=local_item.id %}";
                     {% endif %}
 
-                    function ImagetoPrint(source) {
-                        return "<html><head><scri" + "pt>function step1(){\n" +
-                            "setTimeout('step2()', 10);}\n" +
-                            "function step2(){window.print();window.close()}\n" +
-                            "</scri" + "pt></head><body onload='step1()'>\n" +
-                            "<img src='" + source + "' /></body></html>";
-                    }
-
-                    {#  https://stackoverflow.com/questions/2909033/using-javascript-to-print-images #}
-
-                    function PrintImage(source) {
-                        var Pagelink = "about:blank";
-                        var pwa = window.open(Pagelink, "_new");
-                        pwa.document.open();
-                        pwa.document.write(ImagetoPrint(source));
-                        pwa.document.close();
-                    }
-
                     $('#print_form').submit(function (e) {
                         e.preventDefault();
-                        console.log("attempting print")
-
-                        let request = new Request(target_url,
-                            {headers: {'X-CSRFToken': csrftoken}}
-                        );
-                        fetch(request, {
-                            method: 'POST',
-                            mode: 'same-origin', // Do not send CSRF token to another domain.
-                        }).then(response => response.blob()
-                        ).then(imageBlob => PrintImage(URL.createObjectURL(imageBlob))
-                        );
+                        PrintImageFromUrl(target_url);
                         return false;
-                    })
-                    ;
+                    });
                 </script>
                 {% if cart_line_marked_ready %}
                     <img src="{% url 'get_order_image' partner_slug=partner.slug checkoutline_id=cart_line_marked_ready.id %}"
