@@ -244,3 +244,9 @@ class PrintJobAPITests(TestCase):
         self.assertEqual(response.status_code, 200)
         printers = response.json()['printers']
         self.assertTrue(any(p['client_id'] == 'test-printer-1' and p['name'] == 'Front Desk' for p in printers))
+
+    def test_stream_endpoint_returns_cleanly(self):
+        stream_url = reverse('print_job_stream', kwargs={'partner_slug': self.partner.slug})
+        response = self.client.get(stream_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/event-stream')

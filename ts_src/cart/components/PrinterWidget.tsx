@@ -190,25 +190,43 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
         }
     }, [props.partnerSlug, clientId, printerName]);
 
-    const claimJob = useCallback(async (jobId: number) => {
-        if (!props.partnerSlug || !clientId) return;
+    const isClaimingRef = useRef(false);
+
+    const claimNextJob = useCallback(async (jobId?: number) => {
+        if (!props.partnerSlug || !clientId || isClaimingRef.current) return;
+        isClaimingRef.current = true;
         try {
-            const response = await fetch(`/partner/${props.partnerSlug}/print_queue/jobs/claim/`, {
-                method: 'POST',
-                body: JSON.stringify({client_id: clientId, job_id: jobId}),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken') || '',
+            let hasMore = true;
+            let currentJobId = jobId;
+            while (hasMore) {
+                const body: any = {client_id: clientId};
+                if (currentJobId) {
+                    body.job_id = currentJobId;
+                    currentJobId = undefined;
                 }
-            });
-            if (response.status === 200) {
-                const data = await response.json();
-                if (data.status === 'success') {
-                    await processJob(data.job);
+                const response = await fetch(`/partner/${props.partnerSlug}/print_queue/jobs/claim/`, {
+                    method: 'POST',
+                    body: JSON.stringify(body),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') || '',
+                    }
+                });
+                if (response.status === 200) {
+                    const data = await response.json();
+                    if (data.status === 'success' && data.job) {
+                        await processJob(data.job);
+                    } else {
+                        hasMore = false;
+                    }
+                } else {
+                    hasMore = false;
                 }
             }
         } catch (e) {
             console.error("Failed to claim job", e);
+        } finally {
+            isClaimingRef.current = false;
         }
     }, [props.partnerSlug, clientId]);
 
@@ -433,30 +451,14 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
     useEffect(() => {
         if (!props.partnerSlug || !clientId) return;
 
-        const url = `/partner/${props.partnerSlug}/print_queue/stream/?client_id=${clientId}`;
-        const eventSource = new EventSource(url);
+        const interval = setInterval(() => {
+            claimNextJob();
+        }, 2000);
 
-        eventSource.onmessage = (event) => {
-            if (event.data.includes(': heartbeat')) return;
-            try {
-                const data = JSON.parse(event.data);
-                if (data.event === 'NEW_JOB') {
-                    claimJob(data.job_id);
-                }
-            } catch (e) {
-                console.error("Failed to parse SSE message", e);
-            }
-        };
+        claimNextJob();
 
-        eventSource.onerror = (e) => {
-            console.error("SSE Error", e);
-            eventSource.close();
-        };
-
-        return () => {
-            eventSource.close();
-        };
-    }, [props.partnerSlug, clientId, claimJob]);
+        return () => clearInterval(interval);
+    }, [props.partnerSlug, clientId, claimNextJob]);
 
     useEffect(() => {
         checkConnectionCapability();

@@ -170,38 +170,12 @@ def mark_job_printed(request, partner_slug, job_id):
 
 
 def print_job_stream(request, partner_slug):
+    """
+    Deprecated stream endpoint.
+    Returns immediately to avoid blocking WSGI workers in production.
+    Clients poll /jobs/claim/ instead.
+    """
     partner = get_partner_or_401(request, partner_slug)
-    client_id = request.GET.get('client_id')
-
-    def event_stream():
-        # Start by finding the latest job ID so we only notify about new ones
-        last_job_id = PrintJob.objects.filter(partner=partner).order_by('-id').values_list('id', flat=True).first() or 0
-        while True:
-            printer_ids = []
-            if client_id:
-                printer_ids = list(Printer.objects.filter(partner=partner, client_id=client_id).values_list('id', flat=True))
-
-            new_jobs = PrintJob.objects.filter(
-                partner=partner,
-                status='PENDING',
-                id__gt=last_job_id
-            )
-            if printer_ids:
-                new_jobs = new_jobs.filter(
-                    Q(destination_printer_id__isnull=True) | Q(destination_printer_id__in=printer_ids)
-                )
-            else:
-                new_jobs = new_jobs.filter(destination_printer_id__isnull=True)
-
-            new_jobs = new_jobs.order_by('id')
-
-            for job in new_jobs:
-                yield f"data: {json.dumps({'event': 'NEW_JOB', 'job_id': job.id})}\n\n"
-                last_job_id = job.id
-
-            yield ": heartbeat\n\n"
-            time.sleep(5)
-
-    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response = StreamingHttpResponse(iter([": deprecated\n\n"]), content_type='text/event-stream')
     response['Cache-Control'] = 'no-cache'
     return response
