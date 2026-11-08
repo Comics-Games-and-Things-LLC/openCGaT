@@ -124,14 +124,23 @@ def claim_print_job(request, partner_slug):
     client_id = data.get('client_id')
     job_id = data.get('job_id')
 
+    printer_ids = []
+    if client_id:
+        printer_ids = list(Printer.objects.filter(partner=partner, client_id=client_id).values_list('id', flat=True))
+
     with transaction.atomic():
         # Find jobs for this partner, either unassigned or assigned to this client
         jobs = PrintJob.objects.select_for_update().filter(
             partner=partner,
             status='PENDING'
-        ).filter(
-            Q(destination_printer__isnull=True) | Q(destination_printer__client_id=client_id)
         )
+        if printer_ids:
+            jobs = jobs.filter(
+                Q(destination_printer_id__isnull=True) | Q(destination_printer_id__in=printer_ids)
+            )
+        else:
+            jobs = jobs.filter(destination_printer_id__isnull=True)
+
         if job_id:
             jobs = jobs.filter(id=job_id)
 
@@ -168,13 +177,23 @@ def print_job_stream(request, partner_slug):
         # Start by finding the latest job ID so we only notify about new ones
         last_job_id = PrintJob.objects.filter(partner=partner).order_by('-id').values_list('id', flat=True).first() or 0
         while True:
+            printer_ids = []
+            if client_id:
+                printer_ids = list(Printer.objects.filter(partner=partner, client_id=client_id).values_list('id', flat=True))
+
             new_jobs = PrintJob.objects.filter(
                 partner=partner,
                 status='PENDING',
                 id__gt=last_job_id
-            ).filter(
-                Q(destination_printer__isnull=True) | Q(destination_printer__client_id=client_id)
-            ).order_by('id')
+            )
+            if printer_ids:
+                new_jobs = new_jobs.filter(
+                    Q(destination_printer_id__isnull=True) | Q(destination_printer_id__in=printer_ids)
+                )
+            else:
+                new_jobs = new_jobs.filter(destination_printer_id__isnull=True)
+
+            new_jobs = new_jobs.order_by('id')
 
             for job in new_jobs:
                 yield f"data: {json.dumps({'event': 'NEW_JOB', 'job_id': job.id})}\n\n"
