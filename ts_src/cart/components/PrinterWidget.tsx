@@ -5,6 +5,7 @@ import WebUSBReceiptPrinter from '@point-of-sale/webusb-receipt-printer';
 import WebSerialReceiptPrinter from './WebSerialReceiptPrinter/WebSerialReceiptPrinter';
 import WebBluetoothReceiptPrinter from '@point-of-sale/webbluetooth-receipt-printer';
 import getCookie from "./get_cookie";
+import {getPrinterClientId} from './printerClientId';
 import {
     POS_PRINT_CHANNEL_NAME,
     encodeCartReceipt,
@@ -391,11 +392,7 @@ const PrinterWidget: React.FunctionComponent<PrinterWidgetProps> = (props): JSX.
         }
 
         // Identity initialization
-        let id = localStorage.getItem('printer_client_id');
-        if (!id) {
-            id = crypto.randomUUID();
-            localStorage.setItem('printer_client_id', id);
-        }
+        const id = getPrinterClientId();
         setClientId(id);
 
         const savedName = localStorage.getItem('printer_name') || 'Station ' + id.substring(0, 4);
