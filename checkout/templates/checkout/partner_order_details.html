@@ -159,10 +159,10 @@
                     cut: true
                 };
 
-                if (window.posPrinter && typeof window.posPrinter.broadcastPrintCustom === 'function') {
-                    window.posPrinter.broadcastPrintCustom(payload);
-                } else if (typeof RoutePrintMessage === 'function') {
+                if (typeof RoutePrintMessage === 'function') {
                     RoutePrintMessage({type: 'PRINT_CUSTOM', payload: payload});
+                } else if (window.posPrinter && typeof window.posPrinter.broadcastPrintCustom === 'function') {
+                    window.posPrinter.broadcastPrintCustom(payload);
                 } else if (typeof BroadcastChannel !== 'undefined') {
                     var channel = new BroadcastChannel('pos_print_channel');
                     channel.postMessage({
@@ -172,7 +172,8 @@
                     channel.close();
                 }
 
-                if (typeof ReceiptPrinterEncoder !== 'undefined') {
+                var dest = localStorage.getItem('destination_receipt_printer_id') || localStorage.getItem('destination_printer_id') || 'local';
+                if (dest === 'local' && typeof ReceiptPrinterEncoder !== 'undefined') {
                     let encoder = new ReceiptPrinterEncoder()
                     const firstColumnWidth = Math.round(encoder.columns * 0.1);
                     const secondColumnWidth = Math.round(encoder.columns * 0.9);

@@ -29,12 +29,18 @@ class Printer(models.Model):
 
 
 class PrintJob(models.Model):
-    JOB_TYPE_CHOICES = [('RECEIPT', 'Receipt'), ('LABEL', 'Label'), ('RAW', 'Raw')]
+    JOB_TYPE_CHOICES = [
+        ('RECEIPT', 'Receipt'),
+        ('LABEL', 'Label'),
+        ('RAW', 'Raw'),
+        ('CUSTOM', 'Custom'),
+        ('COMMANDS', 'Commands'),
+    ]
     STATUS_CHOICES = [('PENDING', 'Pending'), ('CLAIMED', 'Claimed'), ('PRINTED', 'Printed'), ('FAILED', 'Failed')]
 
     partner = models.ForeignKey('partner.Partner', on_delete=models.CASCADE)
     destination_printer = models.ForeignKey(Printer, on_delete=models.SET_NULL, null=True, blank=True)
-    job_type = models.CharField(max_length=10, choices=JOB_TYPE_CHOICES)
+    job_type = models.CharField(max_length=20, choices=JOB_TYPE_CHOICES)
     payload = models.JSONField(help_text="Data required for printing")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)

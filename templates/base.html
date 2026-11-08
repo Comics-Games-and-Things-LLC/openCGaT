@@ -126,6 +126,7 @@
     {% endblock %}
     {% if partner %}
         <script>
+            window.partnerSlug = "{{ partner.slug }}";
             function getCookie(name) {
                 let cookieValue = null;
                 if (document.cookie && document.cookie !== '') {

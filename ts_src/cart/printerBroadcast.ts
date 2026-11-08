@@ -293,13 +293,15 @@ export async function routePrint(
     const storageKey = isLabel ? 'destination_label_printer_id' : 'destination_receipt_printer_id';
     const destinationPrinterId = localStorage.getItem(storageKey) || (!isLabel ? localStorage.getItem('destination_printer_id') : null) || 'local';
 
-    if (destinationPrinterId === 'local' || !partnerSlug) {
+    const slug = partnerSlug || (typeof window !== 'undefined' && ((window as any).partnerSlug || window.location.pathname.match(/\/partner\/([^\/]+)/)?.[1]));
+
+    if (destinationPrinterId === 'local' || !slug) {
         return broadcastPrint(message, channelName);
     }
 
     // Send to network queue
     try {
-        const response = await fetch(`/partner/${partnerSlug}/print_queue/jobs/add/`, {
+        const response = await fetch(`/partner/${slug}/print_queue/jobs/add/`, {
             method: 'POST',
             body: JSON.stringify({
                 job_type: message.type.replace('PRINT_', ''),
@@ -339,13 +341,15 @@ export function broadcastPrintCart(
  */
 export function broadcastPrintCustom(
     payload: ICustomPrintPayload,
-    channelName = POS_PRINT_CHANNEL_NAME
-): boolean {
-    return broadcastPrint(
+    channelName = POS_PRINT_CHANNEL_NAME,
+    partnerSlug?: string
+): Promise<boolean> {
+    return routePrint(
         {
             type: 'PRINT_CUSTOM',
             payload,
         },
+        partnerSlug,
         channelName
     );
 }
@@ -355,13 +359,15 @@ export function broadcastPrintCustom(
  */
 export function broadcastPrintRaw(
     data: Uint8Array | number[],
-    channelName = POS_PRINT_CHANNEL_NAME
-): boolean {
-    return broadcastPrint(
+    channelName = POS_PRINT_CHANNEL_NAME,
+    partnerSlug?: string
+): Promise<boolean> {
+    return routePrint(
         {
             type: 'PRINT_RAW',
             payload: {data},
         },
+        partnerSlug,
         channelName
     );
 }
@@ -372,13 +378,15 @@ export function broadcastPrintRaw(
 export function broadcastPrintCommands(
     commands: PrintCommand[],
     cut = true,
-    channelName = POS_PRINT_CHANNEL_NAME
-): boolean {
-    return broadcastPrint(
+    channelName = POS_PRINT_CHANNEL_NAME,
+    partnerSlug?: string
+): Promise<boolean> {
+    return routePrint(
         {
             type: 'PRINT_COMMANDS',
             payload: {commands, cut},
         },
+        partnerSlug,
         channelName
     );
 }
