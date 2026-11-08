@@ -235,6 +235,10 @@
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
+                        const contentType = response.headers.get('content-type') || '';
+                        if (contentType.includes('text/html')) {
+                            throw new Error(`Received HTML instead of image from URL: ${target_url}`);
+                        }
                         return response.blob();
                     })
                     .then(imageBlob => OpenPrintImagePage(URL.createObjectURL(imageBlob)))
